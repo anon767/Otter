@@ -4,7 +4,8 @@
 
 int main()
 {
-	int i = __SYMBOLIC();
+	int i;
+	__SYMBOLIC(&i);
 
 	jmp_buf ev[2];
 	if (setjmp(ev[0]))
@@ -13,8 +14,11 @@ int main()
 	{
 		if(setjmp(ev[1]))
 			i = 0;
-		else
-			longjmp(ev[__SYMBOLIC()%2], 1);
+		else {
+			unsigned k;
+			__SYMBOLIC(&k);
+			longjmp(ev[k%2], 1);
+		}
 	}
 
 	__ASSERT(i == 0);

@@ -18,7 +18,7 @@ void foo()
 
 int main()
 {
-	i = __SYMBOLIC();
+	__SYMBOLIC(&i);
 	if (setjmp(ev))
 		i = 0;
 	else

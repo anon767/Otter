@@ -92,9 +92,10 @@ let simple_testsuite = "Simple" >::: [
 
 	test_bounds ~label:"Symbolic offset with no problem"
 "int main() {
-  int x[2];
-	char *p = x + (__SYMBOLIC()==0);
-	*p = 9;
+  int x[2], i;
+  __SYMBOLIC(&i);
+  char *p = x + (i == 0);
+  *p = 9;
   return 0;
 }"
 	(fun res -> expectedResultCounts 1 0 0 res);
@@ -102,10 +103,12 @@ let simple_testsuite = "Simple" >::: [
 	test_bounds ~label:"Underrun on then branch; overrun on else branch"
 "int main() {
   char *x = malloc(4), *p;
-  if (__SYMBOLIC()) { p = x; }
+  _Bool b;
+  __SYMBOLIC(&b);
+  if (b) { p = x; }
   else { p = x + 3; }
-	p[1] = 7;
-	p[-1] = 12;
+  p[1] = 7;
+  p[-1] = 12;
   return 0;
 }"
 	(fun res ->

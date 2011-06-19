@@ -5,10 +5,11 @@
  * As of r10258, this test causes BackOtter to crashes.
  */
 
-int __SYMBOLIC(void *);
+void __SYMBOLIC(void *);
 void __FAILURE(void) __attribute__((used)) { }
 
 int main(void) {
-    __SYMBOLIC();
+    int x;
+    __SYMBOLIC(&x);
     return 0;
 }

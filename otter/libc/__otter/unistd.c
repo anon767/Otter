@@ -203,7 +203,7 @@ ssize_t __otter_libc_read_tty(void* buf, size_t num)
 	char data;
 	for(int i = 0; i < num; i++)
 	{
-		data = __SYMBOLIC(1);
+		__SYMBOLIC(&data);
 		/* This is a device not a file redirected to stdin; use 0 to indicate crtl+D was pressed to stop input */
 		if(data != 0)
 		{

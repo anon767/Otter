@@ -1,6 +1,8 @@
 #pragma expect_abandoned(out_of_bounds) /* __SYMBOLIC() % 4 may be negative */
 #pragma no_other_abandoned
 
+void __SYMBOLIC(void *);
+
 int foo0() {return 0;}
 int foo1() {return 1;}
 int foo2() {return 2;}
@@ -15,8 +17,10 @@ int main(void)
 	a[1] = foo1;
 	a[2] = foo2;
 	a[3] = foo3;
-	
-	int x = a[__SYMBOLIC() % 4]();
+
+	int i;
+	__SYMBOLIC(&i);
+	int x = a[i % 4]();
 
 	__ASSERT(x >= 0);
 	__ASSERT(x <= 4);

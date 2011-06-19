@@ -66311,7 +66311,6 @@ ssize_t __otter_libc_write_file(struct __otter_fs_open_file_table_entry *open_fi
 ssize_t __otter_libc_read_tty(void *buf , size_t num ) 
 { char data ;
   int i ;
-  uintmax_t __cil_tmp ;
 
   {
 #line 211
@@ -66319,9 +66318,7 @@ ssize_t __otter_libc_read_tty(void *buf , size_t num )
 #line 211
   while ((unsigned int )i < num) {
 #line 213
-    __cil_tmp = __SYMBOLIC((void *)1);
-#line 213
-    data = (char )__cil_tmp;
+    __SYMBOLIC((void *)&data);
 #line 215
     if ((int )data != 0) {
 #line 217

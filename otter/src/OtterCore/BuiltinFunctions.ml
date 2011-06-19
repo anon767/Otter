@@ -608,15 +608,8 @@ let otter_print_state job retopt exps =
 	end_function_call job
 
 
-(* There are 2 ways to use __SYMBOLIC:
-	 (1) '__SYMBOLIC(&x);' gives x a fresh symbolic value and associates
-	 that value with the variable x.
-	 (2) 'x = __SYMBOLIC(n);' assigns to x a fresh symbolic value which
-	 is not associated to any variable. If n > 0, n is the number of
-	 symbolic bytes desired; if n <= 0, a number of symbolic bytes equal
-	 to the size of x is returned. (If you manage to get something like
-	 'x = __SYMBOLIC();' past CIL despite the disagreement in the number
-	 of arguments, this behaves like the n <= 0 case.) *)
+(* '__SYMBOLIC(&x);' gives x a fresh symbolic value and associates
+    that value with the variable x. *)
 let intercept_symbolic job interceptor =
 	match job#instrList with
 		| Cil.Call(retopt, Cil.Lval(Cil.Var({vname = "__SYMBOLIC"}), Cil.NoOffset), exps, loc)::_ ->
@@ -636,21 +629,7 @@ let intercept_symbolic job interceptor =
 					end_function_call (job#with_exHist exHist)
 
 				| _ ->
-					begin match retopt with
-						| None -> failwith "Incorrect usage of __SYMBOLIC(): symbolic value generated and ignored"
-						| Some lval ->
-							let job, (_, size as lval) = Expression.lval job lval in
-							let job, size = match exps with
-								| [] -> (job, size)
-								| [CastE (_, h)] | [h] ->
-									let job, bytes = Expression.rval job h in
-									let newsize = bytes_to_int_auto bytes in
-									(job, if newsize <= 0 then size else newsize)
-								| _ -> failwith "__SYMBOLIC takes at most one argument"
-							in
-							let job = MemOp.state__assign job lval (bytes__symbolic size) in
-							end_function_call job
-					end
+					failwith "Incorrect usage of __SYMBOLIC(&x)"
 			end
 		| _ ->
 			interceptor job

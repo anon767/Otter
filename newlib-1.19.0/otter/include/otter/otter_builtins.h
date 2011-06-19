@@ -32,17 +32,9 @@ void __ASSUME(_Bool);
 //#define __ASSERT(x) ((x) || abort())
 //#define __ASSUME(x) ((x) || exit())
 
-/* __SYMBOLIC is currently overloaded in a somewhat awkward way that
-    doesn't quite respect its C type.
-    There are 2 ways to use __SYMBOLIC:
-    (1) '__SYMBOLIC(&x);' gives x a fresh symbolic value and associates
-    that value with the variable x.
-    (2) 'x = __SYMBOLIC(n);' assigns to x a fresh symbolic value which
-    is not associated to any variable. If n > 0, n is the number of
-    symbolic bytes desired; if n <= 0, a number of symbolic bytes equal
-    to the size of x is returned. To prevent truncation if x has a wide
-    integer type, __SYMBOLIC is declared to return a uintmax_t. */
-uintmax_t __SYMBOLIC(void *);
+/* '__SYMBOLIC(&x);' gives x a fresh symbolic value and associates
+    that value with the variable x. */
+void __SYMBOLIC(void *);
 
 // I think we all agree that we should eventually use this instead.
 /* __SYMBOLIC(p, n), where n is a size_t, sets n bytes starting at

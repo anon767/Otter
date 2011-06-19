@@ -1,5 +1,7 @@
 #pragma no_other_abandoned
 
+void __SYMBOLIC(void *);
+
 int strlen(char *s) {
 	char *ss = s;
 	while (*ss) {
@@ -14,7 +16,9 @@ int main(){
 	int i;
 
 	for (i=0;i<MAX;i++) {
-		str[i] = __SYMBOLIC();
+		char c;
+		__SYMBOLIC(&c);
+		str[i] = c;
 	}
 	str[MAX-1] = '\0';
 

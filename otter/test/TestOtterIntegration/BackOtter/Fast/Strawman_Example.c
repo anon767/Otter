@@ -1,7 +1,7 @@
 #pragma expect_abandoned(target_reached)
 #pragma max_abandoned(1)
 
-int __SYMBOLIC(void *);
+void __SYMBOLIC(void *);
 void __FAILURE(void) { }
 
 int input() {

@@ -218,7 +218,9 @@ let expect_return_testsuite = "expect_return" >::: [
         "#pragma expect_return()
         #pragma expect_return()
         int main(void) {
-            if (__SYMBOLIC()) return 0;
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) return 0;
             return 1;
         }";
 
@@ -226,7 +228,9 @@ let expect_return_testsuite = "expect_return" >::: [
         "#pragma expect_return(__return_code__ == 0)
         #pragma expect_return(__return_code__ == 1)
         int main(void) {
-            if (__SYMBOLIC()) return 0;
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) return 0;
             return 1;
         }";
 
@@ -234,7 +238,9 @@ let expect_return_testsuite = "expect_return" >::: [
         "#pragma expect_return(__return_code__ == 1)
         #pragma expect_return(__return_code__ == 0)
         int main(void) {
-            if (__SYMBOLIC()) return 0;
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) return 0;
             return 1;
         }";
 
@@ -242,7 +248,9 @@ let expect_return_testsuite = "expect_return" >::: [
         "#pragma expect_return(__return_code__ == 0)
         #pragma expect_return(__return_code__ == 2)
         int main(void) {
-            if (__SYMBOLIC()) return 0;
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) return 0;
             return 1;
         }";
 
@@ -250,7 +258,9 @@ let expect_return_testsuite = "expect_return" >::: [
         "#pragma expect_return(__return_code__ == 2)
         #pragma expect_return(__return_code__ == 0)
         int main(void) {
-            if (__SYMBOLIC()) return 0;
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) return 0;
             return 1;
         }";
 
@@ -258,7 +268,9 @@ let expect_return_testsuite = "expect_return" >::: [
         "#pragma expect_return(__return_code__ == 2)
         #pragma expect_return(__return_code__ == 3)
         int main(void) {
-            if (__SYMBOLIC()) return 0;
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) return 0;
             return 1;
         }";
 
@@ -267,7 +279,9 @@ let expect_return_testsuite = "expect_return" >::: [
         #pragma expect_return(x == 1)
         int x;
         int main(void) {
-            if (__SYMBOLIC()) return 0;
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) return 0;
             x = 1;
             return 1;
         }";
@@ -277,7 +291,9 @@ let expect_return_testsuite = "expect_return" >::: [
         #pragma expect_return(__return_code__ == 0)
         int x;
         int main(void) {
-            if (__SYMBOLIC()) return 0;
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) return 0;
             x = 1;
             return 1;
         }";
@@ -287,7 +303,9 @@ let expect_return_testsuite = "expect_return" >::: [
         #pragma expect_return(__return_code__ == 1)
         int x;
         int main(void) {
-            if (__SYMBOLIC()) return 0;
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) return 0;
             x = 1;
             return 1;
         }";
@@ -297,7 +315,9 @@ let expect_return_testsuite = "expect_return" >::: [
         #pragma expect_return(x == 1)
         int x;
         int main(void) {
-            if (__SYMBOLIC()) return 0;
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) return 0;
             x = 1;
             return 1;
         }";
@@ -442,7 +462,9 @@ let expect_exit_testsuite = "expect_exit" >::: [
         "#pragma expect_exit()
         #pragma expect_exit()
         int main(void) {
-            if (__SYMBOLIC()) _exit(0);
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) _exit(0);
             _exit(1);
             return 2;
         }";
@@ -451,7 +473,9 @@ let expect_exit_testsuite = "expect_exit" >::: [
         "#pragma expect_exit(__exit_code__ == 0)
         #pragma expect_exit(__exit_code__ == 1)
         int main(void) {
-            if (__SYMBOLIC()) _exit(0);
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) _exit(0);
             _exit(1);
             return 2;
         }";
@@ -460,7 +484,9 @@ let expect_exit_testsuite = "expect_exit" >::: [
         "#pragma expect_exit(__exit_code__ == 1)
         #pragma expect_exit(__exit_code__ == 0)
         int main(void) {
-            if (__SYMBOLIC()) _exit(0);
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) _exit(0);
             _exit(1);
             return 2;
         }";
@@ -469,7 +495,9 @@ let expect_exit_testsuite = "expect_exit" >::: [
         "#pragma expect_exit(__exit_code__ == 0)
         #pragma expect_exit(__exit_code__ == 2)
         int main(void) {
-            if (__SYMBOLIC()) _exit(0);
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) _exit(0);
             _exit(1);
             return 2;
         }";
@@ -478,7 +506,9 @@ let expect_exit_testsuite = "expect_exit" >::: [
         "#pragma expect_exit(__exit_code__ == 2)
         #pragma expect_exit(__exit_code__ == 0)
         int main(void) {
-            if (__SYMBOLIC()) _exit(0);
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) _exit(0);
             _exit(1);
             return 2;
         }";
@@ -487,7 +517,9 @@ let expect_exit_testsuite = "expect_exit" >::: [
         "#pragma expect_exit(__exit_code__ == 2)
         #pragma expect_exit(__exit_code__ == 3)
         int main(void) {
-            if (__SYMBOLIC()) _exit(0);
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) _exit(0);
             _exit(1);
             return 2;
         }";
@@ -497,7 +529,9 @@ let expect_exit_testsuite = "expect_exit" >::: [
         #pragma expect_exit(x == 1)
         int x;
         int main(void) {
-            if (__SYMBOLIC()) _exit(0);
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) _exit(0);
             x = 1;
             _exit(1);
             return 2;
@@ -508,7 +542,9 @@ let expect_exit_testsuite = "expect_exit" >::: [
         #pragma expect_exit(__exit_code__ == 0)
         int x;
         int main(void) {
-            if (__SYMBOLIC()) _exit(0);
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) _exit(0);
             x = 1;
             _exit(1);
             return 2;
@@ -519,7 +555,9 @@ let expect_exit_testsuite = "expect_exit" >::: [
         #pragma expect_exit(__exit_code__ == 1)
         int x;
         int main(void) {
-            if (__SYMBOLIC()) _exit(0);
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) _exit(0);
             x = 1;
             _exit(1);
             return 2;
@@ -530,7 +568,9 @@ let expect_exit_testsuite = "expect_exit" >::: [
         #pragma expect_exit(x == 1)
         int x;
         int main(void) {
-            if (__SYMBOLIC()) _exit(0);
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) _exit(0);
             x = 1;
             _exit(1);
             return 2;
@@ -696,7 +736,9 @@ let expect_abandoned_failure_testsuite = "expect_abandoned(failure(...))" >::: [
         "#pragma expect_abandoned(failure(\"\"))
         #pragma expect_abandoned(failure(\"\"))
         int main(void) {
-            if (__SYMBOLIC()) foo();
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) foo();
             foo();
             return 2;
         }";
@@ -706,7 +748,9 @@ let expect_abandoned_failure_testsuite = "expect_abandoned(failure(...))" >::: [
         #pragma expect_abandoned(failure(\"\"), x == 1)
         int x;
         int main(void) {
-            if (__SYMBOLIC()) x = 0;
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) x = 0;
             else x = 1;
             foo();
             return 2;
@@ -717,7 +761,9 @@ let expect_abandoned_failure_testsuite = "expect_abandoned(failure(...))" >::: [
         #pragma expect_abandoned(failure(\"\"), x == 0)
         int x;
         int main(void) {
-            if (__SYMBOLIC()) x = 0;
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) x = 0;
             else x = 1;
             foo();
             return 2;
@@ -728,7 +774,9 @@ let expect_abandoned_failure_testsuite = "expect_abandoned(failure(...))" >::: [
         #pragma expect_abandoned(failure(\"\"), x == 2)
         int x;
         int main(void) {
-            if (__SYMBOLIC()) x = 0;
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) x = 0;
             else x = 1;
             foo();
             return 2;
@@ -739,7 +787,9 @@ let expect_abandoned_failure_testsuite = "expect_abandoned(failure(...))" >::: [
         #pragma expect_abandoned(failure(\"\"), x == 0)
         int x;
         int main(void) {
-            if (__SYMBOLIC()) x = 0;
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) x = 0;
             else x = 1;
             foo();
             return 2;
@@ -750,7 +800,9 @@ let expect_abandoned_failure_testsuite = "expect_abandoned(failure(...))" >::: [
         #pragma expect_abandoned(failure(\"\"), x == 3)
         int x;
         int main(void) {
-            if (__SYMBOLIC()) x = 0;
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) x = 0;
             else x = 1;
             foo();
             return 2;
@@ -761,7 +813,9 @@ let expect_abandoned_failure_testsuite = "expect_abandoned(failure(...))" >::: [
         #pragma expect_abandoned(failure(\"\"), y == 1)
         int x, y;
         int main(void) {
-            if (__SYMBOLIC()) { x = 0; y = 1; }
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) { x = 0; y = 1; }
             else { x = 2; y = 3; }
             foo();
             return 4;
@@ -772,7 +826,9 @@ let expect_abandoned_failure_testsuite = "expect_abandoned(failure(...))" >::: [
         #pragma expect_abandoned(failure(\"\"), x == 0)
         int x, y;
         int main(void) {
-            if (__SYMBOLIC()) { x = 0; y = 1; }
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) { x = 0; y = 1; }
             else { x = 2; y = 3; }
             foo();
             return 4;
@@ -798,7 +854,9 @@ let no_other_return_testsuite = "no_other_return" >::: [
         "#pragma expect_return()
         #pragma no_other_return
         int main(void) {
-            if (__SYMBOLIC()) return 1;
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) return 1;
             return 0;
         }";
 
@@ -814,7 +872,9 @@ let no_other_return_testsuite = "no_other_return" >::: [
         #pragma expect_return()
         #pragma no_other_return
         int main(void) {
-            if (__SYMBOLIC()) return 1;
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) return 1;
             return 0;
         }";
 ]
@@ -838,7 +898,9 @@ let no_other_exit_testsuite = "no_other_exit" >::: [
         "#pragma expect_exit()
         #pragma no_other_exit
         int main(void) {
-            if (__SYMBOLIC()) _exit(0);
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) _exit(0);
             _exit(1);
             return 2;
         }";
@@ -856,7 +918,9 @@ let no_other_exit_testsuite = "no_other_exit" >::: [
         #pragma expect_exit()
         #pragma no_other_exit
         int main(void) {
-            if (__SYMBOLIC()) _exit(0);
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) _exit(0);
             _exit(1);
             return 2;
         }";
@@ -881,7 +945,9 @@ let no_other_abandoned_testsuite = "no_other_abandoned" >::: [
         "#pragma expect_abandoned(failure(\"\"))
         #pragma no_other_abandoned
         int main(void) {
-            if (__SYMBOLIC()) foo();
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) foo();
             foo();
             return 0;
         }";
@@ -899,7 +965,9 @@ let no_other_abandoned_testsuite = "no_other_abandoned" >::: [
         #pragma expect_abandoned(failure(\"\"))
         #pragma no_other_abandoned
         int main(void) {
-            if (__SYMBOLIC()) foo();
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) foo();
             foo();
             return 0;
         }";
@@ -939,7 +1007,9 @@ let no_other_results_testsuite = "no_other_results" >::: [
         "#pragma expect_return()
         #pragma no_other_results
         int main(void) {
-            if (__SYMBOLIC()) return 1;
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) return 1;
             return 0;
         }";
 
@@ -947,7 +1017,9 @@ let no_other_results_testsuite = "no_other_results" >::: [
         "#pragma expect_exit()
         #pragma no_other_results
         int main(void) {
-            if (__SYMBOLIC()) _exit(0);
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) _exit(0);
             _exit(1);
             return 2;
         }";
@@ -956,7 +1028,9 @@ let no_other_results_testsuite = "no_other_results" >::: [
         "#pragma expect_abandoned(failure(\"\"))
         #pragma no_other_results
         int main(void) {
-            if (__SYMBOLIC()) foo();
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) foo();
             foo();
             return 0;
         }";
@@ -989,7 +1063,9 @@ let no_other_results_testsuite = "no_other_results" >::: [
         #pragma expect_exit()
         #pragma no_other_results
         int main(void) {
-            if (__SYMBOLIC()) _exit(0);
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) _exit(0);
             return 1;
         }";
 
@@ -998,7 +1074,9 @@ let no_other_results_testsuite = "no_other_results" >::: [
         #pragma expect_abandoned(failure(\"\"))
         #pragma no_other_results
         int main(void) {
-            if (__SYMBOLIC()) _exit(0);
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) _exit(0);
             foo();
             return 1;
         }";
@@ -1008,7 +1086,9 @@ let no_other_results_testsuite = "no_other_results" >::: [
         #pragma expect_abandoned(failure(\"\"))
         #pragma no_other_results
         int main(void) {
-            if (__SYMBOLIC()) foo();
+            _Bool b;
+            __SYMBOLIC(&b);
+            if (b) foo();
             return 0;
         }";
 
@@ -1018,8 +1098,11 @@ let no_other_results_testsuite = "no_other_results" >::: [
         #pragma expect_abandoned(failure(\"\"))
         #pragma no_other_results
         int main(void) {
-            if (__SYMBOLIC()) foo();
-            if (__SYMBOLIC()) _exit(0);
+            _Bool b1, b2;
+            __SYMBOLIC(&b1);
+            __SYMBOLIC(&b2);
+            if (b1) foo();
+            if (b2) _exit(0);
             return 1;
         }";
 ]

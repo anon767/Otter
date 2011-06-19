@@ -22,9 +22,12 @@ int main()
 	__ASSERT(labs(l) >= 0);
 	__ASSERT(llabs(ll) >= 0);
 
-	int ij = __SYMBOLIC(sizeof(int));
-	long lj = __SYMBOLIC(sizeof(long));
-	long long llj = __SYMBOLIC(sizeof(long long));
+	int ij;
+	__SYMBOLIC(&ij);
+	long lj;
+	__SYMBOLIC(&lj);
+	long long llj;
+	__SYMBOLIC(&llj);
 	/* can't divide by 0 */
 	__ASSUME(ij != 0);
 	__ASSUME(lj != 0);

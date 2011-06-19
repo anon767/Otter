@@ -29,7 +29,10 @@ int main()
 	__ASSERT(is_sorted(0, 1, 2, 3, -1));
 	__ASSERT(!is_sorted(12, 45, 12, 45, 12, 45, 12, 45, 12, 45, 12, 45, -1));
 
-	int i = (__SYMBOLIC() % 9) + 1;
+	int i;
+	__SYMBOLIC(&i);
+	__ASSUME(i > 0);
+	i = (i % 9) + 1;
 
 	__ASSERT(is_sorted(0, i, 101, 999, i*1000, -1));
 	return (0);

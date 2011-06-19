@@ -1,5 +1,7 @@
 #pragma no_other_abandoned
 
+void __SYMBOLIC(void *);
+
 struct A {
  int i;
  char c;
@@ -13,7 +15,9 @@ int main(){
  a[1].i = 1;
  a[1].c = 'a';
 
- int i = __SYMBOLIC() % 2;
+ int i;
+ __SYMBOLIC(&i);
+ i %= 2;
 
  char c = a[i].c;
 
