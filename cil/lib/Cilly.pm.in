@@ -994,22 +994,37 @@ sub applyCil {
         push @cmd, @{$self->{CILARGS}};
     }
 
-    # Add the arguments
-    if(@srcs > 20) {
-        my $extraFile = "___extra_files";
-        open(TOMERGE, ">$extraFile") || die $!;
-        foreach my $fl (@srcs) {
-            my $fname =  ref $fl ? $fl->filename : $fl;
-            print TOMERGE "$fname\n";
+    # Merge if necessary (separate merge and cil into two stages to workaround
+    # inconsistencies introduced by the merger)
+    if(@srcs > 1) {
+        my (undef, @mergecmd) = $self->MergeCommand (undef, undef, undef);
+
+        my $mergedout;
+        my ($base, $dir, undef) = fileparse($dest->filename, qr{\.[^.]+});
+        if($self->{KEEPMERGED}) {
+            $mergedout = "$dir$base" . '.c';
+        } else {
+            $mergedout = new TempFile($base, 'c');
         }
-        close(TOMERGE);
-        push @cmd, '--extrafiles', $extraFile;
+        push @mergecmd, '--mergedout', $mergedout;
+
+        if(@srcs > 20) {
+            my $extraFile = "___extra_files";
+            open(TOMERGE, ">$extraFile") || die $!;
+            foreach my $fl (@srcs) {
+                my $fname =  ref $fl ? $fl->filename : $fl;
+                print TOMERGE "$fname\n";
+            }
+            close(TOMERGE);
+            push @mergecmd, '--extrafiles', $extraFile;
+        } else {
+            push @mergecmd, @srcs;
+        }
+
+        $self->runShell(@mergecmd);
+        push @cmd, $mergedout;
     } else {
         push @cmd, @srcs;
-    }
-    if(@srcs > 1 && $self->{KEEPMERGED}) {
-	my ($base, $dir, undef) = fileparse($dest->filename, qr{\.[^.]+});
-        push @cmd, '--mergedout', "$dir$base" . '.c';
     }
     # Now run cilly
     $self->runShell(@cmd);
