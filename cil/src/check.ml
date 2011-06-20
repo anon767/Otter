@@ -693,8 +693,8 @@ and checkStmt (s: stmt) =
             if H.mem labels ln then
               ignore (warn "Multiply defined label %s" ln);
             H.add labels ln ()
-        | Case (e, _) -> 
-            checkExpType true e intType
+        | Case _ ->
+            () (* checked in the enclosing Switch *)
         | _ -> () (* Not yet implemented *)
       in
       List.iter checkLabel s.labels;
@@ -738,7 +738,8 @@ and checkStmt (s: stmt) =
           checkBlock bf
       | Switch (e, b, cases, l) -> 
           currentLoc := l;
-          checkExpType false e intType;
+          let t = checkExp false e in
+          checkIntegralType t;
           (* Remember the statements so far *)
           let prevStatements = !statements in
           checkBlock b;
@@ -747,21 +748,32 @@ and checkStmt (s: stmt) =
           let casesVisited : stmt list ref = ref [] in
           List.iter
             (fun c -> 
-               (if List.memq c !casesVisited then
-                  ignore (warnContext 
-                            "Duplicate stmt in \"cases\" list of Switch.")
-                else
-                  casesVisited := c::!casesVisited);
-              (* Make sure it is in there *)
-              let rec findCase = function
-                | l when l == prevStatements -> (* Not found *)
+              E.withContext (fun () -> dprintf "Case: %a" d_stmt c)
+                begin fun () ->
+                  (* Check its type which should be the same as that of the
+                    control expression of the enclosing switch statement
+                    (C99 6.8.4.2) *)
+                  List.iter begin function
+                    | Case (ce, _) -> checkExpType true ce t
+                    | Default _ | Label _ -> ()
+                  end c.labels;
+                  (* Check for duplicates *)
+                  (if List.memq c !casesVisited then
                     ignore (warnContext 
-                              "Cannot find target of switch statement")
-                | [] -> E.s (E.bug "Check: findCase")
-                | c' :: rest when c == c' -> () (* Found *)
-                | _ :: rest -> findCase rest
-              in
-              findCase !statements)
+                              "Duplicate stmt in \"cases\" list of Switch.")
+                  else
+                    casesVisited := c::!casesVisited);
+                  (* Make sure it is in there *)
+                  let rec findCase = function
+                    | l when l == prevStatements -> (* Not found *)
+                        ignore (warnContext
+                                  "Cannot find target of switch statement")
+                    | [] -> E.s (E.bug "Check: findCase")
+                    | c' :: rest when c == c' -> () (* Found *)
+                    | _ :: rest -> findCase rest
+                  in
+                  findCase !statements
+                end ())
             cases;
       | TryFinally (b, h, l) -> 
           currentLoc := l;

@@ -1071,7 +1071,16 @@ let exitLoop () =
   match !continues with
     [] -> E.s (error "exit Loop not in a loop")
   | _ :: rest -> continues := rest
-      
+
+(* maintain the current type for case label constants, which is based on
+    the control expression of the enclosing switch statement (C99 6.8.4.2) *)
+let case_type_env = Stack.create ()
+
+let push_case_type (t : typ) = Stack.push t case_type_env
+
+let pop_case_type () = ignore (Stack.pop case_type_env)
+
+let current_case_type () = Stack.top case_type_env
 
 (* In GCC we can have locally declared labels. *)
 let genNewLocalLabel (l: string) = 
@@ -6295,25 +6304,31 @@ and doStatement (s : A.statement) : chunk =
     | A.SWITCH (e, s, loc) -> 
         let loc' = convLoc loc in
         currentLoc := loc';
-        let (se, e', et) = doExp false e (AExp (Some intType)) in
-        let (et'', e'') = castTo et intType e' in
+        let (se, e', et) = doExp false e (AExp None) in
+        let et' = integralPromotion et in
+        let (et'', e'') = castTo et et' e' in
+        push_case_type et'';
         let s' = doStatement s in
+        pop_case_type ();
         se @@ (switchChunk e'' s' loc')
                
     | A.CASE (e, s, loc) -> 
         let loc' = convLoc loc in
         currentLoc := loc';
         let (se, e', et) = doExp true e (AExp None) in
+        let e' = if !lowerConstants then constFold false e' else e' in
+        let et' = current_case_type () in
+        let (et'', e'') = castTo et et' e' in
         if isNotEmpty se then
           E.s (error "Case statement with a non-constant");
-        caseRangeChunk [if !lowerConstants then constFold false e' else e'] 
+        caseRangeChunk [e'']
           loc' (doStatement s)
             
     | A.CASERANGE (el, eh, s, loc) -> 
         let loc' = convLoc loc in
         currentLoc := loc';
         let (sel, el', etl) = doExp false el (AExp None) in
-        let (seh, eh', etl) = doExp false eh (AExp None) in
+        let (seh, eh', eth) = doExp false eh (AExp None) in
         if isNotEmpty sel || isNotEmpty seh then
           E.s (error "Case statement with a non-constant");
         let il, ih, ik = 
@@ -6324,8 +6339,15 @@ and doStatement (s : A.statement) : chunk =
         in
         if compare_cilint il ih > 0 then 
           E.s (error "Empty case range");
+        let et = TInt (ik, []) in
+        let et' = current_case_type () in
         let rec mkAll (i: cilint) = 
-          if compare_cilint i ih > 0 then [] else kintegerCilint ik i :: mkAll (add_cilint i one_cilint)
+          if compare_cilint i ih > 0 then
+            []
+          else
+            let e = kintegerCilint ik i in
+            let (et'', e') = castTo et et' e in
+            e' :: mkAll (add_cilint i one_cilint)
         in
         caseRangeChunk (mkAll il) loc' (doStatement s)
         
