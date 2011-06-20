@@ -1,5 +1,6 @@
 #line 2 "__otter_main_driver.c"
 
+#include "otter/otter_builtins.h"
 #include "otter/otter_fs.h"
 #include "otter/otter_user.h"
 #include <stdio.h>

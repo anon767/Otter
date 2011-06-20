@@ -1,7 +1,14 @@
 open CilUtilities
 
+exception CIL_consistency_error
+
 (* set up the file for symbolic execution *)
 let prepare_file file =
+    (* catch consistency errors before doing anything else *)
+    if not (Check.checkFile [] file) then begin
+        flush !Errormsg.logChannel;
+        raise CIL_consistency_error
+    end;
     (* based on Cilly.makeCFGFeature.fd_doit *)
     HoistStringLiterals.apply file;
     WidenBitfields.apply file;

@@ -13,7 +13,7 @@ void __otter_multi_time_wait(unsigned int ticks) {
     // no-op
 }
 
-void __otter_multi_io_block(void*, ...) {
+void __otter_multi_io_block(void * x, ...) {
     // no-op
 }
 

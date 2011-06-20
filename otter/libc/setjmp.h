@@ -30,7 +30,6 @@ void __libc_longjmp(jmp_buf environment, int value);
 void longjmp(jmp_buf environment, int value)
 {
 	__libc_longjmp(environment[0].s, value ? value : 1);
-	exit();
 }
 
 #endif

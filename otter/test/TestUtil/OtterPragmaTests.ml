@@ -46,6 +46,8 @@
         - [#pragma no_other_exit] specifies that no other {!Job.Exit} should be in the remaining results.
         - [#pragma no_other_abandoned] specifies that no other {!Job.Abandoned} should be in the remaining results.
         - [#pragma no_other_results] specifies that there should no remaining results.
+        - [#pragma expect_cil_consistency_errors] specifies that the file fails to pass CIL's consistency checks
+            (typically type errors due to missing function prototypes).
         - [#pragma queue] specifies which queue to use in Otter. This corresponds to Otter's [--queue] command-line option.
 
     The following [#pragma] directives are for BackOtter only (TODO: refactor this)
@@ -92,9 +94,10 @@ module Make (Errors : Errors) = struct
         max_paths : int option;         (** Bound the number of paths to execute to completion (corresponds to [--max-paths]). *)
         max_abandoned : int option;     (** Bound the number of abandoned paths to return (corresponds to [--max-abandoned]). *)
         queue : string option;          (** Set the queue (corresponds to [--queue]). *)
+        expect_cil_consistency_errors : Cil.location option; (** Whether to expect the file to fail CIL's consistency check. *)
         forward_queue : string option;  (** Set the forward queue (corresponds to [--forward-queue]). *)
         backward_queue : string option; (** Set the backward queue (corresponds to [--backward-queue]). *)
-        function_ranker : string option;(** Set the backward function ranker (corresponds to [--backward-function-rank]). *)
+        function_ranker : string option;    (** Set the backward function ranker (corresponds to [--backward-function-rank]). *)
         bidirectional_search_ratio : float option;  (** Set the bidirectional search ratio (corresponds to [--bidirectional-search-ratio]). *)
     }
 
@@ -111,6 +114,7 @@ module Make (Errors : Errors) = struct
         max_paths = None;
         max_abandoned = None;
         queue = None;
+        expect_cil_consistency_errors = None;
         forward_queue = None;
         backward_queue = None;
         function_ranker = None;
@@ -405,6 +409,12 @@ module Make (Errors : Errors) = struct
                     | "queue", _ ->
                         assert_loc_failure loc "Invalid queue (should have exactly one string argument that is the name of the queue)."
 
+                    | "expect_cil_consistency_errors", [] ->
+                        if flags.expect_cil_consistency_errors <> None then assert_loc_failure loc "expect_cil_consistency_errors already defined";
+                        ({ flags with expect_cil_consistency_errors = Some loc }, test)
+                    | "expect_cil_consistency_errors", _ ->
+                        assert_loc_failure loc "Invalid expect_cil_consistency_errors (should have no arguments)."
+
                     | "forward_queue", [ Cil.AStr forward_queue ] ->
                         if flags.forward_queue <> None then assert_loc_failure loc "Forward queue already defined.";
                         if forward_queue = "" then assert_loc_failure loc "Invalid queue (should not be blank).";
@@ -514,10 +524,18 @@ module Make (Errors : Errors) = struct
             | None -> fun f -> f ()
         in
 
-        (* prepare the file and run the symbolic executor *)
-        Core.prepare_file file;
+        (* prepare the reporter *)
         let reporter = reporter ?max_steps:flags.max_steps ?max_paths:flags.max_paths ?max_abandoned:flags.max_abandoned () in
+
         try
+            (* prepare the file, checking for CIL consistency errors *)
+            Core.prepare_file file;
+            begin match flags.expect_cil_consistency_errors with
+                | Some loc -> assert_loc_failure loc "@[Expected CIL consistency errors but did not find any.@]"
+                | None -> ()
+            end;
+
+            (* run the symbolic executor *)
             let _, reporter = run (fun () -> driver reporter file) in
             try
                 (* then, run the given test *)
@@ -525,8 +543,14 @@ module Make (Errors : Errors) = struct
                 (reporter, None)
             with e ->
                 (reporter, Some e)
-        with e ->
-            (reporter, Some e)
+        with
+            | Core.CIL_consistency_error ->
+                begin match flags.expect_cil_consistency_errors with
+                    | None -> assert_failure "@[Unexpected CIL consistency errors.@]"
+                    | Some _ -> (reporter, None)
+                end;
+            | e ->
+                (reporter, Some e)
 
 
     (** Creates an OUnit {!TestCase} using {!eval_otter_with_pragma} with {!BasicReporter.t} as the reporter.
