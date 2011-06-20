@@ -303,13 +303,7 @@ and typeMatch (t1: typ) (t2: typ) =
     (* Allow mismatches in const-ness, so that string literals can be used
        as char*s *)
     if typeSigIgnoreConst t1 <> typeSigIgnoreConst t2 then
-      match unrollType t1, unrollType t2 with
-        (* Allow free interchange of TInt and TEnum *)
-        TInt (ik, _), TEnum (ei, _) when ik = ei.ekind -> ()
-      | TEnum (ei, _), TInt (ik, _) when ik = ei.ekind -> ()
-          
-      | _, _ -> ignore (warn "Type mismatch:@!    %a@!and %a@!"
-                           d_type t1 d_type t2)
+      ignore (warn "Type mismatch:@!    %a@!and %a@!" d_type t1 d_type t2)
   end else begin
     (* Many casts are missing.  For now, just skip this check. *)
   end
@@ -563,10 +557,9 @@ and checkExp (isconst: bool) (e: exp) : typ =
           | TVoid _ -> 
               E.s (bug "AddrOf on improper type");
               
-          | (TInt _ | TFloat _ | TPtr _ | TComp _ | TFun _ | TArray _ ) -> 
+          | (TInt _ | TFloat _ | TPtr _ | TComp _ | TFun _ | TArray _ | TEnum _ | TBuiltin_va_list _) ->
               TPtr(tlv, [])
 
-          | TEnum (ei, _) -> TPtr(TInt(ei.ekind, []), [])
           | _ -> E.s (bug "AddrOf on unknown type")
       end
 

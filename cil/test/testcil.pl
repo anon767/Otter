@@ -359,6 +359,7 @@ addTest("test/vararg7 _GNUCC=1");
 addTest("testrun/va-arg-1 _GNUCC=1");
 addTest("testrun/va-arg-2 _GNUCC=1");
 addTest("testrun/va-arg-7 _GNUCC=1");
+addTest("test/va_list_ptr");
 addTest("test-bad/arrsize ");
 addTest("testrun/comma1 _GNUCC=1");
 addTest("test/retval");
@@ -514,6 +515,7 @@ addTest("testrungcc/enum3j _GNUCC=1");
 addTest("testrungcc/enum3k _GNUCC=1");
 addTest("testrungcc/enum3l _GNUCC=1");
 
+addTest("test/enum_ptr");
 
 if($win32) {
     addTest("testrun/extern_init _MSVC=1");   
