@@ -1,9 +1,9 @@
 Notes on how to run redis through Otter
 ---------------------------------------
 
-This document walks through the process of merging redis with Otter's version of
-libc and POSIX library, and running redis through Otter. This was done on a
-MacBook Pro running OS X 10.5.8.
+This document walks through the process of merging redis 2.2.0-rc4 with Otter's
+version of libc and POSIX library, and running redis through Otter. This was
+done on a MacBook Pro running OS X 10.5.8.
 
 
 Step 1: Merging redis
@@ -120,7 +120,8 @@ to sha1.h. (Again, adding this to sha1.c would also work.)
 
 Now, there are no errors. There are still a bunch of warnings, mostly about
 calling functions without prototypes. While not ideal, it's probably fine to
-ignore these. There is one warning from ranlib, though:
+ignore these. There is one warning from ranlib, though, if you rebuild
+deps/hiredis/libhiredis.a:
 
     ar rcs libhiredis.a net.o hiredis.o sds.o async.o
     ranlib: warning for library: libhiredis.a the table of contents is empty (no object file members in the library define global symbols)
@@ -134,9 +135,26 @@ uses 'ar' rather than '$(AR)':
 
   STLIB_MAKE_CMD?=ar rcs ${STLIBNAME} ${OBJ}
 
-Replacing that 'ar' with '$(AR)' does the job.
+Replacing that 'ar' with '$(AR)' does the job. Unfortunately, doing this also
+leads to these warnings:
 
-This produced a handful of *_comb.c files and one *.a file:
+    sds.c:193: Warning: def'n of func sdstrim at sds.c:193 (sum 42773586) conflicts with the one at sds.c:213 (sum 46742650); keeping the one at sds.c:213.
+    sds.c:210: Warning: def'n of func sdsrange at sds.c:210 (sum 5050136) conflicts with the one at sds.c:230 (sum 95078129); keeping the one at sds.c:230.
+    sds.c:345: Warning: def'n of func sdsfreesplitres at sds.c:345 (sum 655445) conflicts with the one at sds.c:368 (sum 709081); keeping the one at sds.c:368.
+    sds.c:352: Warning: def'n of func sdsfromlonglong at sds.c:352 (sum 769465) conflicts with the one at sds.c:375 (sum 823101); keeping the one at sds.c:375.
+    sds.c:367: Warning: def'n of func sdscatrepr at sds.c:367 (sum 190069848) conflicts with the one at sds.c:390 (sum 190123484); keeping the one at sds.c:390.
+    sds.c:404: Warning: def'n of func sdssplitargs at sds.c:404 (sum 559564371) conflicts with the one at sds.c:427 (sum 559618007); keeping the one at sds.c:427.
+
+It turns out there are two implementations of sds (which is a string library
+that redis uses): one in src and one in deps/hiredis, and now that we actually
+process all of the code, the two definitions collide. The redis authors assert,
+"There are no known bugs in either version." The main difference is that the
+server implementation uses zmalloc/zfree (which track the server's memory
+footprint) while the client implementation just uses malloc/free. It seems fine
+for our purposes to use either, so fixing these warnings was not a priority.
+
+Ignoring the warnings, this produces a handful of *_comb.c files and one *.a
+file:
 
     deps/hiredis/libhiredis.a
     deps/linenoise/linenoise_example_comb.c
@@ -171,16 +189,16 @@ cluttering up our merged program, so we use another flag to remove the clutter:
 
 Running this ends with an error:
 
-    [0,0] otter_fs_util.c:57 : open_file_index = *(__otter_fs_fd_table + fd);
-    [0,0] otter_fs_util.c:57 : Statement.step: failwith Dereference something not an address:
-    [0,0] otter_fs_util.c:57 : constant Bytes(4U)
+    [jid: 0, pid: 0] otter_fs_util.c:57 : open_file_index = *(__otter_fs_fd_table + fd);
+    [jid: 0, pid: 0] otter_fs_util.c:57 : Statement.step: failwith Dereference something not an address:
+    [jid: 0, pid: 0] otter_fs_util.c:57 : constant Bytes(4U)
 
 While a bit cryptic, this indicates that OtterFS was never initialized. Thus,
 __otter_fs_fd_table is null, so (__otter_fs_fd_table + fd) is a number rather
 than a pointer to an element in the table.
 
 OtterFS is initialized by calling __otter_fs_mount, which is declared in
-otter/otter_fs.h, so we add this do the beginning of redis's main function.
+otter/otter_fs.h, so we add this to the beginning of redis's main function.
 
     #ifdef CIL
     #include <otter/otter_fs.h>
@@ -190,11 +208,18 @@ otter/otter_fs.h, so we add this do the beginning of redis's main function.
     int main(int argc, char **argv) {
     #endif
 
-Now, remaking redis and invoking Otter again runs for a long time. It turns out
-redis initializes 10000 objects when it starts up, which is supposed to save
-memory. Unfortunately, having so many objects to initialize just seems to get in
-Otter's way. So, we decrease this number for Otter. It is defined in redis.h,
-and we modify it like this:
+The initialization creates the "/" directory, a few subdirectories, and some
+special devices (such as /dev/null), and it creates the file descriptor table
+and the open-file table. The file descriptor table is local to each process, but
+as each process forks, it will copy the existing file descriptors. The open-file
+table is system-wide (i.e., visible to all processes), and must only be created
+once. Therefore, make sure you only call __otter_fs_mount once.
+
+With this call to __otter_fs_mount, remaking redis and invoking Otter again runs
+for a long time. It turns out redis initializes 10000 objects when it starts up,
+which is supposed to save memory. Unfortunately, having so many objects to
+initialize just seems to get in Otter's way. So, we decrease this number for
+Otter. It is defined in redis.h, and we modify it like this:
 
     #ifdef CIL
     #define REDIS_SHARED_INTEGERS 10
@@ -202,7 +227,8 @@ and we modify it like this:
     #define REDIS_SHARED_INTEGERS 10000
     #endif
 
-A similar thing happens with the number of file descriptors in ae.h:
+A similar thing happens with the number of file descriptors in ae.h, so we
+change it, too:
 
     #ifdef CIL
     #define AE_SETSIZE 10    /* Max number of fd supported */
@@ -212,9 +238,8 @@ A similar thing happens with the number of file descriptors in ae.h:
 
 With these changes, Otter can now run redis, but it reaches an infinite loop
 when the server waits for a (non-existent) client to connect. We will have to
-use MultiOtter to run a client process in parallel with the server. Like
-initalizing OtterFS, this requires a small modification to the beginning of
-redis's main() function:
+run a client process in parallel with the server. Like initalizing OtterFS, this
+requires a small modification to the beginning of redis's main() function:
 
     #ifdef CIL
     #include <otter/otter_fs.h>
@@ -239,21 +264,30 @@ redis's main() function:
     #endif
 
 This does several things (and these require adding the #includes you see above).
-Most importantly, it forks a child process which calls and external function,
-client_main. We will provide this function in another file, and it will act as
-the client, connecting to and interacting with redis.
+In order of importance (but not in order in the code):
 
-Also, notice the calls to __otter_fs_init_stdin_out_err. This function
-initializes stdin, stdout, and stderr, and each process calls it because each
-has its own copy of these I/O streams.
+1. It forks a child process which calls an external function, client_main. We
+will provide this function in another file, and it will act as the client,
+connecting to and interacting with redis. Note that we use the normal 'fork'
+call; our implementation of fork (which is in
+otter-trunk/newlib-1.19.0/otter/syscalls/unistd/__otter_unistd.c) calls the
+MultiOtter primitives __otter_multi_fork, which actually creates the new
+process. Only values allocates using gmalloc will be shared between processes;
+other values are local to each process.
 
-Finally, the client will have to connect to the server only *after* the server
-has opened a socket for listening. To perform this synchronization, we add a
-global pointer (making it global is the easiest way to make it visible to both
+2. The calls to __otter_fs_init_stdin_out_err initialize stdin, stdout, and
+stderr. Each process calls it because each process has its own copy of these I/O
+streams.
+
+3. The client will have to connect to the server only *after* the server has
+opened a socket for listening. To perform this synchronization, we add a global
+pointer (making it global is the easiest way to make it visible to both
 processes), use gmalloc to allocate shared memory, set the value to 0, and have
-the child process block until this value is set to a nonzero value. Of course,
-we also have to make the server set this value, so we add one line to the place
-where redis calls listen():
+the child process block until this value is set to a nonzero value. To block, we
+use the macro block_while_condition, which is defined and described in
+otter-trunk/newlib-1.19.0/otter/include/otter/otter_scheduler.h. Of course, we
+also have to make the server set this value, so we add one line to the place
+where redis calls listen(), which is in src/anet.c:
 
         if (listen(s, 511) == -1) { /* the magic 511 constant is from nginx */
             ... // Report an error
