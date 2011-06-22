@@ -20,7 +20,7 @@ export OCAMLPATH:=$(CURDIR):@EXTRAOCAMLPATH@
 
 OCAMLBUILD_DEPS = \
 	configure Makefile Makefile.rules \
-	$(wildcard $(EXTRALIBDIRS) $(CIL_OBJDIR) $(EXTRALIBDIRS:%=%/*) $(CIL_OBJDIR)/*)
+	$(EXTRALIBDIRS) $(CIL_OBJDIR) $(EXTRALIBDIRS:%=%/*) $(CIL_OBJDIR)/*
 
 OUNIT_FLAGS = -verbose
 

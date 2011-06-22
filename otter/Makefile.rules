@@ -59,8 +59,14 @@ ocamlbuild//%.docdir : $(OCAMLBUILD_BUILDDIR)
 	$(call OCAMLBUILD.build,$(DOCDIR)/html.stamp,$(OCAMLBUILD_DOCDIR),$(DOCDIR))
 
 
-# recompile everything if an external dependency is newer than the build directory
-$(OCAMLBUILD_BUILDDIR) : $(OCAMLBUILD_DEPS)
+# recompile everything if any of the below is newer than the build directory:
+# - an ocamlfind package specified via OCAMLBUILD_FLAGS = ... pkg_%
+# - an external dependency specified via OCAMLBUILD_DEPS
+COMMA:=,
+$(OCAMLBUILD_BUILDDIR) : \
+	$(wildcard $(shell OCAMLPATH=$(OCAMLPATH) $(OCAMLFIND) query -r -format "%d/*" \
+		$(patsubst pkg_%,%,$(filter pkg_%,$(subst $(COMMA), ,$(OCAMLBUILD_FLAGS))))))
+$(OCAMLBUILD_BUILDDIR) : $(wildcard $(OCAMLBUILD_DEPS))
 	$(OCAMLBUILD) -clean
 
 clean-ocamlbuild :
