@@ -24,9 +24,9 @@ test : test-native-code
 lib : libOcamlSTP.a OcamlSTP.a OcamlSTP.cmi OcamlSTP.cma OcamlSTP.cmxa
 
 
-OcamlSTP.a OcamlSTP.cmi OcamlSTP.cma OcamlSTP.cmxa : OcamlSTP.mli OcamlSTP.ml libOcamlSTP.a libstp.a
-	$(OCAMLOPT) $(OCAMLFLAGS) $(OCAMLLDFLAGS) -a -o OcamlSTP.cmxa OcamlSTP.mli OcamlSTP.ml -cclib -lOcamlSTP -cclib -lstp
-	$(OCAMLC) $(OCAMLFLAGS) $(OCAMLLDFLAGS) -a -custom -o OcamlSTP.cma OcamlSTP.mli OcamlSTP.ml -cclib -lOcamlSTP -cclib -lstp
+%.a %.cmi %.cma %.cmxa : %.mli %.ml lib%.a libstp.a
+	$(OCAMLOPT) $(OCAMLFLAGS) $(OCAMLLDFLAGS) -a -o $*.cmxa $*.mli $*.ml -cclib -l$* -cclib -lstp
+	$(OCAMLC) $(OCAMLFLAGS) $(OCAMLLDFLAGS) -a -custom -o $*.cma $*.mli $*.ml -cclib -l$* -cclib -lstp
 
 libOcamlSTP.a : OcamlSTP_impl.o
 	$(RM) libOcamlSTP.a
