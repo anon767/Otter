@@ -150,23 +150,33 @@ let is_Bytes_Read = function Bytes_Read _ -> true | _ -> false
     @param symIndex is the index into bytes : [bytes]
     @param len is the width of the read : [int]
     @param step_size is the increment by which symIndex should be increased : [int]
-    @return a conditional representing a chain of 'if symIndex = n then bytes[n*step_size..n*step_size+len-1] else ...' cases, where n ranges from 0 to ((the size of the bytearray) - len)/step_size.
+    @return a conditional representing a chain of 'if symIndex = n then bytes[n*step_size..n*step_size+len-1] else ...' cases, 
+            where n ranges from 0 to ((the size of the bytearray) - len)/step_size.
+            When indices i where a < i <= b yield the same bytes, a conditional bytes of the form IfThenElse(a<i<=b,bytes_b,...) is created.
 *)
 let expand_read_to_conditional2 bytes symIndex len step_size =
-    let rec expand index =
+    let rec expand index last_opt =
         let (), read_at_index = bytes__read () bytes (int_to_bytes (index * step_size)) len in
         if is_Bytes_Read read_at_index then failwith "bytes__read with constant offset unexpectedly evaluated to a Bytes_Read";
-        let read_at_index = conditional__bytes read_at_index in
-        assert (index >= 0);
-        if index = 0 then read_at_index else
-        IfThenElse (
-            guard__bytes (make_Bytes_Op (
-                OP_EQ,
-                [(symIndex, !Cil.upointType); ((int_to_bytes index), !Cil.upointType)]
-            )),
-            read_at_index,
-            expand (index - 1)
-        )
+        match last_opt with
+        | Some(last_bytes, last_index) ->
+            if index>=0 && (bytes__equal read_at_index last_bytes) then
+                (* Merge with previous read_at_index *)
+                expand (index - 1) last_opt
+            else if index < 0 then
+                (* No need to setup the guard, coz it's the last case in the conditional tree *)
+                conditional__bytes last_bytes
+            else
+                (* Output read_at_index for index < i <= last_index *)
+                IfThenElse (
+                    guard__bytes (make_Bytes_Op (OP_LAND, [
+                        (make_Bytes_Op (OP_GT, [(symIndex, !Cil.upointType); ((int_to_bytes index), !Cil.upointType)]), !Cil.upointType);
+                        (make_Bytes_Op (OP_LE, [(symIndex, !Cil.upointType); ((int_to_bytes last_index), !Cil.upointType)]), !Cil.upointType)]
+                    )),
+                    conditional__bytes last_bytes,
+                    expand (index - 1) (Some (read_at_index, index))
+                )
+        | None -> assert(index>=0);expand (index - 1) (Some (read_at_index, index))
     in
     let block_size = match bytes with
         | Bytes_ByteArray a -> ImmutableArray.length a
@@ -175,7 +185,7 @@ let expand_read_to_conditional2 bytes symIndex len step_size =
     in
     let largest_index = (block_size - len)/step_size in
     if largest_index < 0 then failwith "Error in expand_read_to_conditional2: the read is wider than the memory block";
-    expand largest_index
+    expand largest_index None
 
 let rec expand_read_to_conditional (bytes : bytes) (symIndex : bytes) (len : int) =
     let bytes = match bytes with
