@@ -34,6 +34,8 @@ endef
 
 
 # ocamlbuild: build and install into the appropriate directory
+.NOTPARALLEL : ocamlbuild//%
+
 ocamlbuild//%.native : $(OCAMLBUILD_BUILDDIR)
 	$(call OCAMLBUILD.build,$*.native,$(OCAMLBUILD_PRODUCTDIR))
 
