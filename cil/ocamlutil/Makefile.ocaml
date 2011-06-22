@@ -259,7 +259,7 @@ ifdef NATIVECAML
  CAMLC          = $(CAMLDIR)ocamlopt  $(COMPILE_FLAGS)
  CAMLLINK       = $(CAMLDIR)ocamlopt  $(LINK_FLAGS)
  CMO            = cmx
- CMC            = opt.$(OBJ)  # compiled (and optimized) C
+ CMC            = opt.$(OBJ)
  CMXA           = cmxa
  EXEEXT         = .asm
  MOVEAFTERCAMLC = cmi cmx $(OBJ)
