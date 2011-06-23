@@ -30,9 +30,8 @@ let fail_if_not job condition error =
               | `Pass ->
                     MemOp.state__add_path_condition job condition true
 
-(* Bounds-checking *)
-(* The next two function are used for bounds-checking. Here are some
-     comments:
+
+(*  Bounds-checking
 
      Offsets are treated as values of type !upointType, which is
      unsigned, so it is impossible for them to be negative. This means
@@ -41,11 +40,9 @@ let fail_if_not job condition error =
      We can't check the bounds for each leaf of a conditional tree on its own,
      because we don't want to completely fail just because *some*
      possibility can be out of bounds. (We only want to fail if *all*
-     possibilities are out of bounds.) So instead, we compute two
-     conditional trees, {sizes} and {offsets}, with the same shape and
-     guards as the input {lvals} and which contain at the leaves, respectively,
-     the size of the memory block and the offset of the Bytes_Address at
-     the correpond leaf in {lvals}.
+     possibilities are out of bounds.) So instead, we generate two constraints
+     by mapping over the leaves conditional tree, converting it into an upper
+     bound check as well as an integer overflow check.
 
      You might think that you only need to check
      {offsets + useSize <= sizes}, where {useSize} is the size with
@@ -79,53 +76,31 @@ let fail_if_not job condition error =
      and even if we allow symbolic sized allocations in the future, most
      allocations will probably still be concrete. *)
 
-(* TODO: Should we prune the resulting conditional trees, removing
-     infeasible subtrees, when a bounds check fails? This question
-     applies both to {lvals} itself and to the bytes representing the
-     assertion being checked (which will then be assumed into the path
-     condition). *)
-let rec getBlockSizesAndOffsets lvals = match lvals with
-        | IfThenElse (guard, x, y) ->
-                let blockSizesX, offsetsX = getBlockSizesAndOffsets x
-                and blockSizesY, offsetsY = getBlockSizesAndOffsets y in
-                IfThenElse (guard, blockSizesX, blockSizesY),
-                IfThenElse (guard, offsetsX, offsetsY)
-        | Unconditional (block,offset) ->
-                Unconditional block.memory_block_size,
-                Unconditional offset
-
-
-(** [checkBounds job lvals useSize cil_lval] checks whether a dereference is in bounds.
+(** [check_bounds job lvals size exp] checks whether a dereference is in bounds.
     @param job the job in which to perform the check
     @param lvals the conditional tree of lvalues being accessed
-    @param useSize the width, in bytes, of the access
+    @param size the width, in bytes, of the access
     @param exp the C expression being accessed (for error reporting)
     @return [job], augmented (if necessary) with the assumption that the check passed.
 *)
-let checkBounds job lvals useSize exp =
-    (* Get the block sizes and offsets *)
-    let sizesTree, offsetsTree = getBlockSizesAndOffsets lvals in
+let check_bounds job lvals size exp =
+    let size = (int_to_offset_bytes size, !Cil.upointType) in
 
-    (* Make the relevant Bytes *)
-    let offsetsBytes = make_Bytes_Conditional offsetsTree
-    and sizesBytes = make_Bytes_Conditional sizesTree
-    and useSizeBytes = int_to_offset_bytes useSize in
+    let bounds_check = conditional__map begin fun (block, offset) ->
+        let block_size = (block.memory_block_size, !Cil.upointType) in
+        let offset = (offset, !Cil.upointType) in
 
-    (* Prepare the first bounds check: {offsets <= sizes - useSize} *)
-    let sizesMinusUseSize = Operator.minus [(sizesBytes, !Cil.upointType); (useSizeBytes, !Cil.upointType)] in
-    let offsetsLeSizesMinusUseSize = Operator.le [(offsetsBytes, !Cil.upointType); (sizesMinusUseSize, !Cil.upointType)] in
+        (* overflow check: size <= block_size *)
+        let overflow = Operator.le [size; block_size] in
+        (* upper bounds check: {offset <= block_size - size} (avoid offset + size which can overflow) *)
+        let upper = Operator.le [offset; (Operator.minus [block_size; size], !Cil.upointType)] in
 
-    (* Prepare the second bounds check: {useSize <= sizes} *)
-    (* TODO: If {sizes} is a conditional tree (rather than a single value), we
-       may want to call conditional__map (with the identity function) to
-       simplify {useSizeLeSizes}. It will almost always have concrete 'true's at
-       every leaf. If we don't simplify, we'll end up calling the solver. *)
-    let useSizeLeSizes = Operator.le [(useSizeBytes, !Cil.upointType); (sizesBytes, !Cil.upointType)] in
+        Unconditional (Operator.bytes__land overflow upper)
+    end lvals in
 
-    let both_checks = Operator.bytes__land offsetsLeSizesMinusUseSize useSizeLeSizes in
+    (* perform the check *)
+    fail_if_not job (make_Bytes_Conditional bounds_check) (`OutOfBounds exp)
 
-    (* Perform the check *)
-    fail_if_not job both_checks (`OutOfBounds exp)
 
 let add_offset offset lvals =
     conditional__map begin fun (block, offset2) ->
@@ -296,7 +271,7 @@ lval ?(justGetAddr=false) job (lhost, offset_exp as cil_lval) =
                 if justGetAddr || not !Executeargs.arg_bounds_checking then
                     job
                 else
-                    checkBounds job lvals size (Lval cil_lval)
+                    check_bounds job lvals size (Lval cil_lval)
             in
             (job, (lvals, size))
 

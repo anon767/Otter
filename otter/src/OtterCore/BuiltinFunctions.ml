@@ -224,7 +224,7 @@ let access_bytes_with_length ?(exp=Cil.Const (Cil.CStr "exp unavailable")) job b
     if not !Executeargs.arg_bounds_checking then
         (job, lvals)
     else
-        let job = Expression.checkBounds job lvals length exp in
+        let job = Expression.check_bounds job lvals length exp in
         (job, lvals)
 
 (** Like [access_bytes_with_length], but starts from an expression instead of a
