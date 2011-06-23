@@ -1,0 +1,42 @@
+#!/usr/bin/awk -f
+BEGIN {
+    for (k in ARGV) {
+        if (ARGV[k]) {
+            file = ARGV[k]
+            sub(/^[^\/]*\//, "", file);
+            if (length(file) > width) {
+                width = length(file);
+            }
+        }
+    }
+}
+function add(record) {
+# slightly reformat for better alignment
+    sub(/ */, "");
+    sub(/[ .][ .][^0-9]+/, "  ");
+    sub(/^[^\/]*\//, "", FILENAME);
+    return record "\n" sprintf("%-*s", width, FILENAME) "  " $0;
+}
+
+
+pipe { print }
+
+/Flat profile/ { flat = 1 }
+flat && /Driver\.main_loop\/step/ { steps = add(steps) }
+flat && /BytesSTP\.query_stp\/query|Stp.query_stp\/query/ { query_stp_query = add(query_stp_query) } 
+flat && /BytesSTP\.query_stp[^\/]|Stp.query_stp[^\/]/ { query_stp = add(query_stp) }
+flat && /Bytes\.make_Bytes_ByteArray/ { bytearray = add(bytearray) }
+/Bottom-up profile/ { flat = 0 } 
+
+/Memo statistics/ { memo = 1 } 
+memo && /BytesSTP\.query_stp|Stp\.query_stp/ { stp = add(stp) }
+memo && /Bytes\.bytes/ { bytes = add(bytes) }
+/Finished\.|Done\./ { memo = 0 }
+
+/Max heap/ { maxheap = add(maxheap) }
+
+
+function finish() { print bytearray "\n" stp "\n" bytes "\n" query_stp_query "\n" query_stp "\n" steps "\n" maxheap } 
+pipe && /Done\./ { finish() }
+END { finish() }
+

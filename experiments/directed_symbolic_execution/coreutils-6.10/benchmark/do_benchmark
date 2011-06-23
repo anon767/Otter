@@ -1,0 +1,126 @@
+#!/usr/bin/make -f
+#
+# This script runs benchmarks over different Otter configurations in parallel and in the background, and sends a
+# summary of the result to the local mailbox. Run as "./do_benchmark"; the first run will prompt you to edit a
+# configuration file "do_benchmark.config" generated automatically. Subsequent runs will execute the benchmark
+# accordingly.
+#
+# Note that this script currently assumes that newlib and coreutils have been built, using the same procedure as for
+# the directed symbolic execution benchmark.
+#
+# Tip: you may be able to set your ~/.forward file to '|"/usr/sbin/sendmail -i <to email>"' (without the single-quote,
+# with the double-quote), to redirect local mail to your email, if your local machine is on the same domain as your
+# email server.
+#
+
+.DEFAULT_GOAL := all
+
+#
+# Stage 0: generate a default configuration file if it doesn't exist.
+#
+
+include do_benchmark.config
+
+.PRECIOUS : do_benchmark.config
+do_benchmark.config :
+	@echo 'Generating a default configuration in $@ ...'
+	@echo>>$@
+	@echo>>$@ '$$(error Please edit $@ to make any configuration changes, and remove this line)'
+	@echo>>$@
+	@echo>>$@ '# Directory under which to find Otter installs (e.g., for $$(top)/$$(work)/otter/otter.pl)'
+	@echo>>$@ 'top = ../../../../..'
+	@echo>>$@ 
+	@echo>>$@ '# Benchmarks are run for every combination of the following'
+	@echo>>$@ 'works = otter-1 otter-2'
+	@echo>>$@ 'programs = mkdir mknod mkfifo ptx paste seq echo chmod uniq tac pr cksum'
+	@echo>>$@ 'forwards = random-path'
+	@echo>>$@ 'backwards = random-path'
+	@echo>>$@ 
+	@echo>>$@ '# Common options'
+	@echo>>$@ 'timeout = 300'
+	@echo>>$@ 'otter_do = --dootter'
+	@echo>>$@ 'print = --printLittle --profile'
+	@echo>>$@ 'export OCAMLRUNPARAM = b'
+	@echo>>$@
+	@echo>>$@ '# Number of jobs to run in parallel'
+	@echo>>$@ 'jobs = 8'
+	@echo>>$@
+	@echo>>$@ '# Directory to write benchmark logs'
+	@echo>>$@ 'log = log-$$(shell date +"%Y-%m-%d-%H-%M-%S")'
+	@echo>>$@
+
+#
+# Stage 1: re-run in background and enable parallel make.
+#
+
+all :
+	@echo '$(MAKE) -j $(jobs) -C "$(CURDIR)" -f "$(firstword $(MAKEFILE_LIST))" NOTE="$(NOTE)" benchmark' | batch now
+
+
+#
+# Stage 2: run benchmarks and generate a report, which is sent by batch to the local mailbox.
+#
+
+# don't expose benchmark unless requested explicitly
+ifneq (,$(findstring benchmark,$(MAKECMDGOALS)))
+
+# location of newlib/coreutils build; currently assumes that they are built
+newlib = ../../../../newlib-1.19.0
+build = build.cil
+
+# fix the value of $(log) (i.e., evaluate $(shell ...) only once)
+log := $(log)
+
+prepare :
+	@mkdir -p $(log)
+	@$(newlib)/otter/otter-with-libc --save-temps -c __otter_main_driver.c __otter_poi.c >& $(log)/prepare.log \
+		|| { cat $(log)/prepare.log; $(RM) -r $(log); exit 1; }
+	@echo
+	@$(if $(NOTE),echo Note: $(NOTE))
+	@$(foreach work,$(works),\
+		echo $(work):; \
+		echo "    svn:$(shell svnversion $(top)/$(work))"; \
+		$(if $(wildcard $(top)/$(work)/otter/.pc/*),\
+			echo "    otter/quilt:$(shell cd $(top)/$(work)/otter && quilt top)";))
+	@echo $(log)
+	@echo
+
+benchmark :
+	@./summarize_benchmark $(log)/*
+
+
+# TODO: move most of the flags into the config file
+define benchmark_template
+benchmark : $(log)/$(forward)-$(backward)-$(program)-$(work).txt
+$(log)/$(forward)-$(backward)-$(program)-$(work).txt : prepare
+	@$(top)/$(work)/otter/otter.pl \
+		--merge $(print) \
+		--doRunRmtmps $(otter_do) \
+		--lineCov --init-malloc=zero --init-local=zero \
+		--untracked-functions=$(newlib)/otter/library_functions \
+		--untracked-functions=$(build)/libcoreutils_functions \
+		--untracked-functions=other_functions \
+		--mainfn=__otter_main_driver \
+		--queue=$(forward) \
+		--forward-queue=$(forward) \
+		--backward-queue=$(backward) \
+		--backward-function-rank=closest-to-entry \
+		--timeout=$(timeout) \
+		--bidirectional-search-ratio=-1 \
+		--function-job-points-to=unsound-typed-void \
+		--function-job-uninit-void \
+		--line-targets-file=line_targets/$(program)_comb.line_targets \
+		__otter_main_driver.o __otter_poi.o $(build)/src/$(program)_comb.c \
+		$(newlib)/otter/lib/libc.a \
+		$(newlib)/otter/lib/libottersys.a \
+		$(newlib)/otter/lib/libm.a \
+		>& $$@
+endef
+
+$(foreach forward,$(forwards),\
+	$(foreach backward,$(backwards),\
+		$(foreach program,$(programs),\
+			$(foreach work,$(works),\
+				$(eval $(benchmark_template))))))
+endif
+
