@@ -6,6 +6,10 @@
     length-one arrays.
 */
 
+void __SYMBOLIC(void *);
+void __ASSUME(_Bool);
+void __ASSERT(_Bool);
+
 #pragma expect_return()
 #pragma no_other_results
 

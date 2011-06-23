@@ -1,5 +1,8 @@
 #pragma no_other_abandoned
 
+void __SYMBOLIC(void *);
+void __ASSUME(_Bool);
+
 typedef unsigned long size_t;
 void * malloc(size_t size);
 typedef void(*EventHandler)();

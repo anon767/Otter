@@ -1,5 +1,9 @@
 #pragma no_other_abandoned
 
+void __SYMBOLIC(void *);
+void __ASSUME(_Bool);
+void __ASSERT(_Bool);
+
 typedef unsigned long size_t;
 void * malloc(size_t size);
 

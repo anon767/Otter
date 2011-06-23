@@ -2,6 +2,9 @@
 #pragma expect_return()
 #pragma no_other_results
 
+void __SYMBOLIC(void *);
+void __ASSUME(_Bool);
+
 void main(void) {
     int* a[256];
     int p = 1;

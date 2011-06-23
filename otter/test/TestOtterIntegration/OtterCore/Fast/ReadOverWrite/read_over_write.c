@@ -1,5 +1,9 @@
 #pragma no_other_abandoned
 
+void __SYMBOLIC(void *);
+void __ASSUME(_Bool);
+void __ASSERT(_Bool);
+
 int main() {
   int x;
   int *ptr_array[2] = {&x,0};
