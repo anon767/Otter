@@ -181,7 +181,8 @@ let expand_read_to_conditional2 bytes symIndex len step_size =
         | Bytes_ByteArray a -> ImmutableArray.length a
         | _ -> 
             let length = Bytes.bytes__length bytes in
-            if length = step_size then length else FormatPlus.failwith "Not a valid array:@ @[%a@]" BytesPrinter.bytes bytes
+            if length = step_size then length (* This handles the case of length-1 arrays. *)
+            else FormatPlus.failwith "Not a valid array:@ @[%a@]" BytesPrinter.bytes bytes
     in
     let largest_index = (block_size - len)/step_size in
     if largest_index < 0 then failwith "Error in expand_read_to_conditional2: the read is wider than the memory block";
