@@ -157,7 +157,6 @@ let is_Bytes_Read = function Bytes_Read _ -> true | _ -> false
 let expand_read_to_conditional2 bytes symIndex len step_size =
     let rec expand index last_opt =
         let (), read_at_index = bytes__read () bytes (int_to_bytes (index * step_size)) len in
-        if is_Bytes_Read read_at_index then failwith "bytes__read with constant offset unexpectedly evaluated to a Bytes_Read";
         match last_opt with
         | Some(last_bytes, last_index) ->
             if index>=0 && (bytes__equal read_at_index last_bytes) then
@@ -180,8 +179,9 @@ let expand_read_to_conditional2 bytes symIndex len step_size =
     in
     let block_size = match bytes with
         | Bytes_ByteArray a -> ImmutableArray.length a
-        | Bytes_Conditional c -> failwith "Unexpected Bytes_Conditional"
-        | _ -> FormatPlus.failwith "Not a valid array:@ @[%a@]" BytesPrinter.bytes bytes
+        | _ -> 
+            let length = Bytes.bytes__length bytes in
+            if length = step_size then length else FormatPlus.failwith "Not a valid array:@ @[%a@]" BytesPrinter.bytes bytes
     in
     let largest_index = (block_size - len)/step_size in
     if largest_index < 0 then failwith "Error in expand_read_to_conditional2: the read is wider than the memory block";
