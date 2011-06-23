@@ -81,7 +81,9 @@ prepare :
 		echo $(work):; \
 		echo "    svn:$(shell svnversion $(top)/$(work))"; \
 		$(if $(wildcard $(top)/$(work)/otter/.pc/*),\
-			echo "    otter/quilt:$(shell cd $(top)/$(work)/otter && quilt top)";))
+			echo "    otter/quilt:";\
+			cd $(top)/$(work)/otter\
+			&& quilt applied | awk '{ print "        " $$0 }';))
 	@echo $(log)
 	@echo
 
