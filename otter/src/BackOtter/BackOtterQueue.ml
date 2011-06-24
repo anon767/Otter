@@ -5,6 +5,7 @@ type queues = [
     | `BackOtterClosestToTargets
     | `BackOtterClosestToTargetsIntraprocedural
     | `BackOtterClosestToTargetsPathWeighted
+    | `ExternalBoundingPaths of [ `BackOtterClosestToTargets ]
     | OtterQueue.Queue.queues
 ]
 
@@ -12,6 +13,7 @@ let queues : (string * queues) list = [
     "backotter-closest-to-targets", `BackOtterClosestToTargets;
     "backotter-closest-to-targets-intraprocedural", `BackOtterClosestToTargetsIntraprocedural;
     "backotter-closest-to-targets-path-weighted", `BackOtterClosestToTargetsPathWeighted;
+    "bounded-backotter-closest-to-targets", `ExternalBoundingPaths `BackOtterClosestToTargets;
 ] @ (OtterQueue.Queue.queues :> (string * queues) list)
 
 (* BackOtter's ClosestToTargetsStrategy is different from that in OtterQueue *)
@@ -19,6 +21,7 @@ let rec get = function
     | `BackOtterClosestToTargets -> new OtterQueue.RankedQueue.t [ new ClosestToTargetsStrategy.t OtterQueue.ClosestToTargetsStrategy.inversely_proportional]
     | `BackOtterClosestToTargetsIntraprocedural -> new OtterQueue.RankedQueue.t [ new ClosestToTargetsStrategy.t ~interprocedural:true OtterQueue.ClosestToTargetsStrategy.inversely_proportional]
     | `BackOtterClosestToTargetsPathWeighted -> new OtterQueue.RankedQueue.t [ new ClosestToTargetsStrategy.t OtterQueue.ClosestToTargetsStrategy.quantized; new OtterQueue.WeightedRandomStrategy.t (new OtterQueue.PathWeightedStrategy.t) ]
+    | `ExternalBoundingPaths `BackOtterClosestToTargets -> new OtterQueue.RankedQueue.t [ new ExternalBoundingPathsStrategy.t; new ClosestToTargetsStrategy.t OtterQueue.ClosestToTargetsStrategy.inversely_proportional ]
     | #OtterQueue.Queue.queues as queue -> OtterQueue.Queue.get queue
 
 let default_fqueue = ref (`Generational `BreadthFirst)

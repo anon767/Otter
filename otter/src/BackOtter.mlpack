@@ -15,5 +15,6 @@ BackOtter/BidirectionalQueue
 BackOtter/ClosestToTargetsStrategy
 BackOtter/ContentQueue
 BackOtter/ExternalBoundingPath
+BackOtter/ExternalBoundingPathsStrategy
 BackOtter/FunctionQueue
 BackOtter/FunctionRanker
