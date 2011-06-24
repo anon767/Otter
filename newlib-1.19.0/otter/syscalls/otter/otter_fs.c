@@ -297,18 +297,18 @@ struct __otter_fs_dnode* __otter_fs_mkdir(const char* name, struct __otter_fs_dn
 
 struct __otter_fs_inode* __otter_fs_touch(const char* name, struct __otter_fs_dnode* dir)
 {
-    return __otter_fs_touch_with_data(name, dir, NULL);
+    return __otter_fs_touch_with_data(name, dir, NULL, 0);
 }
 
-struct __otter_fs_inode* __otter_fs_touch_with_data(const char* name, struct __otter_fs_dnode* dir, char* data)
+struct __otter_fs_inode* __otter_fs_touch_with_data(const char* name, struct __otter_fs_dnode* dir, char* data, int size)
 {
 	struct __otter_fs_inode* newfile = __otter_multi_gmalloc(sizeof(struct __otter_fs_inode));
 	(*newfile).linkno = 1;
-	(*newfile).size = 0;
+	(*newfile).size = size;
 	(*newfile).type = __otter_fs_TYP_FILE;
 	(*newfile).permissions = __otter_fs_umask;
 	(*newfile).data = data;
-	(*newfile).numblocks = 0;
+	(*newfile).numblocks = (size+__otter_fs_BLOCK_SIZE-1)/__otter_fs_BLOCK_SIZE;
 	(*newfile).r_openno = 0;
 	(*newfile).w_openno = 0;
     return __otter_fs_touch_with_inode(name, dir, newfile);
