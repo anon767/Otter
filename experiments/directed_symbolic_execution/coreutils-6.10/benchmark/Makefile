@@ -38,11 +38,11 @@ distclean:
 universe:
 	svn up $(trunk)
 	make -C $(trunk)
-	make -C $(newlib) distclean
+	-make -C $(newlib) distclean
 	-rm $(newlib)/../build* # Sometimes these directories are not removed by the distclean above
-	make -C $(newlib) 
+	make -C $(newlib)
 	make -C $(newlib) native
 	make -C $(newlib) list
-	make distclean
+	-make distclean
 	make
 
