@@ -127,6 +127,8 @@ int __otter_fs_legal_name(const char* name);
 int __otter_fs_chmod_dir(int mode, struct __otter_fs_dnode* dir);
 int __otter_fs_chmod_file(int mode, struct __otter_fs_inode* file);
 struct __otter_fs_dnode* __otter_fs_mkdir(const char* name, struct __otter_fs_dnode* dir);
+struct __otter_fs_inode* __otter_fs_touch_with_data(const char* name, struct __otter_fs_dnode* dir, char* data);
+struct __otter_fs_inode* __otter_fs_touch_with_inode(const char* name, struct __otter_fs_dnode* dir, struct __otter_fs_inode* newfile);
 struct __otter_fs_inode* __otter_fs_touch(const char* name, struct __otter_fs_dnode* dir);
 int __otter_fs_unlink_in_dir(const char* name, struct __otter_fs_dnode* dir);
 int __otter_fs_rmdir_in_dir(const char* name, struct __otter_fs_dnode* dir);

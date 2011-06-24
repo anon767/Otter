@@ -297,6 +297,25 @@ struct __otter_fs_dnode* __otter_fs_mkdir(const char* name, struct __otter_fs_dn
 
 struct __otter_fs_inode* __otter_fs_touch(const char* name, struct __otter_fs_dnode* dir)
 {
+    return __otter_fs_touch_with_data(name, dir, NULL);
+}
+
+struct __otter_fs_inode* __otter_fs_touch_with_data(const char* name, struct __otter_fs_dnode* dir, char* data)
+{
+	struct __otter_fs_inode* newfile = __otter_multi_gmalloc(sizeof(struct __otter_fs_inode));
+	(*newfile).linkno = 1;
+	(*newfile).size = 0;
+	(*newfile).type = __otter_fs_TYP_FILE;
+	(*newfile).permissions = __otter_fs_umask;
+	(*newfile).data = data;
+	(*newfile).numblocks = 0;
+	(*newfile).r_openno = 0;
+	(*newfile).w_openno = 0;
+    return __otter_fs_touch_with_inode(name, dir, newfile);
+}
+
+struct __otter_fs_inode* __otter_fs_touch_with_inode(const char* name, struct __otter_fs_dnode* dir, struct __otter_fs_inode* newfile)
+{
 	if(!__otter_fs_can_permission((*dir).permissions, 2)) /* can't write to dir */
 		__otter_fs_error(EACCES);
 
@@ -316,15 +335,6 @@ struct __otter_fs_inode* __otter_fs_touch(const char* name, struct __otter_fs_dn
 			files = (*files).next;
 		}
 
-		struct __otter_fs_inode* newfile = __otter_multi_gmalloc(sizeof(struct __otter_fs_inode));
-		(*newfile).linkno = 1;
-		(*newfile).size = 0;
-		(*newfile).type = __otter_fs_TYP_FILE;
-		(*newfile).permissions = __otter_fs_umask;
-		(*newfile).data = NULL;
-		(*newfile).numblocks = 0;
-		(*newfile).r_openno = 0;
-		(*newfile).w_openno = 0;
 		struct __otter_fs_filelist* newfilelist = __otter_multi_gmalloc(sizeof(struct __otter_fs_filelist));
 		(*newfilelist).name = name;
 		(*newfilelist).inode = newfile;
