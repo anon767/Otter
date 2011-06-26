@@ -29,8 +29,10 @@ struct __otter_fs_dnode* find_filename_and_dnode(const char* path, char** basena
 		// Copy path so that we can truncate the string by writing a null in
 		// place of the last '/'.
 		char* name = strdup(path);
-
-		name[basename_finder - path] = 0;
+        int last_slash = basename_finder - path;
+        if (last_slash == 0) // root dir
+            last_slash = 1;
+		name[last_slash] = 0;
 
 		*basename = basename_finder + 1;
 		dnode = __otter_fs_find_dnode(name);

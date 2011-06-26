@@ -178,7 +178,10 @@ struct __otter_fs_dnode* __otter_fs_find_dnode(const char* name_in)
 		struct __otter_fs_dnode* dnode;
 		if(*name == '/') /* absolute path */
 		{
-			dnode = __otter_fs_find_dnode_in_tree(name+1, __otter_fs_root);
+            if(name[1] == 0) // root dir
+                dnode = __otter_fs_root;
+            else
+                dnode = __otter_fs_find_dnode_in_tree(name+1, __otter_fs_root);
 		}
 		else /* relative path */
 			dnode = __otter_fs_find_dnode_in_tree(name, __otter_fs_pwd);
