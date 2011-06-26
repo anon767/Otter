@@ -85,13 +85,8 @@ int __otter_main_driver() {
 
     struct __otter_fs_dnode* dnode = __otter_fs_mkdir("e", __otter_fs_root);
     // touch takes no slashes
-    __otter_fs_touch("t.t", dnode);
-    FILE* f = fopen("/e/t.t", "w");
-    //char* s = symbolic_string(8);
-    char* s = symbolic_string(1);
-    //fputs(s,f);
-    putc('\n',f);
-    fclose(f);
+    char* s = strdup("\n");
+    __otter_fs_touch_with_data("t.t", dnode, s, 1);
 
     return main(argc, argv);
 }

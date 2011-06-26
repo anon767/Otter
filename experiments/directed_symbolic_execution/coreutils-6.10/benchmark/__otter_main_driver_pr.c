@@ -65,7 +65,7 @@ int __otter_main_driver() {
     // Set up argv
     int arg_lengths[] = {MAX_ARG_LENGTHS};
     argv[0] = strdup("p");  // name of the program
-    argv[1] = strdup("/etc/t2.txt");
+    argv[1] = strdup("/e/t.t");
     argv[2] = strdup("-e");
     argv[3] = 0;
 
@@ -83,14 +83,10 @@ int __otter_main_driver() {
 	stdout = fopen("/dev/tty", "w"); // assert: fopen returns 1   
 	stderr = fopen("/dev/tty", "w"); // assert: fopen returns 2 
 
-    struct __otter_fs_dnode* dnode = __otter_fs_mkdir("etc", __otter_fs_root);
+    struct __otter_fs_dnode* dnode = __otter_fs_mkdir("e", __otter_fs_root);
     // touch takes no slashes
-    __otter_fs_touch("t2.txt", dnode);
-    FILE* f = fopen("/etc/t2.txt", "w");
-    char* s = symbolic_string(3);
-    //fputs(s,f);
-    fputs("\b\b\b\b\b\b\b\t",f);
-    fclose(f);
+    char* s = strdup("\b\b\b\b\b\b\b\t");
+    __otter_fs_touch_with_data("t.t", dnode, s, 8);
 
     return main(argc, argv);
 }

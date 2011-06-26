@@ -78,18 +78,14 @@ int __otter_main_driver() {
     // Two "symbolic" files, each containing 8 symbolic bytes
     struct __otter_fs_dnode* dnode = __otter_fs_mkdir("e", __otter_fs_root);
     {
-        __otter_fs_touch("t1.t", dnode);
-        FILE* f = fopen("/e/t1.t", "w");
-        char* s = symbolic_string(8);
-        fputs(s,f);
-        fclose(f);
+        int size = 8; // __SYMBOLIC(&size); __ASSUME(size>0 && size<=8);
+        char* s = symbolic_string(size);
+        __otter_fs_touch_with_data("t.t", dnode, s, size);
     }
     {
-        __otter_fs_touch("t2.t", dnode);
-        FILE* f = fopen("/e/t2.t", "w");
-        char* s = symbolic_string(8);
-        fputs(s,f);
-        fclose(f);
+        int size = 8; // __SYMBOLIC(&size); __ASSUME(size>0 && size<=8);
+        char* s = symbolic_string(size);
+        __otter_fs_touch_with_data("t2.t", dnode, s, size);
     }
 #endif
     
