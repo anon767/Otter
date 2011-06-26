@@ -84,6 +84,8 @@ let get_console_size =
     in
     fun () -> size
 
+let get_console_width = ref (fun () -> snd (get_console_size ()))
+
 
 class virtual ['self] t =
     object (self : 'self)
@@ -122,7 +124,7 @@ class ['self] labeled label =
 		inherit ['self] t
 		val formatter =
 			(* flush after every line, prefixing each line with a label *)
-			let _, width = get_console_size () in
+			let width = (!get_console_width) () in
 			let buffer = Buffer.create width in
 			let rec labeled_output str pos len =
 				let newline_index = 1 + try String.index_from str pos '\n' - pos with Not_found -> len in
@@ -272,4 +274,7 @@ let options = [
 		Arg.Unit (fun () -> arg_print_mute := 1),
 		" Suppress (pretty much) all output. This trumps all other --print* options");
 
+	("--console-width",
+		Arg.Int (fun width -> get_console_width := fun () -> width),
+		" Set the console with (if not set, the width is auto-detected)");
 ]
