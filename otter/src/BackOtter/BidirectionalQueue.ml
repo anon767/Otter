@@ -7,31 +7,9 @@ open Job
 open Decision
 open Cil
 
-(* TODO: Refactor this *)
-
 let default_bidirectional_search_ratio = ref 0.5
 let arg_backotter_overlap_path_matching = ref false
 
-(*
- * Improve efficiency of bounding paths update/checking.
- *
- * Let DP: decision path, BP: bounding path, FP: failing path.
- * Invariants:
- * 1. DP is most recent decision first. FP and BP are least recent decision first.
- * 2. DP and BP do not overlap---(hd BP) is the decision that a job with DP has to follow.
- * 3. job_to_bounding_paths always has jobs that are mapped to non-empty bounding_paths.
- *
- * To check if a FP can bound a DP:
- * For each prefix(DP, k) where k < len(FP) and DP[k] is a call to origin(FP),
- *     If rev_equal(prefix(DP, k), prefix(FP, k)), "YES", and let BP = suffix(FP, k+1)
- *     Else "NO"
- * Lots of memoization
- *
- * Given job = (DP, BP), to check if the child job' = DP' is bounded by BP,
- * If DP == DP', "YES" (there's no new decision)
- * Else assert(tl(DP') == DP), "YES" if hd(DP') == hd(BP)
- *
- *)
 module JobMap = struct
     module M = Map.Make (struct type t = int let compare = Pervasives.compare end)
     let empty = M.empty

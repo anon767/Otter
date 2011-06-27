@@ -37,7 +37,7 @@ let add_line_target file instruction =
 
 let process_completed entry_fn (reason, job) =
     let instruction = Job.get_instruction job in
-    let line_targets = get_line_targets job#file in
+    let line_targets = get_line_targets job#file in (* Note: __FAILURE()'s first line is added into line_targets in BackOtterMain *)
 
     (* Track reached targets, and convert executions that report repeated abandoned paths to Truncated *)
     let reason = 
