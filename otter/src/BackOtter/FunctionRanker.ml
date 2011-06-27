@@ -55,13 +55,13 @@ let rec get = function
     | `LeastRecentlyRun -> least_recently_run_ranker
     | `RoundRobin -> round_robin_ranker [ get `ClosestToEntry; get `LeastRecentlyRun ]
 
-let default_brank = ref `RoundRobin
+let default_function_rank = ref `RoundRobin
 
-let get_default_brank () = get !default_brank
+let get_default_function_rank () = get !default_function_rank
 
 let options = [
     "--backward-function-rank",
-        Arg.Symbol (fst (List.split queues), fun name -> default_brank := List.assoc name queues),
-        " Set the default backward function ranking in BackOtter (default: " ^ (fst (List.find (fun (_, x) -> x = !default_brank) queues)) ^ ")";
+        Arg.Symbol (fst (List.split queues), fun name -> default_function_rank := List.assoc name queues),
+        " Set the default backward function ranking in BackOtter (default: " ^ (fst (List.find (fun (_, x) -> x = !default_function_rank) queues)) ^ ")";
 ]
 

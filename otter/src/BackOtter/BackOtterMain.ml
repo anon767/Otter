@@ -136,7 +136,7 @@ let doit file =
 
         let find_tag_name tag assocs = List.assoc tag (List.map (fun (a,b)->(b,a)) assocs) in
         Output.printf "Forward strategy: %s@." (find_tag_name (!BackOtterQueue.default_fqueue) BackOtterQueue.queues);
-        Output.printf "Backward function pick: %s@." (find_tag_name (!FunctionRanker.default_brank) FunctionRanker.queues);
+        Output.printf "Backward function ranking: %s@." (find_tag_name (!FunctionRanker.default_function_rank) FunctionRanker.queues);
         Output.printf "Backward strategy: %s@." (find_tag_name (!BackOtterQueue.default_bqueue) BackOtterQueue.queues);
         Output.printf "Ratio: %0.2f@." !BidirectionalQueue.default_bidirectional_search_ratio ;
 

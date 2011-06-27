@@ -514,7 +514,7 @@ module Make (Errors : Errors) = struct
             | _ -> ()
         end;
         begin match flags.function_ranker with
-            | Some function_ranker -> BackOtter.FunctionRanker.default_brank := List.assoc function_ranker BackOtter.FunctionRanker.queues
+            | Some function_ranker -> BackOtter.FunctionRanker.default_function_rank := List.assoc function_ranker BackOtter.FunctionRanker.queues
             | _ -> ()
         end;
 

@@ -37,7 +37,7 @@ let get_function_backward_queue function_queue queue =
     new FunctionQueue.t (FunctionRanker.get function_queue) (fun () -> get queue)
 
 let default_bqueue = ref `RandomPath
-let get_default_bqueue () = get_function_backward_queue !FunctionRanker.default_brank !default_bqueue
+let get_default_bqueue () = get_function_backward_queue !FunctionRanker.default_function_rank !default_bqueue
 
 let options = [
     "--forward-queue",
