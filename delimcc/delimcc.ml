@@ -319,7 +319,8 @@ let push_prompt (p : 'a prompt) (body : unit -> 'a) : 'a =
     | h::t -> assert (h.pfr_mark == p.mark); ptop := t; mbox_receive p
     | _ -> dbg_fatal_error "push_prompt: empty pstack on DelimCCE")
   | e -> match !ptop with
-    | h::t -> ptop := t; dbg_note "propagating exc"; raise e
+    | h::t -> assert (h.pfr_mark == p.mark); ptop := t; 
+	dbg_note "propagating exc"; raise e
     | _ -> dbg_fatal_error "push_prompt: empty pstack on other exc"
 
 (*
@@ -388,13 +389,12 @@ let take_subcont (p : 'b prompt) (f : ('a,'b) subcont -> unit -> 'b) : 'a =
   let (h,s,subcontchain) = unwind [] p.mark !ptop in
   let () = ptop := s in
   let pa = new_prompt () in
-  let old_mbox = !(p.mbox) in
   try
     take_subcont_aux p f pa h.pfr_ek subcontchain (* does not return *)
   with 
   | DelimCCE -> mbox_receive pa
   | Out_of_memory -> dbg_fatal_error "take_subcont: out of memory"
-  | e -> dbg_note "propagating exc1"; p.mbox := old_mbox; raise e
+  | e -> dbg_fatal_error "take_subcont: can't happen"
 
 
 let push_subcont_aux (sk : ('a,'b) subcont) (m : unit -> 'a)  =
@@ -412,7 +412,7 @@ let push_subcont (sk : ('a,'b) subcont) (m : unit -> 'a) : 'b =
     push_subcont_aux sk m 			(* does not return *)
   with 
   | DelimCCE -> mbox_receive sk.subcont_pb
-  | e -> dbg_note "propagating exc2"; raise e
+  | e -> dbg_note "propagating exc1"; raise e
 
 
 (* Another optimization: push the _delimited_ continuation.
@@ -446,7 +446,7 @@ let push_delim_subcont (sk : ('a,'b) subcont) (m : unit -> 'a) : 'b =
     | _ -> dbg_fatal_error "push_delim_subcont: empty pstack on DelimCCE")
   | e -> match !ptop with
     | h::t -> assert (h.pfr_mark == sk.subcont_pb.mark); ptop := t; 
-	dbg_note "propagating exc3"; raise e
+	dbg_note "propagating exc2"; raise e
     | _ -> dbg_fatal_error "push_delim_subcont: empty pstack on other exc"
 
 
