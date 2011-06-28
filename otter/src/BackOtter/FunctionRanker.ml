@@ -2,17 +2,13 @@ open CilUtilities
 open OcamlUtilities
 open OtterCore
 
-(** Evaluation function used by ranker *)
+(** Evaluation function used by ranker, smaller the better *)
 let distance_from_entryfn (file, fundec) =
-    let entry_fn = ProgramPoints.get_entry_fundec file in
-    let distance = CilCallgraph.get_distance file entry_fn fundec in
-    float_of_int distance
-
-(* TODO: this is not compatible with line-targets *)
-let distance_from_failurefn (file, fundec) =
-    let failure_fn = ProgramPoints.get_failure_fundec file in
-    let distance = CilCallgraph.get_distance file fundec failure_fn in
-    float_of_int distance
+    if BackOtterTargets.is_transitive_unique_caller_of_targets file fundec then
+        let entry_fn = ProgramPoints.get_entry_fundec file in
+        let distance = CilCallgraph.get_distance file entry_fn fundec in
+        float_of_int distance
+    else max_float
 
 let random_function _ = Random.float 1.0
 
@@ -42,7 +38,6 @@ let round_robin_ranker rankers =
 
 let queues = [
     "closest-to-entry", `ClosestToEntry;
-    "closest-to-failure", `ClosestToFailure;
     "random-function", `RandomFunction;
     "least-recently-run", `LeastRecentlyRun;
     "round-robin", `RoundRobin;
@@ -50,7 +45,6 @@ let queues = [
 
 let rec get = function
     | `ClosestToEntry -> eval_ranker distance_from_entryfn
-    | `ClosestToFailure -> eval_ranker distance_from_failurefn
     | `RandomFunction -> eval_ranker random_function
     | `LeastRecentlyRun -> least_recently_run_ranker
     | `RoundRobin -> round_robin_ranker [ get `ClosestToEntry; get `LeastRecentlyRun ]

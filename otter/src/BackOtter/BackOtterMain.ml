@@ -42,38 +42,35 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
             BackOtterQueue.get_default_fqueue ()
         else
             (* when get_line_targets != [], add appropriate jobs in bqueue *)
+            let module FundecSet = Set.Make(CilData.CilFundec) in
             let starter_fundecs = List.fold_left (fun starter_fundecs instruction ->
                 Output.debug_printf "Line target: %a in function " Instruction.printer instruction;
-                let r = 
-                    try
-                        let fundec = instruction.Instruction.fundec in
-                        Output.debug_printf "%s " fundec.svar.vname;
-                        let fundec = BackOtterUtilities.get_transitive_unique_caller file fundec in
-                        if List.memq fundec starter_fundecs then
-                            starter_fundecs 
-                        else fundec::starter_fundecs
-                    with Not_found -> 
-                        Output.debug_printf "(missing) ";
-                        starter_fundecs (* There're lines that KLEE counts as instructions but Otter doesn't. *)
-                in
-                Output.debug_printf "@\n";
-                r
-            ) [] (BackOtterTargetTracker.get_line_targets file) in
-            List.iter (fun f -> Output.debug_printf "Function containing coverage targets: %s@." f.svar.vname) starter_fundecs;
+                try
+                    let fundec = instruction.Instruction.fundec in
+                    Output.debug_printf "%s " fundec.svar.vname;
+                    let transitive_callers = CilCallgraph.find_transitive_callers file fundec in
+                    List.fold_left (fun starter_fundecs fundec -> FundecSet.add fundec starter_fundecs) starter_fundecs (fundec :: transitive_callers)
+                with Not_found ->
+                    Output.debug_printf "(missing) ";
+                    starter_fundecs (* There're lines that KLEE counts as instructions but Otter doesn't. *)
+            ) FundecSet.empty (BackOtterTargetTracker.get_line_targets file) in
+            let starter_fundecs = FundecSet.elements starter_fundecs in
 
-            let queue = new BidirectionalQueue.t file starter_fundecs in
+            List.iter (fun f -> Output.debug_printf "Transitive callers of targets: %s@." f.svar.vname) starter_fundecs;
+
+            let queue = new BidirectionalQueue.t file in
 
             (* Add non-entryfn jobs *)
             let queue = List.fold_left (fun queue fundec ->
-                if CilData.CilFundec.equal fundec entry_fn then 
-                    queue
+                if CilData.CilFundec.equal fundec entry_fn then
+                    queue (* bypass the entry_fn; it's added into entryfn_queue by below *)
                 else
                     queue#put (BackOtterJob.get_function_job file fundec)
             ) queue starter_fundecs in
             queue
     in
 
-    (* Add entryfn jobs *)
+    (* Add the entryfn job *)
     let queue = queue#put entry_job in
 
     (* Define interceptor *)

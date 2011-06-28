@@ -58,3 +58,13 @@ let get_target_fundecs () =
         fun target_fundec _ target_fundecs -> target_fundec :: target_fundecs
     ) targets.fundec_to_pathset []
 
+let is_transitive_unique_caller_of_targets file fundec =
+    OcamlUtilities.Profiler.global#call "BackOtterTargets.is_transitive_unique_caller_of_targets" begin fun () ->
+        (* TODO: this is slightly slow. Improve its performnce. *)
+        let target_fundecs = get_target_fundecs () in
+        let module FundecSet = Set.Make(CilUtilities.CilData.CilFundec) in
+        let callers = List.fold_left (fun callers target_fundec -> List.fold_left (fun callers f -> FundecSet.add f callers) callers (CilUtilities.CilCallgraph.find_callers file target_fundec)) FundecSet.empty target_fundecs in
+        let callers = FundecSet.fold (fun caller callers -> FundecSet.add (BackOtterUtilities.get_transitive_unique_caller file caller) callers) callers FundecSet.empty in
+        FundecSet.mem fundec callers
+    end
+
