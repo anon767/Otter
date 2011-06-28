@@ -2,9 +2,23 @@ open CilUtilities
 open OcamlUtilities
 open OtterCore
 
+let is_ready file fundec =
+    OcamlUtilities.Profiler.global#call "FunctionRanker.is_ready" begin fun () ->
+        (* TODO: this is slightly slow. Improve its performnce. *)
+        let target_fundecs = BackOtterTargets.get_target_fundecs () in
+        let line_target_fundecs =
+            let line_targets = BackOtterTargetTracker.get_line_targets file in
+            List.map (fun line_target -> line_target.OtterCFG.Instruction.fundec) line_targets
+        in
+        let module FundecSet = Set.Make(CilUtilities.CilData.CilFundec) in
+        let callers = List.fold_left (fun callers target_fundec -> List.fold_left (fun callers f -> FundecSet.add f callers) callers (CilUtilities.CilCallgraph.find_callers file target_fundec)) FundecSet.empty target_fundecs in
+        let callers = FundecSet.fold (fun caller callers -> FundecSet.add (BackOtterUtilities.get_transitive_unique_caller file caller) callers) callers FundecSet.empty in
+        List.memq fundec target_fundecs || List.memq fundec line_target_fundecs || FundecSet.mem fundec callers
+    end
+
 (** Evaluation function used by ranker, smaller the better *)
 let distance_from_entryfn (file, fundec) =
-    if BackOtterTargets.is_transitive_unique_caller_of_targets file fundec then
+    if is_ready file fundec then
         let entry_fn = ProgramPoints.get_entry_fundec file in
         let distance = CilCallgraph.get_distance file entry_fn fundec in
         float_of_int distance
