@@ -47,7 +47,6 @@ let fold_array f acc len_opt =
 
 (** Initialize program values symbolically, using {!SymbolicPointers.init_pointer} to initialize pointers.
 
-        @param scheme optionally indicates the scheme to initialize symbolic pointers (see {!SymbolicPointers.init_pointer})
         @param uninit_void optionally indicates whether targets of void * pointers should be uninitialized (default: false)
         @param job is the symbolic executor job in which to initialize the variable
         @param typ is the type of the value to initialize
@@ -56,7 +55,6 @@ let fold_array f acc len_opt =
         @return [(job, bytes)] the updated symbolic job and the initialized variable
 *)
 let rec init_bytes_with_pointers
-            ?scheme
             ?(uninit_void=(!default_uninit_void))
             job
             typ
@@ -90,7 +88,7 @@ let rec init_bytes_with_pointers
                 let malloc_exps = List.concat (List.map (fun (_, lhosts) -> List.map (fun lhost -> Cil.Lval (lhost, Cil.NoOffset)) lhosts) mallocs) in
                 let exps = var_exps @ malloc_exps in
                 if exps <> [] then
-                    init_bytes_with_pointers ?scheme job typ points_to exps
+                    init_bytes_with_pointers job typ points_to exps
                 else
                     let size = Cil.bitsSizeOf typ / 8 in
                     (job, Bytes.bytes__symbolic size)
@@ -100,7 +98,7 @@ let rec init_bytes_with_pointers
             let block_name = FormatPlus.as_string Printcil.exp (List.hd exps) in
 
             (* finally, make the pointer *)
-            SymbolicPointers.init_pointer ?scheme job points_to exps block_name init_target
+            SymbolicPointers.init_pointer job points_to exps block_name init_target
 
         | Cil.TComp (compinfo, _) when compinfo.Cil.cstruct ->
             (* for structs, initialize and iterate over the fields *)
@@ -173,7 +171,6 @@ end
     the symbolic job.
 
         @param file is the file to symbolically execute
-        @param scheme optionally indicates the scheme to initialize symbolic pointers (see {!init_bytes_with_pointers})
         @param uninit_void optionally indicates whether targets of void * pointers should be uninitialized (see
                 {!init_bytes_with_pointers})
         @param points_to is a function for computing pointer targets to be passed to {!init_bytes_with_pointers}
@@ -181,7 +178,7 @@ end
         @param fn is list the function at which to begin symbolic execution
         @return [OtterCore.Job.job] the created job
 *)
-class ['abandoned, 'truncated] t file ?scheme ?uninit_void ?(points_to=(!default_points_to) file) fn =
+class ['abandoned, 'truncated] t file ?uninit_void ?(points_to=(!default_points_to) file) fn =
     object (self : 'self)
         inherit ['abandoned, 'truncated] OtterCore.Job.t file fn
         initializer
@@ -198,7 +195,7 @@ class ['abandoned, 'truncated] t file ?scheme ?uninit_void ?(points_to=(!default
                 | Cil.GVar (v, { Cil.init = Some init }, _) when CilData.CilVar.is_const v ->
                     SymbolicPointers.init_const_global job v (Some init)
                 | Cil.GVarDecl (v, _) | Cil.GVar (v, _, _) when not (State.VarinfoMap.mem v job#state.State.global) ->
-                    let deferred job = init_bytes_with_pointers ?scheme job v.Cil.vtype points_to [ (Cil.Lval (Cil.var v)) ] in
+                    let deferred job = init_bytes_with_pointers job v.Cil.vtype points_to [ (Cil.Lval (Cil.var v)) ] in
                     let job, lval_block = SymbolicPointers.init_lval_block job v deferred in
                     job#with_state { job#state with State.global = State.VarinfoMap.add v lval_block job#state.State.global }
                 | _ ->
@@ -208,7 +205,7 @@ class ['abandoned, 'truncated] t file ?scheme ?uninit_void ?(points_to=(!default
             (* then, setup function arguments *)
             (* TODO: handle varargs *)
             let job, rev_args_bytes = List.fold_left begin fun (job, args_bytes) v ->
-                let job, bytes = init_bytes_with_pointers ?scheme job v.Cil.vtype points_to [ (Cil.Lval (Cil.var v)) ] in
+                let job, bytes = init_bytes_with_pointers job v.Cil.vtype points_to [ (Cil.Lval (Cil.var v)) ] in
                 (job, bytes::args_bytes)
             end (job, []) fn.Cil.sformals in
 
