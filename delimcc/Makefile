@@ -20,6 +20,10 @@
 #	make memory_leak_plugged
 #	     to build and run another memory leak test. See the comments
 #	     in the source code.
+#    make race
+#    make raceopt
+#	     to build and run a race condition test. It should run forever
+#	     without failing any assertions or raising any uncaught exceptions
 #       make bench_exc
 #       make bench_excopt
 #	     to benchmark delimcc's abort, comparing with native exceptions
@@ -158,6 +162,10 @@ memory%: libdelimcc.a memory%.ml libdelimcc.a delimcc.cmi
 memory%opt: libdelimccopt.a memory%.ml libdelimccopt.a delimcc.cmi
 	$(OCAMLOPT) -o $@ -cclib -L. delimcc.cmxa memory$*.ml
 	./$@ > /dev/null
+
+race : OCAMLC += unix.cma
+
+raceopt : OCAMLOPT += unix.cmxa
 
 %: libdelimcc.a %.ml libdelimcc.a delimcc.cmi
 	$(OCAMLC) -o $@ -dllpath . delimcc.cma $@.ml

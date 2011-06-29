@@ -155,6 +155,9 @@
 
 module EK :
     sig
+      external delimcc_begin : unit -> unit = "delimcc_begin"
+      external delimcc_end : unit -> unit = "delimcc_end"
+
       (** The pointer to an exception frame. It corresponds to caml_trapsp,
           but relative to the top of the stack.
           DelimCCE (see below) has no type parameters, so ek doesn't have
@@ -184,6 +187,9 @@ module EK :
    end 
    =
    struct
+      external delimcc_begin : unit -> unit = "delimcc_begin"
+      external delimcc_end : unit -> unit = "delimcc_end"
+
      (* ek is int from the OCaml point of view and ptrdiff_t from the 
 	C point of view.
 	The pointer difference is in the units of `value'. Because `value'
@@ -304,11 +310,14 @@ let new_prompt () : 'a prompt =
 (* The wrapper for the body; captured in the continuation *)
 let push_prompt_aux (p : 'a prompt) (body : unit -> 'a) : 'any =
   let () = ptop := {pfr_mark = p.mark; pfr_ek = get_ek ()} :: (!ptop) in
+  delimcc_end ();
   let res = body () in
+  delimcc_begin ();
   p.mbox := (fun () -> res);
   raise DelimCCE
 
 let push_prompt (p : 'a prompt) (body : unit -> 'a) : 'a =
+  delimcc_begin ();
   try
     push_prompt_aux p body
   with
@@ -316,7 +325,8 @@ let push_prompt (p : 'a prompt) (body : unit -> 'a) : 'a =
        continuation delimiter
     *)
   | DelimCCE -> (match !ptop with
-    | h::t -> assert (h.pfr_mark == p.mark); ptop := t; mbox_receive p
+    | h::t -> assert (h.pfr_mark == p.mark); ptop := t;
+      delimcc_end (); mbox_receive p
     | _ -> dbg_fatal_error "push_prompt: empty pstack on DelimCCE")
   | e -> match !ptop with
     | h::t -> assert (h.pfr_mark == p.mark); ptop := t; 
@@ -386,13 +396,14 @@ let take_subcont_aux (p : 'b prompt) (f : ('a,'b) subcont -> unit -> 'b)
 
 
 let take_subcont (p : 'b prompt) (f : ('a,'b) subcont -> unit -> 'b) : 'a =
+  delimcc_begin ();
   let (h,s,subcontchain) = unwind [] p.mark !ptop in
   let () = ptop := s in
   let pa = new_prompt () in
   try
     take_subcont_aux p f pa h.pfr_ek subcontchain (* does not return *)
   with 
-  | DelimCCE -> mbox_receive pa
+  | DelimCCE -> delimcc_end (); mbox_receive pa
   | Out_of_memory -> dbg_fatal_error "take_subcont: out of memory"
   | e -> dbg_fatal_error "take_subcont: can't happen"
 
@@ -400,18 +411,19 @@ let take_subcont (p : 'b prompt) (f : ('a,'b) subcont -> unit -> 'b) : 'a =
 let push_subcont_aux (sk : ('a,'b) subcont) (m : unit -> 'a)  =
   let base = sk.subcont_bs in
   let ek = get_ek () in
-  List.iter (fun pframe ->
-    ptop := {pframe with pfr_ek = add_ek ek (sub_ek pframe.pfr_ek base)} ::
-      !ptop)
-    sk.subcont_ps;
-  sk.subcont_pa.mbox := m;
-  push_stack_fragment sk.subcont_ek DelimCCE  (* does not return *)
+    List.iter (fun pframe ->
+      ptop := {pframe with pfr_ek = add_ek ek (sub_ek pframe.pfr_ek base)} ::
+        !ptop)
+      sk.subcont_ps;
+    sk.subcont_pa.mbox := m;
+    push_stack_fragment sk.subcont_ek DelimCCE  (* does not return *)
 
 let push_subcont (sk : ('a,'b) subcont) (m : unit -> 'a) : 'b =
+  delimcc_begin ();
   try
     push_subcont_aux sk m 			(* does not return *)
   with 
-  | DelimCCE -> mbox_receive sk.subcont_pb
+  | DelimCCE -> delimcc_end (); mbox_receive sk.subcont_pb
   | e -> dbg_note "propagating exc1"; raise e
 
 
@@ -437,12 +449,13 @@ let push_delim_subcont_aux (sk : ('a,'b) subcont) (m : unit -> 'a) : 'any =
   push_stack_fragment sk.subcont_ek DelimCCE (* does not return *)
 
 let push_delim_subcont (sk : ('a,'b) subcont) (m : unit -> 'a) : 'b =
+  delimcc_begin ();
   try
     push_delim_subcont_aux sk m
   with
   | DelimCCE -> (match !ptop with
     | h::t -> assert (h.pfr_mark == sk.subcont_pb.mark); ptop := t; 
-	mbox_receive sk.subcont_pb
+	delimcc_end (); mbox_receive sk.subcont_pb
     | _ -> dbg_fatal_error "push_delim_subcont: empty pstack on DelimCCE")
   | e -> match !ptop with
     | h::t -> assert (h.pfr_mark == sk.subcont_pb.mark); ptop := t; 
@@ -455,6 +468,7 @@ let push_delim_subcont (sk : ('a,'b) subcont) (m : unit -> 'a) : 'b =
    This code makes it clear that abort is essentially raise.
 *)
 let abort (p : 'b prompt) (x : 'b) : 'a =
+  delimcc_begin ();
   let (h,s) = unwind_abort p.mark !ptop in
   ptop := s;
   p.mbox := (fun () -> x);

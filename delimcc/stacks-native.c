@@ -130,11 +130,19 @@ the running time is 22.4 sec.
 #include <string.h>
 #include <custom.h>
 
+#include <config.h>
+#include <signals.h>
+#include <signal.h>
+#include <stdbool.h>
+
 #define DEBUG 0
 /* For debugging */
 #include <stdio.h>
 
 extern void caml_raise_exception (const value bucket) Noreturn;
+
+extern intnat volatile caml_signals_are_pending;
+extern void caml_process_pending_signals(void);
 
 
 /* Assuming p is the pointer to the trap stack frame, return
@@ -166,6 +174,44 @@ extern void caml_raise_exception (const value bucket) Noreturn;
 #define myassert(x) ((x) ? 1 : \
   (fprintf(stderr, "\nFailed assert %s in %s at %d\n", #x,__FILE__, __LINE__),\
   exit(8)))
+
+
+/* ---------------------------------------------------------------------- */
+/* Prologue/epilogue operations, in particular, masking signals to avoid
+   race conditions when a signal handler raises an exception during
+   delimcc operations.
+ */
+static _Bool in_delimcc = false;
+#ifdef POSIX_SIGNALS
+static sigset_t saved_sigmask;
+#endif
+
+value delimcc_begin(value unit) {
+  myassert( !in_delimcc );
+#ifdef POSIX_SIGNALS
+  /* process all pending signals and mask */
+  sigset_t blockall;
+  sigfillset(&blockall);
+  while (1) {
+    caml_process_pending_signals();
+    sigprocmask(SIG_SETMASK, &blockall, &saved_sigmask);
+    if (! caml_signals_are_pending) break;
+    sigprocmask(SIG_SETMASK, &saved_sigmask, NULL);
+  }
+#endif
+  in_delimcc = true;
+  return Val_unit;
+}
+
+value delimcc_end(value unit) {
+  myassert( in_delimcc );
+  in_delimcc = false;
+#ifdef POSIX_SIGNALS
+  /* unmask signals: may cause signal handlers to be run immediately */
+  sigprocmask(SIG_SETMASK, &saved_sigmask, NULL);
+#endif
+  return Val_unit;
+}
 
 
 /* ---------------------------------------------------------------------- */
