@@ -505,7 +505,6 @@ and
 *)
 evaluate_under_condition job_in condition exp =
     let job = MemOp.state__add_path_condition job_in condition true in
-    let checkpointed_path_condition = job#state.path_condition in
     let result = try (Some (rval job exp), "") with Failure msg -> (None, msg) in
     match result with
       | None, msg -> None, msg
@@ -515,11 +514,7 @@ evaluate_under_condition job_in condition exp =
             (* Roll back the assumption that condition holds. Because of lazy
                memory initialization, using the old job is dangerous, because
                new bytes may have been created while evaluating exp. However,
-               just reverting the path condition is fine. Just as an extra
-               check, though, we make sure the path condition didn't change
-               during the evaluation of exp. *)
-            if job#state.path_condition != checkpointed_path_condition
-            then failwith "Path condition changed unexpectedly while evaluating under a condition";
+               just reverting the path condition is fine. *)
             (Some (job#with_state { job#state with
                                         path_condition = job_in#state.path_condition;
                                   }, bytes), "")
