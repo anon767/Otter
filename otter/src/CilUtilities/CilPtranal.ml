@@ -164,29 +164,6 @@ let wrap_points_to_varinfo points_to_varinfo exp = Profiler.global#call "wrap_po
 end
 
 
-(** Similar to wrap_points_to_varinfo, but not field sensitive (i.e., no offset)
-        @param points_to_varinfo is the points-to function to wrap
-        @param exp is the expression to resolve
-        @return [(target_varinfos, target_mallocs)] where [target_varinfos] contains the points to target varinfos
-                and no offset; and [target_mallocs] contains a list of dynamic allocation sites and no offset
-*)
-let unsound_wrap_points_to_varinfo points_to_varinfo exp = Profiler.global#call "unsound_wrap_points_to_varinfo" begin fun () ->
-    let varinfos, mallocs = points_to_varinfo exp in
-
-    (* combine the target varinfos with no offset *)
-    let target_varinfos = List.fold_left begin fun target_varinfos varinfo ->
-        (varinfo, Cil.NoOffset)::target_varinfos
-    end [] varinfos in
-
-    (* combine the target mallocs with no offset *)
-    let target_mallocs = List.fold_left begin fun target_mallocs ((_, _, typ as malloc), lhosts) ->
-        (malloc, lhosts, Cil.NoOffset)::target_mallocs
-    end [] mallocs in
-
-    (target_varinfos, target_mallocs)
-end
-
-
 (** Helper that generates a map from untyped dynamic allocation sites ([Cil.varinfo * string] tuple) to typed dynamic
     allocation sites ([(CilData.Malloc.t * CilData.CilLhost.t list) list]), using a points-to analysis to find the types and
     pointer expressions that refer to those sites.
@@ -393,16 +370,16 @@ let naive_points_to =
         naive_points_to (file, exp)
 
 
-(** Unsound point-to that maps each pointer to one or two distinct [malloc]s: one of the pointer target type, and
-    another of an array of size 1024 of the base type; and if the pointer is a function pointer, all functions 
-    returned by {!Ptranal.resolve_exp} filtered by type.
+(** Unsound point-to that maps each pointer to one or two distinct [malloc]s: one of the pointer target type, and if
+    the pointer points to base (numeric) type, another of an array of size 4 of the base type; and if the pointer is
+    a function pointer, all functions returned by {!Ptranal.resolve_exp} filtered by type.
         @param file is the file being analyzed
         @param exp is the expression to resolve
         @return [(targets_list, target_mallocs)] where [target_list] is empty and [target_mallocs] contains a single
                 dynamic allocation site
 *)
 let unsound_points_to =
-    let array_size = Some (Cil.integer 1024) in
+    let array_size = Some (Cil.integer 4) in
     let counter = Counter.make () in
     let resolve_exp exp = Profiler.global#call "Ptranal.resolve_exp" (fun () -> Ptranal.resolve_exp exp) in
     fun file exp -> Profiler.global#call "CilPtranal.unsound_points_to" begin fun () ->
@@ -428,14 +405,17 @@ let unsound_points_to =
                         let malloc_targets = [ (malloc, [ deref_lhost; malloc_lhost ]) ] in
 
                         let malloc_targets =
-                            let array_typ = Cil.TArray (typ, array_size, []) in
-                            let malloc_array = (malloc_varinfo, name, array_typ) in
-                            let malloc_array_lhost = make_malloc_lhost array_typ in
-                            (malloc_array, [ deref_lhost; malloc_array_lhost ])::malloc_targets
+                            if Cil.isArithmeticType typ then
+                                let array_typ = Cil.TArray (typ, array_size, []) in
+                                let malloc_array = (malloc_varinfo, name, array_typ) in
+                                let malloc_array_lhost = make_malloc_lhost array_typ in
+                                (malloc_array, [ deref_lhost; malloc_array_lhost ])::malloc_targets
+                            else
+                                malloc_targets
                         in
                         ([], malloc_targets)
                 in
-                unsound_wrap_points_to_varinfo (fun _ -> (varinfo_targets, malloc_targets)) exp
+                wrap_points_to_varinfo (fun _ -> (varinfo_targets, malloc_targets)) exp
             | _ ->
                 ([], [])
     end
@@ -444,7 +424,7 @@ let unsound_points_to =
 (** Unsound point-to that maps each void pointer variable to zero or more distinct [malloc]s of types partially
     determined from a pointer analysis, and every other pointer (variable or malloc'ed) to one or two distinct
     [malloc]s: one of the pointer target type, and if the pointer points to base (numeric) type, another of an array
-    of size 16 of the base type; and if the pointer is a function pointer, all functions returned by {!Ptranal.resolve_exp}
+    of size 4 of the base type; and if the pointer is a function pointer, all functions returned by {!Ptranal.resolve_exp}
     filtered by type.
         @param file is the file being analyzed
         @param exp is the expression to resolve
@@ -469,8 +449,118 @@ let unsound_typed_void_points_to =
                     (make_malloc typ)::targets
                 end target_types [] in
 
-                unsound_wrap_points_to_varinfo (fun _ -> ([], targets)) exp
+                wrap_points_to_varinfo (fun _ -> ([], targets)) exp
             | _ ->
                 unsound_points_to file exp
+    end
+
+
+(** Similar to wrap_points_to_varinfo, but not field sensitive (i.e., no offset)
+        @param points_to_varinfo is the points-to function to wrap
+        @param exp is the expression to resolve
+        @return [(target_varinfos, target_mallocs)] where [target_varinfos] contains the points to target varinfos
+                and no offset; and [target_mallocs] contains a list of dynamic allocation sites and no offset
+*)
+let unsound_wrap_points_to_varinfo points_to_varinfo exp = Profiler.global#call "unsound_wrap_points_to_varinfo" begin fun () ->
+    let varinfos, mallocs = points_to_varinfo exp in
+
+    (* combine the target varinfos with no offset *)
+    let target_varinfos = List.fold_left begin fun target_varinfos varinfo ->
+        (varinfo, Cil.NoOffset)::target_varinfos
+    end [] varinfos in
+
+    (* combine the target mallocs with no offset *)
+    let target_mallocs = List.fold_left begin fun target_mallocs ((_, _, typ as malloc), lhosts) ->
+        (malloc, lhosts, Cil.NoOffset)::target_mallocs
+    end [] mallocs in
+
+    (target_varinfos, target_mallocs)
+end
+
+
+(** Unsound point-to that maps each pointer to one or two distinct [malloc]s: one of the pointer target type, and
+    another of an array of size 1024 of the base type; and if the pointer is a function pointer, all functions 
+    returned by {!Ptranal.resolve_exp} filtered by type.
+    Unlike unsound_points_to, this points_to calls unsound_wrap_points_to_varinfo which does not conservatively
+    assumes a pointer points to every field of its struct/array target.
+        @param file is the file being analyzed
+        @param exp is the expression to resolve
+        @return [(targets_list, target_mallocs)] where [target_list] is empty and [target_mallocs] contains a single
+                dynamic allocation site
+*)
+let really_unsound_points_to =
+    let array_size = Some (Cil.integer 1024) in
+    let counter = Counter.make () in
+    let resolve_exp exp = Profiler.global#call "Ptranal.resolve_exp" (fun () -> Ptranal.resolve_exp exp) in
+    fun file exp -> Profiler.global#call "CilPtranal.really_unsound_points_to" begin fun () ->
+        match Cil.unrollType (Cil.typeOf exp) with
+            | Cil.TPtr (typ, _) as pointer_type ->
+                let malloc_varinfo = find_malloc file in
+                let name = "malloc" ^ string_of_int (Counter.next counter) in
+
+                let varinfo_targets, malloc_targets =
+                    if is_malloc_lhost_exp exp then
+                        (* since two lhosts are returned every time below, only provide targets for the non-malloc lhost *)
+                        ([], [])
+                    else if Cil.isFunctionType typ then
+                        (* resolve function pointers *)
+                        let varinfo_targets, _ = resolve_exp exp in
+                        let varinfo_targets = List.filter (fun v -> accept_points_to pointer_type v.Cil.vtype) varinfo_targets in
+                        (varinfo_targets, [])
+                    else
+                        let deref_lhost = Cil.Mem exp in
+
+                        let malloc = (malloc_varinfo, name, typ) in
+                        let malloc_lhost = make_malloc_lhost typ in
+                        let malloc_targets = [ (malloc, [ deref_lhost; malloc_lhost ]) ] in
+
+                        let malloc_targets =
+                            if Cil.isArithmeticType typ then
+                                let array_typ = Cil.TArray (typ, array_size, []) in
+                                let malloc_array = (malloc_varinfo, name, array_typ) in
+                                let malloc_array_lhost = make_malloc_lhost array_typ in
+                                (malloc_array, [ deref_lhost; malloc_array_lhost ])::malloc_targets
+                            else malloc_targets
+                        in
+                        ([], malloc_targets)
+                in
+                unsound_wrap_points_to_varinfo (fun _ -> (varinfo_targets, malloc_targets)) exp
+            | _ ->
+                ([], [])
+    end
+
+
+(** Unsound point-to that maps each void pointer variable to zero or more distinct [malloc]s of types partially
+    determined from a pointer analysis, and every other pointer (variable or malloc'ed) to one or two distinct
+    [malloc]s: one of the pointer target type, and another of an array of size 1024 of the base type; and if
+    the pointer is a function pointer, all functions returned by {!Ptranal.resolve_exp} filtered by type.
+    Unlike unsound_points_to, this points_to calls unsound_wrap_points_to_varinfo which does not conservatively
+    assumes a pointer points to every field of its struct/array target.
+        @param file is the file being analyzed
+        @param exp is the expression to resolve
+        @return [(targets_list, target_mallocs)] where [target_list] is empty and [target_mallocs] contains a single
+                dynamic allocation site
+*)
+let really_unsound_typed_void_points_to =
+    let counter = Counter.make () in
+    fun file exp -> Profiler.global#call "CilPtranal.really_unsound_typed_void_points_to" begin fun () ->
+        init_file file;
+        match Cil.unrollType (Cil.typeOf exp) with
+            | Cil.TPtr (typ, _) when Cil.isVoidType typ ->
+                let malloc_varinfo = find_malloc file in
+                let make_malloc typ = ((malloc_varinfo, "malloc" ^ string_of_int (Counter.next counter), typ), [ make_malloc_lhost typ ]) in
+
+                let module TypeSet = Set.Make (CilData.CilCanonicalType) in
+                let target_vars, _ = Profiler.global#call "Ptranal.resolve_exp" (fun () -> Ptranal.resolve_exp exp) in
+                let target_types = List.fold_left begin fun target_types target_var ->
+                    TypeSet.add target_var.Cil.vtype target_types
+                end TypeSet.empty target_vars in
+                let targets = TypeSet.fold begin fun typ targets ->
+                    (make_malloc typ)::targets
+                end target_types [] in
+
+                unsound_wrap_points_to_varinfo (fun _ -> ([], targets)) exp
+            | _ ->
+                really_unsound_points_to file exp
     end
 
