@@ -32,9 +32,6 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
         Output.debug_printf "Failure function not found"
     end;
 
-    (* Setup max_function_name_length, to be used in set_output_formatter_interceptor *)
-    BackOtterInterceptor.set_max_function_name_length (entry_fn :: (CilCallgraph.find_transitive_callees file entry_fn));
-
     (* A queue that prioritizes jobs *)
     let queue = 
         if (!BidirectionalQueue.default_bidirectional_search_ratio) >= 1.0 then 
