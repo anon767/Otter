@@ -48,7 +48,7 @@ let default_queue = ref `RandomPath
 let rec get = function
     | `BreadthFirst -> new RankedQueue.t [ new BreadthFirstStrategy.t ]
     | `DepthFirst -> new RankedQueue.t [ new DepthFirstStrategy.t ]
-    | `RandomPath -> new RandomPathQueue.t
+    | `RandomPath -> new RandomPathQueue.t (fun _ -> true)
     | `Generational `BreadthFirst -> new RankedQueue.t [ new GenerationalStrategy.t; new BreadthFirstStrategy.t ]
     | `Generational `DepthFirst -> new RankedQueue.t [ new GenerationalStrategy.t; new DepthFirstStrategy.t ]
     | `Generational `Random -> new RankedQueue.t [ new GenerationalStrategy.t ]

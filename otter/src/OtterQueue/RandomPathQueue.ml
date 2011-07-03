@@ -50,15 +50,19 @@ module JobIndirectSet = struct
 end
 
 
-class ['self] t = object (_ : 'self)
+class ['self] t keep = object (self : 'self)
     (* zipper-based search queue context *)
     val context = `Top
     val leaves = RandomBag.empty
     val jobs = JobIndirectSet.empty
 
     method put job =
-        let jobs, job_id = JobIndirectSet.add job jobs in
-        {< leaves = RandomBag.put (`Job job_id) leaves; jobs = jobs >}
+        if keep job then
+            let jobs, job_id = JobIndirectSet.add job jobs in
+            {< leaves = RandomBag.put (`Job job_id) leaves; jobs = jobs >}
+        else 
+            let _ = OcamlUtilities.Output.debug_printf "Pruned job %d@\n" job#path_id in
+            self
 
     method remove job =
         {< jobs = JobIndirectSet.remove job jobs >}

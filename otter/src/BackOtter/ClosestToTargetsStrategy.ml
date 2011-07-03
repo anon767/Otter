@@ -66,20 +66,20 @@ let get_distances =
     fun ?(interprocedural=true) ({ Instruction.file = file; _ } as source) context ->
         get_distances interprocedural source context (BackOtterTargets.get_target_fundecs ()) (BackOtterTargetTracker.get_line_targets file)
 
+let weight ?interprocedural weight_fn job =
+    Profiler.global#call "BackOtter.ClosestToTargetsStrategy.weight" begin fun () ->
+        let source = Job.get_instruction job in
+        let context = Job.get_instruction_context job in
+        let distance = get_distances ?interprocedural source context in
+        Output.debug_printf "Job %d has distance to target = %d@\n" job#node_id distance;
+        weight_fn distance
+    end
 
 class ['self] t ?interprocedural weight_fn = object (self : 'self)
     method add job = self
 
     method remove job = self
 
-    method weights jobs = Profiler.global#call "ClosestToTargetsStrategy.weights" begin fun () ->
-        List.map begin fun job ->
-            let source = Job.get_instruction job in
-            let context = Job.get_instruction_context job in
-            let distance = get_distances ?interprocedural source context in
-            Output.debug_printf "Job %d has distance to target = %d@\n" job#node_id distance;
-            weight_fn distance
-        end jobs
-    end
+    method weights jobs = List.map (weight ?interprocedural weight_fn) jobs
 end
 
