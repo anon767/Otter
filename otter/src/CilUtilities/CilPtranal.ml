@@ -407,9 +407,10 @@ let unsound_points_to =
                         let malloc_targets =
                             if Cil.isArithmeticType typ then
                                 let array_typ = Cil.TArray (typ, array_size, []) in
+                                let deref_array_lhost = Cil.Mem (Cil.mkCast exp (Cil.TPtr (array_typ, []))) in
                                 let malloc_array = (malloc_varinfo, name, array_typ) in
                                 let malloc_array_lhost = make_malloc_lhost array_typ in
-                                (malloc_array, [ deref_lhost; malloc_array_lhost ])::malloc_targets
+                                (malloc_array, [ deref_array_lhost; malloc_array_lhost ])::malloc_targets
                             else
                                 malloc_targets
                         in
@@ -517,10 +518,12 @@ let really_unsound_points_to =
                         let malloc_targets =
                             if Cil.isArithmeticType typ then
                                 let array_typ = Cil.TArray (typ, array_size, []) in
+                                let deref_array_lhost = Cil.Mem (Cil.mkCast exp (Cil.TPtr (array_typ, []))) in
                                 let malloc_array = (malloc_varinfo, name, array_typ) in
                                 let malloc_array_lhost = make_malloc_lhost array_typ in
-                                (malloc_array, [ deref_lhost; malloc_array_lhost ])::malloc_targets
-                            else malloc_targets
+                                (malloc_array, [ deref_array_lhost; malloc_array_lhost ])::malloc_targets
+                            else
+                                malloc_targets
                         in
                         ([], malloc_targets)
                 in
