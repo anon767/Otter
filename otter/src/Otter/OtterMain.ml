@@ -47,7 +47,8 @@ let options =
     TrackingFunctions.options @
     Bytes.options @
     Output.options @
-    InitBytes.options
+    InitBytes.options @
+    CilUtilities.CilPtranal.options 
 
 let feature : featureDescr = {
 	fd_name = "otter";

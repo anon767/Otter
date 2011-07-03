@@ -478,9 +478,10 @@ let unsound_wrap_points_to_varinfo points_to_varinfo exp = Profiler.global#call 
     (target_varinfos, target_mallocs)
 end
 
+let unsound_array_size = ref 32
 
 (** Unsound point-to that maps each pointer to one or two distinct [malloc]s: one of the pointer target type, and
-    another of an array of size 1024 of the base type; and if the pointer is a function pointer, all functions 
+    another of an array of size [!unsound_array_size] of the base type; and if the pointer is a function pointer, all functions 
     returned by {!Ptranal.resolve_exp} filtered by type.
     Unlike unsound_points_to, this points_to calls unsound_wrap_points_to_varinfo which does not conservatively
     assumes a pointer points to every field of its struct/array target.
@@ -490,7 +491,7 @@ end
                 dynamic allocation site
 *)
 let really_unsound_points_to =
-    let array_size = Some (Cil.integer 1024) in
+    let array_size = Some (Cil.integer (!unsound_array_size)) in
     let counter = Counter.make () in
     let resolve_exp exp = Profiler.global#call "Ptranal.resolve_exp" (fun () -> Ptranal.resolve_exp exp) in
     fun file exp -> Profiler.global#call "CilPtranal.really_unsound_points_to" begin fun () ->
@@ -516,14 +517,11 @@ let really_unsound_points_to =
                         let malloc_targets = [ (malloc, [ deref_lhost; malloc_lhost ]) ] in
 
                         let malloc_targets =
-                            if Cil.isArithmeticType typ then
-                                let array_typ = Cil.TArray (typ, array_size, []) in
-                                let deref_array_lhost = Cil.Mem (Cil.mkCast exp (Cil.TPtr (array_typ, []))) in
-                                let malloc_array = (malloc_varinfo, name, array_typ) in
-                                let malloc_array_lhost = make_malloc_lhost array_typ in
-                                (malloc_array, [ deref_array_lhost; malloc_array_lhost ])::malloc_targets
-                            else
-                                malloc_targets
+                            let array_typ = Cil.TArray (typ, array_size, []) in
+                            let deref_array_lhost = Cil.Mem (Cil.mkCast exp (Cil.TPtr (array_typ, []))) in
+                            let malloc_array = (malloc_varinfo, name, array_typ) in
+                            let malloc_array_lhost = make_malloc_lhost array_typ in
+                            (malloc_array, [ deref_array_lhost; malloc_array_lhost ])::malloc_targets
                         in
                         ([], malloc_targets)
                 in
@@ -535,7 +533,7 @@ let really_unsound_points_to =
 
 (** Unsound point-to that maps each void pointer variable to zero or more distinct [malloc]s of types partially
     determined from a pointer analysis, and every other pointer (variable or malloc'ed) to one or two distinct
-    [malloc]s: one of the pointer target type, and another of an array of size 1024 of the base type; and if
+    [malloc]s: one of the pointer target type, and another of an array of size [!unsound_array_size] of the base type; and if
     the pointer is a function pointer, all functions returned by {!Ptranal.resolve_exp} filtered by type.
     Unlike unsound_points_to, this points_to calls unsound_wrap_points_to_varinfo which does not conservatively
     assumes a pointer points to every field of its struct/array target.
@@ -566,4 +564,10 @@ let really_unsound_typed_void_points_to =
             | _ ->
                 really_unsound_points_to file exp
     end
+
+let options = [
+    "--unsound-array-size",
+        Arg.Set_int unsound_array_size,
+        Printf.sprintf "<size> Set the unsound_array_size (default: %d)" (!unsound_array_size);
+]
 
