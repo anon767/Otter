@@ -1,3 +1,6 @@
+#ifdef CIL
+extern void __ASSERT(_Bool);
+#endif
 /* pr -- convert text files for printing.
    Copyright (C) 88, 91, 1995-2007 Free Software Foundation, Inc.
 
@@ -2666,8 +2669,12 @@ char_to_clump (char c)
 
       if (untabify_input)
 	{
-	  for (i = width; i; --i)
+	  for (i = width; i; --i){
+#ifdef CIL
+        __ASSERT(width - i < (8 > chars_per_input_tab ? 8 : chars_per_input_tab));
+#endif
 	    *s++ = ' ';
+      }
 	  chars = width;
 	}
       else
