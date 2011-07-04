@@ -129,7 +129,7 @@ let doit file =
 
     Output.printf "@\n@\nBackOtter: Bi-directional Symbolic Executor@\n@.";
 
-    UserSignal.using_signals begin fun () -> try
+    UserSignal.using_signals ~usr1_handler:(fun _ -> OtterExtensions.Gcov.flush_gcovfiles ()) begin fun () -> try
         Core.prepare_file file;
 
         let find_tag_name tag assocs = List.assoc tag (List.map (fun (a,b)->(b,a)) assocs) in

@@ -13,8 +13,9 @@ let default_timeout = ref 0
         - SIGINT from Ctrl-C raises {!UserInterrupt}
         - SIGALRM from an optional timeout raises {!TimedOut}
         - SIGQUIT from Ctrl-\ prints a backtrace
+        - SIGUSR1 user-specific signal handler
 *)
-let using_signals ?(timeout=(!default_timeout)) f =
+let using_signals ?(timeout=(!default_timeout)) ?(usr1_handler=(fun _ -> ())) f =
     (* first, get the original handlers; they can't be taken below since reset requires it *)
     let old_ALRM_handler_opt =
         if timeout < 0 then
@@ -26,6 +27,7 @@ let using_signals ?(timeout=(!default_timeout)) f =
     in
     let old_INT_handler = Sys.signal Sys.sigint Sys.Signal_ignore in
     let old_QUIT_handler = Sys.signal Sys.sigquit Sys.Signal_ignore in
+    let old_USR1_handler = Sys.signal Sys.sigusr1 Sys.Signal_ignore in
 
     (* clean up after any signal, or just before returning *)
     let reset () =
@@ -37,7 +39,8 @@ let using_signals ?(timeout=(!default_timeout)) f =
                 ()
         end;
         Sys.set_signal Sys.sigint old_INT_handler;
-        Sys.set_signal Sys.sigint old_QUIT_handler
+        Sys.set_signal Sys.sigint old_QUIT_handler;
+        Sys.set_signal Sys.sigint old_USR1_handler
     in
     let handle exn =
         Sys.Signal_handle (fun _ -> reset (); raise exn)
@@ -77,6 +80,9 @@ let using_signals ?(timeout=(!default_timeout)) f =
         end else
             ignore (Unix.waitpid [] child)
     end end;
+
+    (* USR1 *)
+    Sys.set_signal Sys.sigusr1 begin Sys.Signal_handle usr1_handler end;
 
     let x = f () in
     reset ();
