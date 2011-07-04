@@ -110,3 +110,23 @@ let fork_call ?time_limit:time_limit_opt (f : (unit -> 'a)) : 'a =
                 raise (ForkCallStopped i)
     end
 
+let mkdir_p path file_perm =
+    let rec ex path =
+        (Filename.basename path) :: (
+            match Filename.dirname path with
+            | "." -> [ "." ]
+            | "/" -> [ "/" ]
+            | d -> ex d
+        )
+    in
+    let dirs = List.rev (ex path) in
+    let cwd = Unix.getcwd () in
+    let rec mkdir_p = function
+        | [] -> ()
+        | "." :: dirs -> mkdir_p dirs
+        | "/" :: dirs -> Unix.chdir "/"; mkdir_p dirs
+        | ".." :: dirs -> Unix.chdir ".."; mkdir_p dirs
+        | d :: dirs -> (try Unix.mkdir d file_perm with Unix.Unix_error (Unix.EEXIST, "mkdir", _) -> () | e -> raise e); Unix.chdir d; mkdir_p dirs
+    in
+    mkdir_p dirs;
+    Unix.chdir cwd

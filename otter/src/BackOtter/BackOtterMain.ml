@@ -70,10 +70,11 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     (* Add the entryfn job *)
     let queue = queue#put entry_job in
 
-    (* Define interceptor *)
+    (* Define jnterceptor *)
     let interceptor =
         let (>>>) = Interceptor.(>>>) in
             BackOtterInterceptor.set_output_formatter_interceptor
+        >>> OtterExtensions.Gcov.interceptor
         >>> Interceptor.function_pointer_interceptor
         >>> BuiltinFunctions.interceptor
         >>> (
@@ -98,6 +99,9 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
         end
     in
     let queue, reporter = OtterDriver.Driver.main_loop step queue reporter in
+
+    (* Flush gcovfiles *)
+    OtterExtensions.Gcov.flush_gcovfiles ();
 
     (* Output failing paths for non-entry_fn *)
     List.iter (fun fundec ->
@@ -177,7 +181,8 @@ let options = [
     BackOtterTargetTracker.options @ 
     BackOtterUtilities.options @ 
     BidirectionalQueue.options @ 
-    FunctionRanker.options 
+    FunctionRanker.options @
+    OtterExtensions.Gcov.options 
 
 
 let feature = {

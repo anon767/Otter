@@ -43,6 +43,7 @@ module Make (Ord: Set.OrderedType) = struct
     let cardinal = M.cardinal
     let iter f s = M.iter (fun elt _ -> f elt) s
     let elements s = M.fold (fun elt t lst -> (elt, t)::lst) s []
+    let mem = M.mem
 
     let add elt s = 
         if M.mem elt s then 
