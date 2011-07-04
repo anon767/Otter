@@ -5,7 +5,7 @@ open Cil
 
 module LineSet = Job.LineSet
 
-let output_dir = ref "./gcov.out/"
+let gcov_out = ref "./gcov.out/"
 let arg_run_gcov = ref false
 
 let get_lines =
@@ -38,7 +38,7 @@ class gcovfile file filename = object (self)
             UnixPlus.mkdir_p dirname 0o755;
             open_out filename
         in
-        let outChan = open_out_with_mkdir ((!output_dir) ^ filename) in
+        let outChan = open_out_with_mkdir ((!gcov_out) ^ "/" ^ filename) in
         let f = Format.formatter_of_out_channel outChan in
         for i = 1 to Array.length lines - 1 do
             let (line, status) = lines.(i) in
@@ -93,4 +93,7 @@ let options = [
     "--gcov",
         Arg.Set arg_run_gcov,
         " Output gcov-like statistics";
+    "--gcov-out",
+        Arg.Set_string gcov_out,
+        Printf.sprintf "<dir> Set the directory storing gcov-like statistics (default: %s)" (!gcov_out);
 ]
