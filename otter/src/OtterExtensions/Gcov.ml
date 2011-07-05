@@ -43,7 +43,7 @@ class gcovfile file filename = object (self)
         let f = Format.formatter_of_out_channel outChan in
         for i = 1 to Array.length lines - 1 do
             let (line, status) = lines.(i) in
-            Format.fprintf f "%6s:%5d:%s\n" (get_status_count status) i line
+            Format.fprintf f "%9s:%5d:%s\n" (get_status_count status) i line
         done;
         close_out outChan
 
