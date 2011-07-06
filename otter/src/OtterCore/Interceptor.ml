@@ -99,7 +99,7 @@ let intercept_function_by_name_internal target_name replace_func job interceptor
             Output.set_mode Output.MSG_STMT;
             Output.printf "@[%a@\n<built-in function>@]@." Printcil.instr instr;
             begin try
-                let job = job#append_decision_path (Decision.DecisionFuncall(instr, varinfo)) in
+                let job = job#append_decision_path (Decision.make_Decision_Funcall(instr, varinfo)) in
                 replace_func job retopt exps
             with Not_applicable ->
                 interceptor job
