@@ -33,15 +33,15 @@ benchmarks = {
 strategies = {
     'InterSDSE'         : '--dobackotter --bidirectional-search-ratio=1.1 --forward-queue=backotter-closest-to-targets',
     'IntraSDSE'         : '--dobackotter --bidirectional-search-ratio=1.1 --forward-queue=backotter-closest-to-targets-intraprocedural',
-    'CCBSE(RandomPath)' : '--dobackotter --function-inlining --forward-queue=random-path --backward-queue=random-path --bidirectional-search-ratio=-1 --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry',
-    'CCBSE(InterSDSE)'  : '--dobackotter --function-inlining --forward-queue=backotter-closest-to-targets --backward-queue=backotter-closest-to-targets --bidirectional-search-ratio=-1 --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry',
-    'CCBSE(IntraSDSE)'  : '--dobackotter --function-inlining --forward-queue=backotter-closest-to-targets-intraprocedural --backward-queue=backotter-closest-to-targets-intraprocedural --bidirectional-search-ratio=-1 --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry',
+    'CCBSE(RandomPath)' : '--dobackotter --function-inlining --forward-queue=random-path --backward-queue=random-path --bidirectional-search-ratio=-1 --function-job-points-to=really-unsound-typed-void --backward-function-rank=closest-to-entry',
+    'CCBSE(InterSDSE)'  : '--dobackotter --function-inlining --forward-queue=backotter-closest-to-targets --backward-queue=backotter-closest-to-targets --bidirectional-search-ratio=-1 --function-job-points-to=really-unsound-typed-void --backward-function-rank=closest-to-entry',
+    'CCBSE(IntraSDSE)'  : '--dobackotter --function-inlining --forward-queue=backotter-closest-to-targets-intraprocedural --backward-queue=backotter-closest-to-targets-intraprocedural --bidirectional-search-ratio=-1 --function-job-points-to=really-unsound-typed-void --backward-function-rank=closest-to-entry',
     'OtterKLEE'         : '--dobackotter --bidirectional-search-ratio=1.1 --forward-queue=KLEE',
-    'Mix(OtterKLEE)'    : '--dobackotter --function-inlining --backward-queue=random-path --bidirectional-search-ratio=.5  --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry --forward-queue=KLEE',
+    'Mix(OtterKLEE)'    : '--dobackotter --function-inlining --backward-queue=random-path --bidirectional-search-ratio=.5  --function-job-points-to=really-unsound-typed-void --backward-function-rank=closest-to-entry --forward-queue=KLEE',
     'OtterSAGE'         : '--dobackotter --bidirectional-search-ratio=1.1 --forward-queue=SAGE',
-    'Mix(OtterSAGE)'    : '--dobackotter --function-inlining --backward-queue=random-path --bidirectional-search-ratio=.5  --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry --forward-queue=SAGE',
+    'Mix(OtterSAGE)'    : '--dobackotter --function-inlining --backward-queue=random-path --bidirectional-search-ratio=.5  --function-job-points-to=really-unsound-typed-void --backward-function-rank=closest-to-entry --forward-queue=SAGE',
     'RandomPath'        : '--dobackotter --bidirectional-search-ratio=1.1 --forward-queue=random-path',
-    'Mix(RandomPath)'   : '--dobackotter --function-inlining --backward-queue=random-path --bidirectional-search-ratio=.5  --function-job-points-to=unsound-typed-void --backward-function-rank=closest-to-entry --forward-queue=random-path',
+    'Mix(RandomPath)'   : '--dobackotter --function-inlining --backward-queue=random-path --bidirectional-search-ratio=.5  --function-job-points-to=really-unsound-typed-void --backward-function-rank=closest-to-entry --forward-queue=random-path',
 }
 
 options = {
