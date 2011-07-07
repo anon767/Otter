@@ -1,0 +1,24 @@
+#!/bin/sh
+
+if [ $# -lt 1 ]
+then
+    echo "Usage: $0 -SIGNAL <pid_from pid_to>"
+    exit
+fi
+
+signal=$1
+
+if [ $# -eq 3 ]
+then
+    pid_from=$2
+    pid_to=$3
+    for ((i=$pid_from;i<=$pid_to;i++))
+    do
+        echo kill process $i with $signal
+        kill $signal $i
+    done
+else
+    echo killall runotter.native with $signal
+    killall $signal runotter.native
+fi
+echo Done
