@@ -286,6 +286,28 @@ let soundness_testsuite = "Soundness" >::: [
                     return 0;
                 }
             "] end;
+
+        (* pointers to unions of different-sized fields should be dereference-able and the target values usable *)
+        test_symbolic_pointers ~label:"Dereference union pointer"
+            ~expect_return:[ 1; 2 ]
+            begin String.concat "" ["
+                union { char v; short w; int x; long y; long long z; } x, *p;
+                int foo(void) {
+                    if (p) {
+                        if (p->x) {
+                            return 1;
+                        } else {
+                            return 2;
+                        }
+                    }
+                    return 0;
+                }
+                int main(void) {
+                    p = &x;
+                    foo();
+                    return 0;
+                }
+            "] end;
     ];
 
     "Pointer to malloc'ed" >::: [
