@@ -337,7 +337,7 @@ let exec_stmt job = Profiler.global#call "Statement.exec_stmt" begin fun () ->
                         Output.printf "Unknown@.";
 
                         (* Create two jobs, one for each branch. The false branch
-                           inherits the old jid, and the true job gets a new jid. *)
+                           inherits the old path_id, and the true job gets a new path_id. *)
                         Output.set_mode Output.MSG_BRANCH;
                         Output.printf "@[Branching on @[%a@]@ at @[%a@].@]@." CilPrinter.exp exp Printcil.loc loc;
 
@@ -346,15 +346,15 @@ let exec_stmt job = Profiler.global#call "Statement.exec_stmt" begin fun () ->
 
                         let job, branch = (job : _ #Info.t)#fork [ false; true ] in
                         if not branch then begin
-                            (* the false branch will be processed first by #fork (giving it the original path id), so print it first *)
-                            Output.printf "Job %d is the false branch " job#path_id;
+                            (* the false branch will be processed first by #fork (giving it the original path id), so print it first (the node_id is printed) *)
+                            Output.printf "Job %d is the false branch " job#node_id;
                             let job = try_branch job (Some (logicalNot rv)) block2 in
                             let job = job#append_decision_path (Decision.make_Decision_Conditional(stmt, false)) in
                             let job = job#with_exHist (nextExHist (Some job#stmt) ~whichBranch:false) in
                             job
                         end else begin
-                            (* then the true branch will be processed, so print it next *)
-                            Output.printf "and job %d is the true branch.@\n@." job#path_id;
+                            (* then the true branch will be processed, so print it next (the node_id is printed) *)
+                            Output.printf "and job %d is the true branch.@\n@." job#node_id;
                             let job = try_branch job (Some rv) block1 in
                             let job = job#append_decision_path (Decision.make_Decision_Conditional(stmt, true)) in
                             let job = job#with_exHist (nextExHist (Some job#stmt) ~whichBranch:true) in

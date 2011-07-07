@@ -14,9 +14,9 @@ let multi_set_output_formatter job =
 	let loc = Job.get_loc job in
 	let label =
 		if loc = Cil.locUnknown then
-			Format.sprintf "[jid: %d, pid: %d] : " job#path_id job#pid
+			Format.sprintf "[jid: %d, pid: %d] : " job#node_id job#pid
 		else
-			Format.sprintf "[jid: %d, pid: %d] %s:%d : " job#path_id job#pid (Filename.basename loc.Cil.file) loc.Cil.line
+			Format.sprintf "[jid: %d, pid: %d] %s:%d : " job#node_id job#pid (Filename.basename loc.Cil.file) loc.Cil.line
 	in
 	Output.set_formatter (new Output.labeled label)
 

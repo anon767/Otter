@@ -326,7 +326,7 @@ let printPath job =
     let pc_all = PathCondition.clauses state.path_condition in
     let pc_branch, pc_assume = separate_assume state.path_condition in
 
-    Output.printf "Path condition for job %d:@\n  @[%a@]@\n@." job#path_id
+    Output.printf "Path condition for job %d:@\n  @[%a@]@\n@." job#node_id
         (FormatPlus.pp_print_list (BytesPrinter.bytes_named hist.bytesToVars) "@\n") pc_branch;
     Output.printf "Path condition (ASSUMEs):@\n  @[%a@]@\n@."
         (FormatPlus.pp_print_list (BytesPrinter.bytes_named hist.bytesToVars) "@\n") pc_assume;
