@@ -18,19 +18,28 @@ let get_lines =
             vis#lines
         end
 
-type line_status = Visit_count of int | Not_executable
-let get_status_count = function Visit_count 0 -> "#####" | Visit_count n -> string_of_int n | Not_executable -> "-"
-let update_status = function Visit_count(n) -> Visit_count(n+1) | Not_executable -> invalid_arg "non-executable line cannot be visited"
+module VisitCounter = struct
+    module IntSet = Set.Make( struct
+        type t = int
+        let compare = Pervasives.compare
+        end)
+    type t = Visit_count of IntSet.t| Not_executable
+    let get_count = function 
+        | Visit_count s ->
+            let size = IntSet.cardinal s in if size = 0 then "#####" else string_of_int size
+        | Not_executable -> "-"
+    let update_status node_id = function Visit_count s -> Visit_count (IntSet.add node_id s) | Not_executable -> invalid_arg "non-executable line cannot be visited"
+    let create is_executable = if is_executable then Visit_count IntSet.empty else Not_executable
+end
 
 class gcovfile file filename = object (self)
 
-    val mutable lines = Array.make 0 ("",Not_executable)
+    val mutable lines = Array.make 0 ("",VisitCounter.create false)
     val mutable filename_with_path = filename
 
-    (* TODO: make use of path_id *)
-    method update (path_id:int) linenum =
+    method update node_id linenum =
         let (line, status) = lines.(linenum) in
-        let status = update_status status in
+        let status = VisitCounter.update_status node_id status in
         lines.(linenum) <- (line, status)
 
     method flush =
@@ -43,7 +52,7 @@ class gcovfile file filename = object (self)
         let f = Format.formatter_of_out_channel outChan in
         for i = 1 to Array.length lines - 1 do
             let (line, status) = lines.(i) in
-            Format.fprintf f "%9s:%5d:%s\n" (get_status_count status) i line
+            Format.fprintf f "%9s:%5d:%s\n" (VisitCounter.get_count status) i line
         done;
         close_out outChan
 
@@ -68,7 +77,7 @@ class gcovfile file filename = object (self)
                 with Sys_error _ -> get_file_inchan paths)
         in
         let lines = get_file_inchan (!gcov_paths) in
-        let lines = Array.mapi (fun i line -> (line, if LineSet.mem (filename, i) lineset then Visit_count 0 else Not_executable)) lines in
+        let lines = Array.mapi (fun i line -> (line, VisitCounter.create (LineSet.mem (filename, i) lineset))) lines in
         self#set_lines lines
 
 end
@@ -95,11 +104,11 @@ let interceptor job interceptor =
     if not (!arg_run_gcov) || loc = Cil.locUnknown then interceptor job
     else
         let file = job#file in
-        let path_id = job#path_id in
+        let node_id = job#node_id in
         let filename = loc.file in
         let linenum = loc.line in
         let gcovfile = get_gcovfile file filename in
-        gcovfile#update path_id linenum;
+        gcovfile#update node_id linenum;
         interceptor job
 
 
