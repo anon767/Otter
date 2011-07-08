@@ -478,7 +478,7 @@ let unsound_wrap_points_to_varinfo points_to_varinfo exp = Profiler.global#call 
     (target_varinfos, target_mallocs)
 end
 
-let unsound_array_size = ref 32
+let unsound_array_size = ref 8
 
 (** Unsound point-to that maps each pointer to one or two distinct [malloc]s: one of the pointer target type, and
     another of an array of size [!unsound_array_size] of the base type; and if the pointer is a function pointer, all functions 
@@ -510,18 +510,12 @@ let really_unsound_points_to =
                         let varinfo_targets = List.filter (fun v -> accept_points_to pointer_type v.Cil.vtype) varinfo_targets in
                         (varinfo_targets, [])
                     else
-                        let deref_lhost = Cil.Mem exp in
-
-                        let malloc = (malloc_varinfo, name, typ) in
-                        let malloc_lhost = make_malloc_lhost typ in
-                        let malloc_targets = [ (malloc, [ deref_lhost; malloc_lhost ]) ] in
-
                         let malloc_targets =
                             let array_typ = Cil.TArray (typ, array_size, []) in
                             let deref_array_lhost = Cil.Mem (Cil.mkCast exp (Cil.TPtr (array_typ, []))) in
                             let malloc_array = (malloc_varinfo, name, array_typ) in
                             let malloc_array_lhost = make_malloc_lhost array_typ in
-                            (malloc_array, [ deref_array_lhost; malloc_array_lhost ])::malloc_targets
+                            [(malloc_array, [ deref_array_lhost; malloc_array_lhost ])]
                         in
                         ([], malloc_targets)
                 in
