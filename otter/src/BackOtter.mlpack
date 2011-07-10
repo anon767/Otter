@@ -12,6 +12,7 @@ BackOtter/BackOtterTargetTracker
 BackOtter/BackOtterTimer
 BackOtter/BackOtterUtilities
 BackOtter/BidirectionalQueue
+BackOtter/BuiltinFunctions
 BackOtter/ClosestToTargetsStrategy
 BackOtter/ContentQueue
 BackOtter/ExternalBoundingPath

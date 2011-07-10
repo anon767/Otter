@@ -77,6 +77,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
         >>> OtterExtensions.Gcov.interceptor
         >>> Interceptor.function_pointer_interceptor
         >>> BuiltinFunctions.interceptor
+        >>> OtterCore.BuiltinFunctions.interceptor
         >>> (
             let limit = !default_conditionals_forking_limit  in
             if limit < max_int then
