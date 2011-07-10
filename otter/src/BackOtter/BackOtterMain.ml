@@ -178,7 +178,6 @@ let options = [
     BackOtterTimer.options @ 
     BackOtterQueue.options @ 
     BackOtterJob.options @ 
-    BackOtterJobExtension.options @ 
     BackOtterTargetTracker.options @ 
     BackOtterUtilities.options @ 
     BidirectionalQueue.options @ 

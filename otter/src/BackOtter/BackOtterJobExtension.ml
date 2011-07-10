@@ -1,5 +1,7 @@
 open OtterCore
 
+let arg_enable_record_decision = ref true
+
 class t :
     object ('self)
         (** Bounding paths
@@ -58,5 +60,3 @@ class t :
 
     end
 
-let options = [
-]
