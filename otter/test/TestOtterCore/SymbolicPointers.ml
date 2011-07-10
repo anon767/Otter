@@ -246,15 +246,12 @@ let soundness_testsuite = "Soundness" >::: [
     ];
 
     "Unions" >::: [
-        (* there should be at least 1 aliasing conditions: p == &u.x *)
+        (* there should be at least 1 aliasing conditions: p == &u.x, and &u.x == &u.y from the union *)
         test_symbolic_pointers ~label:"Pointer into union"
             ~expect_return:[ 1 ]
             begin String.concat "" ["
                 int *p;
                 union { char a; int x; char b; int y; } u;
-                void nop1(int x) {}
-                void nop2(int x) {}
-                void nop3(int x) {}
                 int foo(void) {
                     if (p == &u.y) {
                         return 1;
