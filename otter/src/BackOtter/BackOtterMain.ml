@@ -52,10 +52,12 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
                     Output.debug_printf "(missing) ";
                     starter_fundecs (* There're lines that KLEE counts as instructions but Otter doesn't. *)
             ) FundecSet.empty (BackOtterTargetTracker.get_line_targets file) in
-            let starter_fundecs = List.fold_left (fun starter_fundecs fname -> FundecSet.add (FindCil.fundec_by_name file fname) starter_fundecs) starter_fundecs (!arg_starter_fnames) in
             let starter_fundecs = FundecSet.elements starter_fundecs in
 
             List.iter (fun f -> Output.debug_printf "Transitive callers of targets: %s@." f.svar.vname) starter_fundecs;
+
+            (* Mark user provided starter functions as ready *)
+            List.iter (fun fname -> FunctionRanker.add_artificially_ready (FindCil.fundec_by_name file fname)) (!arg_starter_fnames);
 
             let queue = new BidirectionalQueue.t file in
 
