@@ -1,3 +1,4 @@
+BackOtter/BackOtterBuiltinFunctions
 BackOtter/BackOtterErrors
 BackOtter/BackOtterFileJob
 BackOtter/BackOtterFunctionJob
@@ -12,7 +13,6 @@ BackOtter/BackOtterTargetTracker
 BackOtter/BackOtterTimer
 BackOtter/BackOtterUtilities
 BackOtter/BidirectionalQueue
-BackOtter/BuiltinFunctions
 BackOtter/ClosestToTargetsStrategy
 BackOtter/ContentQueue
 BackOtter/FunctionQueue

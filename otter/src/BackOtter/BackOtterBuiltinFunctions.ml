@@ -29,8 +29,8 @@ let interceptor job interceptor = Profiler.global#call "BackOtter.BuiltinFunctio
     try
         (
         (intercept_function_by_name_internal "__backotter_is_origin_function"         backotter_is_origin_function) @@
-        (intercept_function_by_name_internal "__backotter_enable_record_decisions"     backotter_enable_record_decisions) @@
-        (intercept_function_by_name_internal "__backotter_disable_record_decisions"    backotter_disable_record_decisions) @@
+        (intercept_function_by_name_internal "__backotter_enable_record_decisions"    backotter_enable_record_decisions) @@
+        (intercept_function_by_name_internal "__backotter_disable_record_decisions"   backotter_disable_record_decisions) @@
 
         (* pass on the job when none of those match *)
         interceptor
