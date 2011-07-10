@@ -9,6 +9,7 @@ open Job
 open Cil
 
 let default_conditionals_forking_limit = ref max_int
+let arg_starter_fnames = ref []
 
 let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
                           reporter file =
@@ -51,6 +52,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
                     Output.debug_printf "(missing) ";
                     starter_fundecs (* There're lines that KLEE counts as instructions but Otter doesn't. *)
             ) FundecSet.empty (BackOtterTargetTracker.get_line_targets file) in
+            let starter_fundecs = List.fold_left (fun starter_fundecs fname -> FundecSet.add (FindCil.fundec_by_name file fname) starter_fundecs) starter_fundecs (!arg_starter_fnames) in
             let starter_fundecs = FundecSet.elements starter_fundecs in
 
             List.iter (fun f -> Output.debug_printf "Transitive callers of targets: %s@." f.svar.vname) starter_fundecs;
@@ -174,6 +176,13 @@ let options = [
     "--conditionals-forking-limit",
         Arg.Set_int default_conditionals_forking_limit,
         "<limit> Set the limit in conditionals forking (default: max_int (== don't use))";
+    "--starter-functions",
+        Arg.String begin fun str ->
+            let args = Str.split (Str.regexp ",") str in
+            List.iter (fun fname -> arg_starter_fnames := fname :: (!arg_starter_fnames)) args
+        end,
+        "<fname[,fname]> Functions regarded as starter functions. Default is empty list.\n";
+        
 ] @
     BackOtterTimer.options @ 
     BackOtterQueue.options @ 
