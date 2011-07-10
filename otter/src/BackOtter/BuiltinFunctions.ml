@@ -16,11 +16,11 @@ let backotter_is_origin_function job retopt exps =
     let job = B.set_return_value job retopt truthvalue in
     B.end_function_call job
 
-let backotter_enable_record_decision job retopt exps =
+let backotter_enable_record_decisions job retopt exps =
     let job = job#with_enable_record_decisions true in
     B.end_function_call job
 
-let backotter_disable_record_decision job retopt exps =
+let backotter_disable_record_decisions job retopt exps =
     let job = job#with_enable_record_decisions false in
     B.end_function_call job
 
@@ -29,8 +29,8 @@ let interceptor job interceptor = Profiler.global#call "BackOtter.BuiltinFunctio
     try
         (
         (intercept_function_by_name_internal "__backotter_is_origin_function"         backotter_is_origin_function) @@
-        (intercept_function_by_name_internal "__backotter_enable_record_decision"     backotter_enable_record_decision) @@
-        (intercept_function_by_name_internal "__backotter_disable_record_decision"    backotter_disable_record_decision) @@
+        (intercept_function_by_name_internal "__backotter_enable_record_decisions"     backotter_enable_record_decisions) @@
+        (intercept_function_by_name_internal "__backotter_disable_record_decisions"    backotter_disable_record_decisions) @@
 
         (* pass on the job when none of those match *)
         interceptor
@@ -45,8 +45,8 @@ end
 let is_builtin =
     let builtins = [
         "__backotter_is_origin_function";
-        "__backotter_enable_record_decision";
-        "__backotter_disable_record_decision";
+        "__backotter_enable_record_decisions";
+        "__backotter_disable_record_decisions";
     ]
     in function name -> List.mem name builtins
 
