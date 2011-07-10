@@ -17,11 +17,11 @@ let backotter_is_origin_function job retopt exps =
     B.end_function_call job
 
 let backotter_enable_record_decision job retopt exps =
-    BackOtterJobExtension.arg_enable_record_decision := true;
+    let job = job#with_enable_record_decisions true in
     B.end_function_call job
 
 let backotter_disable_record_decision job retopt exps =
-    BackOtterJobExtension.arg_enable_record_decision := false;
+    let job = job#with_enable_record_decisions false in
     B.end_function_call job
 
 let interceptor job interceptor = Profiler.global#call "BackOtter.BuiltinFunctions.interceptor" begin fun () ->

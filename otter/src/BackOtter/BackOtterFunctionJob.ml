@@ -12,7 +12,7 @@ class ['abandoned, 'truncated] t file ?(points_to=(!FunctionJob.default_points_t
         inherit BackOtterJobExtension.t as b_super
 
         method append_decision_path decision = 
-            if !BackOtterJobExtension.arg_enable_record_decision then
+            if self#enable_record_decisions then
                 let job = job_super#append_decision_path decision in
                 job#postprocess_append_decision_path decision
             else self

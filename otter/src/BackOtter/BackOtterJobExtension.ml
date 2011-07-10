@@ -1,7 +1,5 @@
 open OtterCore
 
-let arg_enable_record_decision = ref true
-
 class t :
     object ('self)
         (** Bounding paths
@@ -19,6 +17,10 @@ class t :
         method latest_function_call: Cil.varinfo option 
         method clear_latest_function_call: 'self
 
+        (** Enable/disable recording decisions *)
+        method enable_record_decisions: bool
+        method with_enable_record_decisions : bool -> 'self
+
         (** This method updates bounding_paths and latest_function_call given the decision.
           * Used by BackOtterFileJob and BackOtterFunctionJob to override append_decision_path.
           *)
@@ -28,6 +30,10 @@ class t :
     end
 =
     object (self : 'self)
+        val mutable enable_record_decisions = true
+        method enable_record_decisions = enable_record_decisions
+        method with_enable_record_decisions enable_record_decisions = {< enable_record_decisions = enable_record_decisions >}
+
         val mutable bounding_paths = None
         method bounding_paths = bounding_paths
         method with_bounding_paths bounding_paths = {< bounding_paths = bounding_paths >}
@@ -55,6 +61,7 @@ class t :
                latest_function_call = latest_function_call >}
 
         method become (other : 'self) =
+            enable_record_decisions <- other#enable_record_decisions;
             bounding_paths <- other#bounding_paths;
             latest_function_call <- other#latest_function_call
 
