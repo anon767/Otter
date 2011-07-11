@@ -559,6 +559,11 @@ tac_file (const char *filename)
   return ok;
 }
 
+/**
+ *  BackOtter: split main into two functions
+ */
+int main2 (bool ok, char const *const *file);
+
 int
 main (int argc, char **argv)
 {
@@ -649,6 +654,25 @@ main (int argc, char **argv)
   if (O_BINARY && ! isatty (STDOUT_FILENO))
     freopen (NULL, "wb", stdout);
 
+  return main2(ok, file);
+}
+
+#ifdef CIL
+extern int __backotter_is_origin_function(void);
+extern void __backotter_enable_record_decisions(void);
+extern void __backotter_disable_record_decisions(void);
+extern void __otter_main_setup_fs(void);
+#endif
+
+int
+main2 (bool ok, char const *const *file)
+{
+#ifdef CIL
+  __backotter_disable_record_decisions();
+  if (__backotter_is_origin_function())
+      __otter_main_setup_fs();
+  __backotter_enable_record_decisions();
+#endif
   {
     size_t i;
     ok = true;
