@@ -48,7 +48,13 @@ let process_completed entry_fn (reason, job) =
                     (* Failing path has least recent decision first. See the comment in BidirectionalQueue. *)
                     let failing_path = DecisionPath.rev job#decision_path in
                     let is_new_path = BackOtterTargets.add_path fundec failing_path in
-                    if is_new_path then Job.Abandoned (`TargetReached reason)
+                    if is_new_path then 
+                        begin
+                            Output.set_mode Output.MSG_REPORT;
+                            Output.printf "@\nFailing path(s) for %s:@." fundec.svar.vname;
+                            Output.printf "Failing path: @[%a@]@." DecisionPath.print failing_path;
+                            Job.Abandoned (`TargetReached reason)
+                        end
                     else Job.Truncated (`SummaryAbandoned reason)
                 | _ ->
                     reason
