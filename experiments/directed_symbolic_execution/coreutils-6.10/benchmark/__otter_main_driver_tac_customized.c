@@ -11,8 +11,6 @@
 
 extern int main(int argc, char **argv);
 
-char* __otter_environ[MAX_ENVIRON+1];
-
 /* Allocate a char array of length (len+1), 
  * with all characters symbolic except the last one which is \0. */
 char* symbolic_string(int len) {
