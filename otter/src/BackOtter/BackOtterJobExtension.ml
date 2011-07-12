@@ -67,3 +67,9 @@ class t :
 
     end
 
+(* These functions, when invoked, will first run their built-in versions, and retract to C versions when fail. *)
+let disabled_record_decisions_fname = ["memcpy"; "memmove"; "memset"]
+
+let enable_record_decisions job =
+    let current_fundec = List.hd job#state.State.callstack in
+    (not (List.mem current_fundec.Cil.svar.Cil.vname disabled_record_decisions_fname)) && job#enable_record_decisions

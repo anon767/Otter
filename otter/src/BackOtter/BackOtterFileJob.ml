@@ -13,7 +13,7 @@ class ['abandoned, 'truncated] t file cmdline :
 
         (* TODO: can we not duplicate this in BackOtterFunctionJob? *)
         method append_decision_path decision = 
-            if self#enable_record_decisions then
+            if BackOtterJobExtension.enable_record_decisions self then
                 let job = job_super#append_decision_path decision in
                 job#postprocess_append_decision_path decision
             else self
