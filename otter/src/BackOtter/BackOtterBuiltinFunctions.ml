@@ -16,6 +16,13 @@ let backotter_is_origin_function job retopt exps =
     let job = B.set_return_value job retopt truthvalue in
     B.end_function_call job
 
+let backotter_origin_from_mainfn job retopt exps = 
+    let origin_fundec = BackOtterUtilities.get_origin_function job in
+    let mainfn = ProgramPoints.get_main_fundec job#file in
+    let truthvalue = if CilUtilities.CilData.CilFundec.equal origin_fundec mainfn then Bytes.bytes__one else Bytes.bytes__zero in
+    let job = B.set_return_value job retopt truthvalue in
+    B.end_function_call job
+
 let backotter_enable_record_decisions job retopt exps =
     let job = job#with_enable_record_decisions true in
     B.end_function_call job
@@ -29,6 +36,7 @@ let interceptor job interceptor = Profiler.global#call "BackOtter.BuiltinFunctio
     try
         (
         (intercept_function_by_name_internal "__backotter_is_origin_function"         backotter_is_origin_function) @@
+        (intercept_function_by_name_internal "__backotter_origin_from_mainfn"         backotter_origin_from_mainfn) @@
         (intercept_function_by_name_internal "__backotter_enable_record_decisions"    backotter_enable_record_decisions) @@
         (intercept_function_by_name_internal "__backotter_disable_record_decisions"   backotter_disable_record_decisions) @@
 
@@ -45,6 +53,7 @@ end
 let is_builtin =
     let builtins = [
         "__backotter_is_origin_function";
+        "__backotter_origin_from_mainfn";
         "__backotter_enable_record_decisions";
         "__backotter_disable_record_decisions";
     ]
