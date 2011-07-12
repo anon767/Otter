@@ -2,6 +2,7 @@ BackOtter/BackOtterBuiltinFunctions
 BackOtter/BackOtterErrors
 BackOtter/BackOtterFileJob
 BackOtter/BackOtterFunctionJob
+BackOtter/BackOtterGcov
 BackOtter/BackOtterInterceptor
 BackOtter/BackOtterJob
 BackOtter/BackOtterJobExtension

@@ -32,7 +32,7 @@ module VisitCounter = struct
     let create is_executable = if is_executable then Visit_count IntSet.empty else Not_executable
 end
 
-class gcovfile file filename = object (self)
+class gcovfile file filename outdir = object (self)
 
     val mutable lines = Array.make 0 ("",VisitCounter.create false)
     val mutable filename_with_path = filename
@@ -48,7 +48,7 @@ class gcovfile file filename = object (self)
             UnixPlus.mkdir_p dirname 0o755;
             open_out filename
         in
-        let outChan = open_out_with_mkdir (Filename.concat (!gcov_out) filename_with_path) in
+        let outChan = open_out_with_mkdir (Filename.concat outdir filename_with_path) in
         let f = Format.formatter_of_out_channel outChan in
         for i = 1 to Array.length lines - 1 do
             let (line, status) = lines.(i) in
@@ -91,7 +91,7 @@ module GcovHashtbl = Hashtbl.Make(struct
 let gcovs = GcovHashtbl.create 8
 
 let get_gcovfile file filename =
-    if not (GcovHashtbl.mem gcovs (file, filename)) then GcovHashtbl.add gcovs (file, filename) (new gcovfile file filename);
+    if not (GcovHashtbl.mem gcovs (file, filename)) then GcovHashtbl.add gcovs (file, filename) (new gcovfile file filename (!gcov_out));
     GcovHashtbl.find gcovs (file, filename)
 
 

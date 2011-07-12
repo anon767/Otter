@@ -48,7 +48,8 @@ let options =
     Bytes.options @
     Output.options @
     InitBytes.options @
-    CilUtilities.CilPtranal.options 
+    CilUtilities.CilPtranal.options @
+    OtterExtensions.Gcov.options
 
 let feature : featureDescr = {
 	fd_name = "otter";

@@ -78,7 +78,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     let interceptor =
         let (>>>) = Interceptor.(>>>) in
             BackOtterInterceptor.set_output_formatter_interceptor
-        >>> OtterExtensions.Gcov.interceptor
+        >>> BackOtterGcov.interceptor
         >>> Interceptor.function_pointer_interceptor
         >>> BackOtterBuiltinFunctions.interceptor
         >>> BuiltinFunctions.interceptor
@@ -106,7 +106,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     let queue, reporter = OtterDriver.Driver.main_loop step queue reporter in
 
     (* Flush gcovfiles *)
-    OtterExtensions.Gcov.flush_gcovfiles ();
+    BackOtterGcov.flush_gcovfiles ();
 
     (* Output failing paths for non-entry_fn *)
     List.iter (fun fundec ->
@@ -134,7 +134,7 @@ let doit file =
 
     Output.printf "@\n@\nBackOtter: Bi-directional Symbolic Executor@\n@.";
 
-    UserSignal.using_signals ~usr1_handler:(fun _ -> OtterExtensions.Gcov.flush_gcovfiles ()) begin fun () -> try
+    UserSignal.using_signals ~usr1_handler:(fun _ -> BackOtterGcov.flush_gcovfiles ()) begin fun () -> try
         Core.prepare_file file;
 
         let find_tag_name tag assocs = List.assoc tag (List.map (fun (a,b)->(b,a)) assocs) in
@@ -193,8 +193,7 @@ let options = [
     BackOtterTargetTracker.options @ 
     BackOtterUtilities.options @ 
     BidirectionalQueue.options @ 
-    FunctionRanker.options @
-    OtterExtensions.Gcov.options 
+    FunctionRanker.options
 
 
 let feature = {
