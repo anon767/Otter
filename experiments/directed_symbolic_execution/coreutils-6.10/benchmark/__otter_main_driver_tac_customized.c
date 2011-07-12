@@ -57,6 +57,9 @@ void __otter_main_setup_fs() {
     __otter_fs_fd_table = malloc(sizeof(int)*__otter_fs_MAX_FDS); /* local */
     memset(__otter_fs_fd_table, -1, __otter_fs_MAX_FDS*sizeof(int));
     __otter_fs_open_file_table = __otter_multi_gcalloc(sizeof(struct __otter_fs_open_file_table_entry), __otter_fs_MAX_OPEN_FILES);
+
+    /* open file(s), to make some fd available */
+    open ("/t", O_RDONLY /*| O_BINARY */);
 }
 
 #pragma cilnoremove("__otter_main_driver")
