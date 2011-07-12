@@ -34,6 +34,13 @@
 tac -r -s '.\|
 ' file */
 
+#ifdef CIL
+extern int __backotter_is_origin_function(void);
+extern void __backotter_enable_record_decisions(void);
+extern void __backotter_disable_record_decisions(void);
+extern void __otter_main_setup_fs(void);
+#endif
+
 #include <config.h>
 
 #include <stdio.h>
@@ -192,6 +199,12 @@ output (const char *start, const char *past_end)
 static bool
 tac_seekable (int input_fd, const char *file)
 {
+#ifdef CIL
+  __backotter_disable_record_decisions();
+  if (__backotter_is_origin_function())
+      __otter_main_setup_fs();
+  __backotter_enable_record_decisions();
+#endif
   /* Pointer to the location in `G_buffer' where the search for
      the next separator will begin. */
   char *match_start;
@@ -509,6 +522,12 @@ copy_to_temp (FILE **g_tmp, char **g_tempfile, int input_fd, char const *file)
 static bool
 tac_nonseekable (int input_fd, const char *file)
 {
+#ifdef CIL
+  __backotter_disable_record_decisions();
+  if (__backotter_is_origin_function())
+      __otter_main_setup_fs();
+  __backotter_enable_record_decisions();
+#endif
   FILE *tmp_stream;
   char *tmp_file;
   return (copy_to_temp (&tmp_stream, &tmp_file, input_fd, file)
@@ -522,6 +541,12 @@ tac_nonseekable (int input_fd, const char *file)
 static bool
 tac_file (const char *filename)
 {
+#ifdef CIL
+  __backotter_disable_record_decisions();
+  if (__backotter_is_origin_function())
+      __otter_main_setup_fs();
+  __backotter_enable_record_decisions();
+#endif
   bool ok;
   off_t file_size;
   int fd;
@@ -657,13 +682,6 @@ main (int argc, char **argv)
   return main2(ok, file);
 }
 
-#ifdef CIL
-extern int __backotter_is_origin_function(void);
-extern void __backotter_enable_record_decisions(void);
-extern void __backotter_disable_record_decisions(void);
-extern void __otter_main_setup_fs(void);
-#endif
-
 int
 main2 (bool ok, char const *const *file)
 {
@@ -680,10 +698,12 @@ main2 (bool ok, char const *const *file)
       ok &= tac_file (file[i]);
   }
 
+#ifndef CIL    // cannot reach target from this point
   /* Flush the output buffer. */
   output ((char *) NULL, (char *) NULL);
 
   if (have_read_stdin && close (STDIN_FILENO) < 0)
     error (EXIT_FAILURE, errno, "-");
   exit (ok ? EXIT_SUCCESS : EXIT_FAILURE);
+#endif
 }
