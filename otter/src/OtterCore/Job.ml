@@ -48,18 +48,13 @@ class ['abandoned, 'truncated] t file' fn :
 
         inherit State.t
         inherit [('abandoned, 'truncated) complete] Info.t
+        inherit InstructionInfo.t
 
         method exHist : executionHistory
         method with_exHist : executionHistory -> 'self
 
         method decision_path : DecisionPath.t
         method append_decision_path : Decision.t -> 'self
-
-        method instrList : Cil.instr list
-        method with_instrList : Cil.instr list -> 'self
-
-        method stmt : Cil.stmt
-        method with_stmt : Cil.stmt -> 'self
 
         method trackedFns : StringSet.t
         method with_trackedFns : StringSet.t -> 'self
@@ -78,6 +73,7 @@ class ['abandoned, 'truncated] t file' fn :
 
         inherit State.t as state_super
         inherit [('abandoned, 'truncated) complete] Info.t as info_super
+        inherit InstructionInfo.t (List.hd fn.Cil.sallstmts) as instr_info_super
 
         val mutable exHist = emptyHistory
         method exHist = exHist
@@ -87,16 +83,6 @@ class ['abandoned, 'truncated] t file' fn :
         val mutable decision_path = DecisionPath.empty
         method decision_path = decision_path
         method append_decision_path decision = {< decision_path = DecisionPath.add decision decision_path >}
-
-        (** [instr]s to execute before moving to the next [stmt] *)
-        val mutable instrList = []
-        method instrList = instrList
-        method with_instrList instrList = {< instrList = instrList >}
-
-        (** The next statement the job should execute *)
-        val mutable stmt = List.hd fn.Cil.sallstmts
-        method stmt = stmt
-        method with_stmt stmt = {< stmt = stmt >}
 
         (** The set of functions (names) in which to track coverage *)
         val mutable trackedFns = trackedFns'
@@ -129,11 +115,10 @@ class ['abandoned, 'truncated] t file' fn :
         method become (other : 'self) =
             state_super#become other;
             info_super#become other;
+            instr_info_super#become other;
             file <- other#file;
             exHist <- other#exHist;
             decision_path <- other#decision_path;
-            instrList <- other#instrList;
-            stmt <- other#stmt;
             trackedFns <- other#trackedFns;
             inTrackedFn <- other#inTrackedFn;
     end

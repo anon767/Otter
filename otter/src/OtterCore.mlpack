@@ -8,6 +8,7 @@ OtterCore/Errors
 OtterCore/Executeargs
 OtterCore/Expression
 OtterCore/ProgramPoints
+OtterCore/InstructionInfo
 OtterCore/Interceptor
 OtterCore/Info
 OtterCore/InitBytes
