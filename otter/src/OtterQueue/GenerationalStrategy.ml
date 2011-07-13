@@ -28,19 +28,19 @@ class ['self] t = object (self : 'self)
     val next = 1
 
     method add job =
-        let work = JobSet.add job#path_id work in
+        let work = JobSet.add job#node_id work in
         {< work = work >}
 
     method remove job =
         (* dequeue the job *)
         let next', work, queue =
-            if JobSet.mem job#path_id work then
-                let work = JobSet.remove job#path_id work in
+            if JobSet.mem job#node_id work then
+                let work = JobSet.remove job#node_id work in
                 (next, work, queue)
             else
                 try
-                    let generation, () = JobGeneration.lookup job#path_id queue in
-                    let queue = JobGeneration.delete job#path_id queue in
+                    let generation, () = JobGeneration.lookup job#node_id queue in
+                    let queue = JobGeneration.delete job#node_id queue in
                     (generation + 1, work, queue)
                 with JobGeneration.Key ->
                     raise Not_found
@@ -60,10 +60,10 @@ class ['self] t = object (self : 'self)
         if JobSet.is_empty work then
             try
                 let _, generation, () = JobGeneration.find_min queue in
-                List.map (fun job -> if fst (JobGeneration.lookup job#path_id queue) = generation then 1. else 0.) jobs
+                List.map (fun job -> if fst (JobGeneration.lookup job#node_id queue) = generation then 1. else 0.) jobs
             with JobGeneration.Key | JobGeneration.Empty ->
                 raise Not_found
         else
-            List.map (fun job -> if JobSet.mem job#path_id work then 1. else 0.) jobs
+            List.map (fun job -> if JobSet.mem job#node_id work then 1. else 0.) jobs
 end
 

@@ -336,8 +336,6 @@ let exec_stmt job = Profiler.global#call "Statement.exec_stmt" begin fun () ->
                     | Ternary.Unknown ->
                         Output.printf "Unknown@.";
 
-                        (* Create two jobs, one for each branch. The false branch
-                           inherits the old path_id, and the true job gets a new path_id. *)
                         Output.set_mode Output.MSG_BRANCH;
                         Output.printf "@[Branching on @[%a@]@ at @[%a@].@]@." CilPrinter.exp exp Printcil.loc loc;
 

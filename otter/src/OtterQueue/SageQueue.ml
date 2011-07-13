@@ -30,12 +30,12 @@ open OtterCore
 
 module Path = struct
     type t = {
-        path_id : int;
+        node_id : int;
         score : int;
     }
     let compare a b = 
         match Pervasives.compare a.score b.score with
-        | 0 -> Pervasives.compare a.path_id b.path_id
+        | 0 -> Pervasives.compare a.node_id b.node_id
         | i -> i
 end
 
@@ -58,7 +58,7 @@ class ['self] t = object (self : 'self)
     method put job = 
         begin match cur_parent with
             | None -> (* Very beginning *) ()
-            | Some parent -> assert(job#path_id = parent#path_id || job#parent_path_id = parent#path_id)
+            | Some parent -> assert(job#node_id = parent#node_id || job#parent_node_id = parent#node_id)
         end;
         {< cur_children = RandomBag.put job cur_children; >}
 
@@ -86,7 +86,7 @@ class ['self] t = object (self : 'self)
                         score, global_coveredBlocks
                     in
                     let path = {
-                        Path.path_id = parent#path_id;
+                        Path.node_id = parent#node_id;
                         Path.score = score;
                     } in
                     (PathMap.add path cur_branching_points completed_paths, global_coveredBlocks)

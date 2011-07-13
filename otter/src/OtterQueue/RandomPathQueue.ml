@@ -61,7 +61,7 @@ class ['self] t keep = object (self : 'self)
             let jobs, job_id = JobIndirectSet.add job jobs in
             {< leaves = RandomBag.put (`Job job_id) leaves; jobs = jobs >}
         else 
-            let _ = OcamlUtilities.Output.debug_printf "Pruned job %d@\n" job#path_id in
+            let _ = OcamlUtilities.Output.debug_printf "Pruned job %d@\n" job#node_id in
             self
 
     method remove job =
