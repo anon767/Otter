@@ -3,14 +3,17 @@
 open DataStructures
 open OcamlUtilities
 
+let path_counter = Counter.make ()
 let node_counter = Counter.make ()
 
 class ['complete] t :
     object ('self)
+        method path_id : int
         method node_id : int
         method path_length : int
+        method parent_path_id : int
         method parent_node_id : int
-        method parent_list : int list
+        method parent_list : (int * int) list
 
         method path_profiler : Profiler.t
         method node_profiler : Profiler.t
@@ -37,13 +40,16 @@ class ['complete] t :
         val fork_prompt = Delimcc.new_prompt ()
         val finish_prompt = Delimcc.new_prompt ()
 
+        val mutable path_id = Counter.next path_counter
         val mutable node_id = Counter.next node_counter
         val mutable path_length = 0
         val mutable parent_list = []
 
+        method path_id = path_id
         method node_id = node_id
         method path_length = path_length
-        method parent_node_id = List.hd parent_list
+        method parent_path_id = fst (List.hd parent_list)
+        method parent_node_id = snd (List.hd parent_list)
         method parent_list = parent_list
 
         val mutable path_profiler = new Profiler.t
@@ -110,7 +116,7 @@ class ['complete] t :
                         if keep_parent then
                             (parent_list, path_length)
                         else
-                            (node_id::parent_list, path_length + 1)
+                            ((path_id, node_id)::parent_list, path_length + 1)
                     in
                     let path_profiler = path_profiler#add node_profiler in
                     let node_profiler = node_profiler#reset in
@@ -125,7 +131,8 @@ class ['complete] t :
                                     self
                                 else
                                     {<
-                                        (* node_id is updated at every #fork, even if it's the only one *)
+                                        (* path_id is inherited by the first one, while node_id is updated at every #fork,
+                                         * even if it's the only one *)
                                         node_id = Counter.next node_counter;
                                         parent_list = parent_list;
                                         path_length = path_length;
@@ -140,7 +147,8 @@ class ['complete] t :
                             let active', complete' = Delimcc.push_delim_subcont sk begin fun () ->
                                 Profiler.global#restore profiler_context;
                                 let self = {<
-                                    (* TODO: should this section be merged with above? *)
+                                    (* others get new path_ids and node_ids *)
+                                    path_id = Counter.next path_counter;
                                     node_id = Counter.next node_counter;
                                     parent_list = parent_list;
                                     path_length = path_length;
@@ -165,7 +173,8 @@ class ['complete] t :
             execution [x] with different ids and an element from [list] as a pair. The list of results returned by
             [x#run] will include results from the forked executions.
 
-            All forked objects will be given fresh [node_id]s, enforcing the execution tree id scheme.
+            The first forked object will inherit the [path_id] of [x] with a new [node_id];while the remaining objects
+            will be given fresh [path_id]s and [node_id]s, thereby enforcing the execution tree id scheme.
 
             In addition, profiling data for the node represented by [x] will be printed if enabled, and the data will
             be added to the path represented by [x] before forking.
@@ -196,7 +205,7 @@ class ['complete] t :
             let old_mode = Output.get_mode () in
             Output.set_mode Output.MSG_PROFILING;
             Output.printf "== Profile for node %d ==@\n@[%t@]@." node_id node_profiler#printer;
-            Output.printf "== Profile for path %d ==@\n@[%t@]@." node_id path_profiler#printer;
+            Output.printf "== Profile for path %d ==@\n@[%t@]@." path_id path_profiler#printer;
             Output.set_mode old_mode;
 
             Delimcc.abort finish_prompt (`Complete (complete, {< path_profiler = path_profiler >}))
@@ -225,13 +234,13 @@ class ['complete] t :
                     catch_finish x
 
 
-        (** [x#clone] is a convenience function that returns a copy of [x] but with new [node_id], but
+        (** [x#clone] is a convenience function that returns a copy of [x] but with new [path_id] and [node_id], but
             the same [parent_id]. If [x#clone] is called within a call to [x#run], an [Invalid_argument] exception
             will be raised; [x#fork] should be used instead.
          *)
         method clone =
             if Delimcc.is_prompt_set fork_prompt then invalid_arg "Info.t#clone: cannot be called within Info.t#run";
-            {< node_id = Counter.next node_counter >}
+            {< path_id = Counter.next path_counter; node_id = Counter.next node_counter >}
 
 
         (** [x#profile_call label fn] profiles the call to [fn] and records it under [label]. The function [fn] is
@@ -254,6 +263,7 @@ class ['complete] t :
 
 
         method become (other : 'self) =
+            path_id <- other#path_id;
             node_id <- other#node_id;
             parent_list <- other#parent_list;
             path_length <- other#path_length;
