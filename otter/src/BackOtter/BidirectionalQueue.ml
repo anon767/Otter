@@ -43,7 +43,10 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
              *      bound the job and put it in bounded_jobqueue.
              *)
             match job#bounding_paths with
-            | Some [] -> self (* Discard *)
+            | Some [] -> (* Discard *)
+                 Output.set_mode Output.MSG_REPORT;
+                 Output.printf "Discard out-of-bound job %d@\n" job#node_id;
+                 self 
             | Some bounding_paths -> {< bounded_jobqueue = bounded_jobqueue#put job >}
             | None -> Profiler.global#call "BidirectionalQueue.t#put/regular_parent" begin fun () ->
                 (* Regular. Check if the job is a function call to a target function *)
