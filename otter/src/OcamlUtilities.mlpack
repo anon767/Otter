@@ -1,6 +1,7 @@
 OcamlUtilities/FormatPlus
 OcamlUtilities/ListPlus
 OcamlUtilities/Memo
+OcamlUtilities/Module
 OcamlUtilities/Output
 OcamlUtilities/Profiler
 OcamlUtilities/UnixPlus

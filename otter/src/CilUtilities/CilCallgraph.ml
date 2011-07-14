@@ -93,12 +93,7 @@ let find_transitive_callees =
 
 (** Find the distance between two {!Cil.fundecs}. *)
 let get_distance =
-    let module Memo = OcamlUtilities.Memo.Make (struct
-        type t = CilData.CilFile.t * CilData.CilFundec.t * CilData.CilFundec.t
-        let hash (file, f1, f2) = Hashtbl.hash (CilData.CilFile.hash file, CilData.CilFundec.hash f1, CilData.CilFundec.hash f1)
-        let equal (xfile, xf1, xf2) (yfile, yf1, yf2) =
-            CilData.CilFile.equal xfile yfile && CilData.CilFundec.equal xf1 yf1 && CilData.CilFundec.equal xf2 yf2
-    end) in
+    let module Memo = OcamlUtilities.Memo.Make (OcamlUtilities.Module.CombineHashedTypes3 (CilData.CilFile) (CilData.CilFundec) (CilData.CilFundec)) in
     let get_distance = Memo.memo "CilCallgraph.get_distance"
         begin fun (file, f1, f2) ->
             let rec bfs = function
