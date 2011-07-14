@@ -6,6 +6,7 @@ BackOtter/BackOtterGcov
 BackOtter/BackOtterInterceptor
 BackOtter/BackOtterJob
 BackOtter/BackOtterJobExtension
+BackOtter/FunctionManager
 BackOtter/BackOtterMain
 BackOtter/BackOtterQueue
 BackOtter/BackOtterReporter

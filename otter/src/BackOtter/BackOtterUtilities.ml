@@ -7,8 +7,6 @@ open State
 open Cil
 
 
-let arg_function_inlining = ref false
-
 let rev_equals =
     let module Memo = Memo.Make (struct
         type t = (Decision.t -> Decision.t -> bool) * DecisionPath.t * DecisionPath.t * int
@@ -31,7 +29,6 @@ let rev_equals =
     end
 
 
-
 let get_origin_function =
     let rec get_last_element = function
         | [ x ] -> x
@@ -43,28 +40,3 @@ let get_origin_function =
             get_last_element job#state.callstack
         end
 
-
-
-(* Returns a function that callee can transitively be inlined in *)
-let rec get_transitive_unique_caller file callee = 
-    let can_inline_function caller callee =
-        if (!arg_function_inlining) then
-            (* Either caller is "simple", or callee is "main". The latter is a hack. *)
-            let ret = 
-                callee.svar.vname = "main" ||
-                match caller.smaxstmtid with Some size -> size < 5 | None -> false  (* TODO: true if caller does not branch *)
-            in
-            (if ret then Output.debug_printf "Inline %s in %s@." callee.svar.vname caller.svar.vname);
-            ret
-        else
-            false
-    in
-    match CilCallgraph.find_callers file callee with
-    | [ caller ] when can_inline_function caller callee -> get_transitive_unique_caller file caller
-    | _ -> callee
-
-let options = [
-	"--function-inlining",
-		Arg.Set arg_function_inlining,
-		" Enable function inlining in BackOtter";
-] 

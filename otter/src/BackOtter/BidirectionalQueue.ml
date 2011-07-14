@@ -117,7 +117,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                     let want_process_entryfn =
                         (* if ratio <= 0.0 (i.e., pure Backward) AND entry_fn is a caller to some
                          * target, ALWAYS want to process entry_fn. *)
-                        if ratio <= 0.0 && FunctionRanker.is_ready file entry_fn then true else
+                        if ratio <= 0.0 && FunctionManager.is_ready_to_run file entry_fn then true else
                         let entryfn_time_elapsed, otherfn_time_elapsed = !BackOtterTimer.timer_ref in
                         let total_elapsed = entryfn_time_elapsed +. otherfn_time_elapsed in
                         if total_elapsed <= 0.0001 (* epsilon *) then ratio > 0.0

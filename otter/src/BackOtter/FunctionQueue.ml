@@ -34,13 +34,10 @@ class ['self] t rank_fn queue_constructor = object (self : 'self)
 
     method get =
         Profiler.global#call "FunctionQueue.t#get" begin fun () ->
-            FundecMap.iter (
-                fun fundec (file, _, count) -> 
-                    if count = 0 && FunctionRanker.is_ready file fundec then 
-                        let callers = CilUtilities.CilCallgraph.find_callers file fundec in
-                        let callers = List.map (BackOtterUtilities.get_transitive_unique_caller file) callers in
-                        List.iter (fun caller -> FunctionRanker.add_artificially_ready caller) callers
-                ) fundec_map;
+            (* TODO: when a function is completely executed, consider making its callers ready,
+             *       because if we initialize a function unsoundly, we can miss paths to target.
+             *       This can be done by FunctionManager.add_madeready fundec.
+             *)
             let lst = FundecMap.fold (fun fundec (file, _, count) lst -> if count > 0 then (file, fundec) :: lst else lst) fundec_map [] in
             if lst = [] then None
             else

@@ -2,32 +2,9 @@ open CilUtilities
 open OcamlUtilities
 open OtterCore
 
-module FundecSet = Set.Make(CilUtilities.CilData.CilFundec) 
-
-let artificially_ready = ref FundecSet.empty
-
-let add_artificially_ready fundec =
-    artificially_ready := FundecSet.add fundec (!artificially_ready)
-
-let is_ready file fundec =
-    OcamlUtilities.Profiler.global#call "FunctionRanker.is_ready" begin fun () ->
-        (* TODO: this is slightly slow. Improve its performnce. *)
-        let target_fundecs = BackOtterTargets.get_target_fundecs () in
-        let line_target_fundecs =
-            let line_targets = BackOtterTargetTracker.get_line_targets file in
-            List.map (fun line_target -> line_target.OtterCFG.Instruction.fundec) line_targets
-        in
-        let callers = List.fold_left (fun callers target_fundec -> List.fold_left (fun callers f -> FundecSet.add f callers) callers (CilUtilities.CilCallgraph.find_callers file target_fundec)) FundecSet.empty target_fundecs in
-        let callers = FundecSet.fold (fun caller callers -> FundecSet.add (BackOtterUtilities.get_transitive_unique_caller file caller) callers) callers FundecSet.empty in
-        List.memq fundec target_fundecs (* Functions containing paths reaching line targets *)
-        || List.memq fundec line_target_fundecs (* Functions containing line targets *)
-        || FundecSet.mem fundec callers (* (Transitive unique) callers of functions in target_fundecs *)
-        || FundecSet.mem fundec (!artificially_ready) (* Some functions "artificially" made ready by the FunctionQueue *)
-    end
-
 (** Evaluation function used by ranker, smaller the better *)
 let distance_from_entryfn (file, fundec) =
-    if is_ready file fundec then
+    if FunctionManager.is_ready_to_run file fundec then
         let entry_fn = ProgramPoints.get_entry_fundec file in
         let distance = CilCallgraph.get_distance file entry_fn fundec in
         float_of_int distance

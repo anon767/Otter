@@ -9,7 +9,6 @@ open Job
 open Cil
 
 let default_conditionals_forking_limit = ref max_int
-let arg_starter_fnames = ref []
 
 let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
                           reporter file =
@@ -55,9 +54,6 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
             let starter_fundecs = FundecSet.elements starter_fundecs in
 
             List.iter (fun f -> Output.debug_printf "Transitive callers of targets: %s@." f.svar.vname) starter_fundecs;
-
-            (* Mark user provided starter functions as ready *)
-            List.iter (fun fname -> FunctionRanker.add_artificially_ready (FindCil.fundec_by_name file fname)) (!arg_starter_fnames);
 
             let queue = new BidirectionalQueue.t file in
 
@@ -178,22 +174,15 @@ let options = [
     "--conditionals-forking-limit",
         Arg.Set_int default_conditionals_forking_limit,
         "<limit> Set the limit in conditionals forking (default: max_int (== don't use))";
-    "--starter-functions",
-        Arg.String begin fun str ->
-            let args = Str.split (Str.regexp ",") str in
-            List.iter (fun fname -> arg_starter_fnames := fname :: (!arg_starter_fnames)) args
-        end,
-        "<fname[,fname]> Functions regarded as starter functions. Default is empty list.\n";
-        
 ] @
     BackOtterTimer.options @ 
     BackOtterQueue.options @ 
     BackOtterJob.options @ 
     BackOtterFunctionJob.options @ 
     BackOtterTargetTracker.options @ 
-    BackOtterUtilities.options @ 
     BidirectionalQueue.options @ 
-    FunctionRanker.options
+    FunctionRanker.options @
+    FunctionManager.options
 
 
 let feature = {
