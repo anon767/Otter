@@ -115,6 +115,9 @@ let end_function_call job =
 			exHist
 	in
 
+    (* Pop the caller_list in InstructionInfo.t *)
+    let job = job#force_return in
+
 	(* Update the state, program counter, and coverage  *)
 	((job#with_stmt stmt)#with_exHist exHist)#with_instrList []
 
