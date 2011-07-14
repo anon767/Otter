@@ -7,8 +7,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#define MAX_ARGC  4
-
 extern int main(int argc, char **argv);
 
 /* Allocate a char array of length (len+1), 
@@ -49,14 +47,29 @@ void __otter_main_setup_fs() {
     (*root).permissions = 0x01ED;
 
     // Setup a file named "t" in root which has size 1
-    int size = 1;
-    char* s = symbolic_string(size);
+#define MAX_SIZE  1
+    int size = MAX_SIZE;
+    char* s = symbolic_string(MAX_SIZE);
     __otter_fs_touch_with_data("t", __otter_fs_root, s, size);
+
+    struct __otter_fs_dnode* dev = __otter_fs_root; //__otter_fs_mkdir("dev", root);
+    struct __otter_fs_inode* tty = __otter_fs_touch("s", dev);
+
+    (*tty).permissions = 0x01B6;
+    (*tty).type = __otter_fs_TYP_TTY;
+    (*dev).permissions = 0x01FF;
 
     /* mark all file descriptors and file table entries as unused */
     __otter_fs_fd_table = malloc(sizeof(int)*__otter_fs_MAX_FDS); /* local */
     memset(__otter_fs_fd_table, -1, __otter_fs_MAX_FDS*sizeof(int));
     __otter_fs_open_file_table = __otter_multi_gcalloc(sizeof(struct __otter_fs_open_file_table_entry), __otter_fs_MAX_OPEN_FILES);
+
+    stdin  = fopen("/s", "r"); // assert: fopen returns 0  
+    __ASSERT(fileno(stdin)==0);
+    //stdout = fopen("/s", "w"); // assert: fopen returns 1   
+    //__ASSERT(fileno(stdout)==1);
+    //stderr = fopen("/s", "w"); // assert: fopen returns 2 
+    //__ASSERT(fileno(stderr)==2);
 
     /* open file(s), to make some fd available */
     open ("/t", O_RDONLY /*| O_BINARY */);
@@ -75,7 +88,7 @@ int __otter_main_driver() {
     __ASSUME(argc<=MAX_ARGC);
 
     // Set up argv
-    int arg_lengths[] = {1,2,2,2}; //{MAX_ARG_LENGTHS};
+    int arg_lengths[] = {MAX_ARG_LENGTHS};
     argv[0] = strdup("p");  // name of the program
     for (i=1;i<MAX_ARGC;i++) {
         argv[i] = symbolic_string(arg_lengths[i]);
