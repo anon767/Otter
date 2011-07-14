@@ -237,13 +237,14 @@ module Ocamlbuild_patches = struct
             | _::tail -> scan_include_dirs spec tail
             | [] -> spec
         in
-        flag ["ocaml"; "doc"] (scan_include_dirs N !Options.ocaml_lflags);
+        flag ["ocaml"; "doc"] (scan_include_dirs N !Options.ocaml_lflags)
 
 
+    let after_rules () =
         (* Workaround for "The implementation (obtained by packing) does not match the interface" errors, which seems
-           to be due to the presence of the fake mli file.
+             to be due to the presence of the fake mli file.
         *)
-        (* copied from Ocaml_specific.ml and Ocaml_compiler.ml *)
+        (* copied from ocaml_specific.ml and ocaml_compiler.ml *)
         let ocamlopt_p tags deps out =
             (* from Ocaml_compiler.ml:
                     Cmd(S[A"touch"; P mli; Sh" ; if "; cmd; Sh" ; then "; rm; Sh" ; else "; rm; Sh" ; exit 1; fi"])
@@ -271,17 +272,32 @@ module Ocamlbuild_patches = struct
         in
         let native_profile_pack_mlpack = link_from_file native_profile_pack_modules in
 
+        (* Insert the override rules just before the built-in rules, to maintain the rule resolution order.
+
+           For some reason, ocamlbuild generates wildly different inputs for the dependency analysis of %.cmi,
+           %.cmo and %cmx files, which occasionally leads to dependency results with slightly different ordering that
+           causes "make inconsistent assumptions over interface" errors.
+
+           I haven't figured out exactly, but it seems, by accident, the order of built-in rules masks this error in
+           in that when such a conflict occurs, the respective rules will be retriggered, causing the %.cm[ox] file
+           to be (unnecessarily) recompiled, thus hiding the conflict with the %.cmi file for the rest of the build.
+
+           FIXME: this means that the %.cmi file will always be inconsistent with either the %.cmo or the %.cmx file,
+           which is a problem if the %.cmi file is to be distributed in a library.
+         *)
         rule "(override) ocaml: mlpack & cmi & cmx* & o* -> cmx & o"
+            ~insert:(`before "ocaml: mlpack & cmi & cmx* & o* -> cmx & o")
             ~tags:["ocaml"; "native"]
             ~prods:["%.cmx"; "%" -.- !Options.ext_obj; "%.cmi"]
             ~deps:["%.mlpack"]
             (native_pack_mlpack "%.mlpack" "%.cmx");
 
         rule "(override) ocaml: mlpack & cmi & p.cmx* & p.o* -> p.cmx & p.o"
+            ~insert:(`before "ocaml: mlpack & cmi & p.cmx* & p.o* -> p.cmx & p.o")
             ~tags:["ocaml"; "profile"; "native"]
             ~prods:["%.p.cmx"; "%.p" -.- !Options.ext_obj; "%.cmi"]
             ~deps:["%.mlpack"]
-            (native_profile_pack_mlpack "%.mlpack" "%.p.cmx");
+            (native_profile_pack_mlpack "%.mlpack" "%.p.cmx")
 end
 
 
@@ -294,6 +310,7 @@ let _ = dispatch begin function
         OCamlFind.after_rules ();
         OCamlDoc.after_rules ();
         OCamlDoc_DotPack.after_rules ();
+        Ocamlbuild_patches.after_rules ()
     | _ ->
         ()
 end
