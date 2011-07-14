@@ -18,7 +18,7 @@ benchmarks = {
             'seq'    : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/seq_comb.c"     -DMAX_ARGC=4 -DMAX_ARG_LENGTHS=1,10,2,2   -D__OTTER_LONG_DOUBLE_FORMAT_BOUNDS_CHECKING --noUseLogicalOperators',
             'md5sum' : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/md5sum_comb.c"  -DMAX_ARGC=4 -DMAX_ARG_LENGTHS=1,10,2,2   -D__OTTER_SETUP_FILE_SYSTEM --line-targets=@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/../src/md5sum.c:213',
             },
-        'command' : '"@trunk@/newlib-1.19.0/otter/otter-with-libc" "@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/__otter_main_driver.c" "@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/__otter_poi.c" --mainfn=__otter_main_driver -lm --timeout=1800'
+        'command' : '"@trunk@/newlib-1.19.0/otter/otter-with-libc" "@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/__otter_main_driver.c" "@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/__otter_poi.c" --mainfn=__otter_main_driver -lm --timeout=1800 --bypassed-functions=main'
         },
     'synthetic' : {
         'programs' : {
