@@ -26,6 +26,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
     object (self : 'self)
         val entryfn_jobqueue = new ContentQueue.t f_queue
         val otherfn_jobqueue = new ContentQueue.t b_queue
+        val timer = new BackOtterTimer.t
         (* fundecs whose initialized jobs have been created *)
 
         (* A worklist for bounded jobs. TODO: maybe Random-path is better? *)
@@ -94,6 +95,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
             Profiler.global#call "BidirectionalQueue.t#get" begin fun () ->
                 (* Clear the label, as anything printed here has no specific job context *)
                 Output.set_formatter (new Output.plain);
+
                 (* 
                  * If the bounded_jobqueue is nonempty, return bounded_jobqueue#get.
                  * Else if there exists a new failing path, update all job's bounding paths
@@ -118,7 +120,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                         (* if ratio <= 0.0 (i.e., pure Backward) AND entry_fn is a caller to some
                          * target, ALWAYS want to process entry_fn. *)
                         if ratio <= 0.0 && FunctionManager.is_ready_to_run file entry_fn then true else
-                        let entryfn_time_elapsed, otherfn_time_elapsed = !BackOtterTimer.timer_ref in
+                        let entryfn_time_elapsed, otherfn_time_elapsed = timer#time_elapsed in
                         let total_elapsed = entryfn_time_elapsed +. otherfn_time_elapsed in
                         if total_elapsed <= 0.0001 (* epsilon *) then ratio > 0.0
                         else entryfn_time_elapsed /. total_elapsed <= ratio
@@ -131,6 +133,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                             Some ({<
                                 entryfn_jobqueue = entryfn_jobqueue;
                                 otherfn_jobqueue = otherfn_jobqueue;  (* might have been added with new jobs from above *)
+                                timer = timer#time_entryfn;
                             >}, job)
                         | None -> failwith "This is unreachable"
                         end
@@ -142,6 +145,7 @@ class ['job] t ?(ratio=(!default_bidirectional_search_ratio))
                             Some ({<
                                 entryfn_jobqueue = entryfn_jobqueue;
                                 otherfn_jobqueue = otherfn_jobqueue;
+                                timer = timer#time_otherfn;
                             >}, job)
                         | None -> failwith "This is unreachable"
                         end

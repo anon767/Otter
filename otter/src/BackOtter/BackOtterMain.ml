@@ -14,7 +14,6 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
                           reporter file =
 
     Random.init random_seed;
-    BackOtterTimer.reset_time ();
     BackOtterTargets.reset_targets ();
 
     let entry_job = BackOtterJob.get_default file in
@@ -87,17 +86,9 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
         )
     in
     let step job =
-        DataStructures.NamedCounter.incr "step";
-        (* The difference between timing here and timing in BidirectionalQueue is that
-         * here we only time the stepping of the job, whereas in BidirectionalQueue we
-         * also include the time of getting a job. *)
-        let fundec = BackOtterUtilities.get_origin_function job in
-        let tkind = if fundec == entry_fn then `TKindEntry else `TKindOther in
-        BackOtterTimer.time tkind begin fun () ->
-            (job : _ #Info.t)#try_run
-                (fun job -> interceptor job Statement.step)
-                ~catch_finish:(BackOtterTargetTracker.process_completed entry_fn)
-        end
+        (job : _ #Info.t)#try_run
+            (fun job -> interceptor job Statement.step)
+            ~catch_finish:(BackOtterTargetTracker.process_completed entry_fn)
     in
     let queue, reporter = OtterDriver.Driver.main_loop step queue reporter in
 
