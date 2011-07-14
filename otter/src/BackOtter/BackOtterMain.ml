@@ -94,6 +94,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
 
     (* Flush gcovfiles *)
     BackOtterGcov.flush_gcovfiles ();
+    OtterExtensions.CProfiler.flush ();
 
     (* Output failing paths for non-entry_fn *)
     List.iter (fun fundec ->
