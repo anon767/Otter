@@ -31,6 +31,12 @@ let backotter_disable_record_decisions job retopt exps =
     let job = job#with_enable_record_decisions false in
     B.end_function_call job
 
+let backotter_is_bounded job retopt exps =
+    let is_bounded = match job#bounding_paths with None -> false | Some _ -> true in
+    let truthvalue = if is_bounded then Bytes.bytes__one else Bytes.bytes__zero in
+    let job = B.set_return_value job retopt truthvalue in
+    B.end_function_call job
+
 let interceptor job interceptor = Profiler.global#call "BackOtter.BuiltinFunctions.interceptor" begin fun () ->
     (* Whenever a new builtin function is added, put it in is_builtin also. *)
     try
@@ -39,6 +45,7 @@ let interceptor job interceptor = Profiler.global#call "BackOtter.BuiltinFunctio
         (intercept_function_by_name_internal "__backotter_origin_from_mainfn"         backotter_origin_from_mainfn) @@
         (intercept_function_by_name_internal "__backotter_enable_record_decisions"    backotter_enable_record_decisions) @@
         (intercept_function_by_name_internal "__backotter_disable_record_decisions"   backotter_disable_record_decisions) @@
+        (intercept_function_by_name_internal "__backotter_is_bounded"                 backotter_is_bounded) @@
 
         (* pass on the job when none of those match *)
         interceptor
@@ -56,6 +63,7 @@ let is_builtin =
         "__backotter_origin_from_mainfn";
         "__backotter_enable_record_decisions";
         "__backotter_disable_record_decisions";
+        "__backotter_is_bounded";
     ]
     in function name -> List.mem name builtins
 
