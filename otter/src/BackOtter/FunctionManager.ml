@@ -9,11 +9,30 @@ let arg_function_inlining = ref false
 let bypassed_fname = ref StringSet.empty
 let madeready_fname = ref StringSet.empty
 
-let is_inlinable fundec = (!arg_function_inlining) && match fundec.smaxstmtid with Some size -> size < 5 | None -> false  (* TODO: true if caller does not branch *)
+let is_inlinable fundec = match fundec.smaxstmtid with Some size -> size < 5 | None -> false  (* TODO: true if caller does not branch *)
 let is_bypassed fundec = StringSet.mem fundec.svar.vname (!bypassed_fname)
 let is_madeready fundec = StringSet.mem fundec.svar.vname (!madeready_fname)
 
 let add_madeready fundec = madeready_fname := StringSet.add fundec.svar.vname (!madeready_fname)
+
+(** Return inlinable callers of callee. If no such callers, return a singleton set of the callee *)
+let find_inlined =
+    let module Memo = Memo.Make (Module.CombineHashedTypes (CilData.CilFile) (CilData.CilFundec)) in
+    let find_inlined = Memo.memo "FunctionManager.find_inlined"
+        begin fun (file, callee) ->
+            let rec find_inlined file callee =
+                let callers = CilUtilities.CilCallgraph.find_callers file callee in
+                let callers = List.fold_left (
+                    fun s f ->
+                        if is_inlinable f then FundecSet.union (find_inlined file f) s 
+                        else s
+                ) FundecSet.empty callers in
+                if FundecSet.is_empty callers then FundecSet.singleton callee else callers
+            in
+            find_inlined file callee
+        end
+    in
+    fun file callee -> find_inlined (file, callee)
 
 (** Return callers of callee, considering function inlining and bypassing *)
 let find_callers =
@@ -24,7 +43,8 @@ let find_callers =
                 let callers = CilUtilities.CilCallgraph.find_callers file callee in
                 List.fold_left (
                     fun s f ->
-                        if is_inlinable f || is_bypassed f then FundecSet.union (find_callers file f) s
+                        if is_bypassed f then FundecSet.union (find_callers file f) s 
+                        else if (!arg_function_inlining) then FundecSet.union (find_inlined file f) s
                         else FundecSet.add f s
                 ) FundecSet.empty callers
             in
@@ -50,7 +70,7 @@ let is_ready_to_run =
                 in
                 if List.memq fundec line_target_fundecs then true else
                     (* Callers of target functions, defined by find_callers *)
-                    let callers = List.fold_left (fun s f -> FundecSet.union s (find_callers file f)) FundecSet.empty (target_fundecs @ line_target_fundecs) in
+                    let callers = List.fold_left (fun s f -> FundecSet.union s (find_callers file f)) FundecSet.empty target_fundecs in
                     if FundecSet.mem fundec callers then true else
                         (* Some functions made ready by the user *)
                         if is_madeready fundec then true else false
