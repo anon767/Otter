@@ -5,6 +5,7 @@
 # The underlying cause of the bug is an implicit dependence between two data structures, which cannot be tested for with a simple if-statement, and the bug can actually lead to two different crashes (a realloc with an invalid pointer, or an invalid pointer dereference). We could make the dependence explicit by adding a field, but we're not sure if we should do that as it changes the program semantics a little more invasively. Ideally, we'd have a more specific way of detecting errors than adding "if (cond) __FAILURE()" to programs. the bug requires one field of a local variable (one of the data structures) to be uninitialized and treated as non-zero, but this currently leads to a long unaddressed bug in Otter in the way it detects uninitialized values: it fails if variables containing uninitialized values are converted to STP expressions even if the values are not actually read. We suppose one way around this would be to turn off detection of uninitialized values.
 # seq contains a buffer overflow : http://git.savannah.gnu.org/cgit/coreutils.git/commit/?id=b8108fd2ddf77ae79cd014f4f37798a52be13fd1
 # ptx contains a buffer overflow : http://git.savannah.gnu.org/cgit/coreutils.git/commit/?id=a0851554bd52038ed47e46ee521ce74a5a09f747
+# ptx's second bug: http://lists.gnu.org/archive/html/bug-coreutils/2008-07/msg00105.html
 # md5sum contains a buffer underflow : http://git.savannah.gnu.org/cgit/coreutils.git/commit/?id=7cb24684cc4ef96bb25dfc1c819acfc3b98d9442
 
 benchmarks = {
