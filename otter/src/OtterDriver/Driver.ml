@@ -31,7 +31,7 @@ let main_loop step queue reporter =
             checkpoint := (queue, reporter);
             match Profiler.global#call "Driver.main_loop/get" (fun () -> queue#get) with
                 | Some (queue, job) ->
-                    let active, complete = OtterExtensions.CProfiler.time job (fun () -> Profiler.global#call "Driver.main_loop/step" (fun () -> job#run step)) in
+                    let active, complete = Profiler.global#call "Driver.main_loop/step" (fun () -> job#run step) in
                     let queue = List.fold_left (fun queue job -> queue#put job) queue active in
                     let reporter = Profiler.global#call "Driver.main_loop/report" (fun () -> reporter#report complete) in
                     if reporter#should_continue then
