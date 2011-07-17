@@ -12,25 +12,59 @@ module LocationTree = struct
     module Location = CilUtilities.CilData.CilLocation
     module LocationSet = Set.Make(Location)
     module CallstackMap = Map.Make(struct type t = Location.t list let compare = ListPlus.compare Location.compare end)
-
-    type t = (LocationSet.t * float) CallstackMap.t
-    let empty = CallstackMap.empty
-
-    let update callstack loc time tree = Profiler.global#call "LocationTree.update" begin fun () ->
-        let rec update path locopt tree =
-            let locs, time' = if CallstackMap.mem path tree then CallstackMap.find path tree else LocationSet.empty, 0. in
-            let time' = time +. time' in
-            let locs = match locopt with None -> locs | Some loc -> LocationSet.add loc locs in
-            let tree = CallstackMap.add path (locs, time') tree in
-            match path with [] -> tree | loc :: path -> update path (Some loc) tree
-        in
-        update (loc::callstack) None tree
+    module type RecordType = sig 
+        type t 
+        val zero : t 
+        val merge : t -> t -> t 
+        val merge_caller : t -> t -> t 
     end
 
-    let fold ff tree acc = CallstackMap.fold (fun path (_, time) acc -> match path with loc :: _ -> ff loc time acc | [] -> acc) tree acc
+    module Make (Record : RecordType) = struct
+        type t = (LocationSet.t * Record.t) CallstackMap.t
+        let empty = CallstackMap.empty
+
+        let update callstack loc record tree = Profiler.global#call "LocationTree.update" begin fun () ->
+            let tree =
+                let locs, record' = if CallstackMap.mem callstack tree then CallstackMap.find callstack tree else LocationSet.empty, Record.zero in
+                let record' = Record.merge record record' in
+                CallstackMap.add (loc::callstack) (locs, record') tree
+            in
+            let rec update callstack loc tree =
+                let locs, record' = if CallstackMap.mem callstack tree then CallstackMap.find callstack tree else LocationSet.empty, Record.zero in
+                let record' = Record.merge_caller record record' in
+                let locs = LocationSet.add loc locs in
+                let tree = CallstackMap.add callstack (locs, record') tree in
+                match callstack with [] -> tree | loc :: callstack -> update callstack loc tree
+            in
+            update callstack loc tree
+        end
+
+        let fold ff tree acc = CallstackMap.fold (fun callstack (_, record) acc -> match callstack with loc :: _ -> ff loc record acc | [] -> acc) tree acc
+    end
 end
 
 module Profile = struct
+
+    module IntSet = Set.Make (struct type t = int let compare = Pervasives.compare end)
+    module Record = struct 
+        type t = {
+            time : float;
+            nodes : IntSet.t;
+        }
+        let zero = {
+            time = 0.;
+            nodes = IntSet.empty;
+        }
+        let merge r1 r2 = {
+            time = r1.time +. r2.time;
+            nodes = IntSet.union r1.nodes r2.nodes;
+        }
+        let merge_caller r_new r_old = {
+            time = r_new.time +. r_old.time;
+            nodes = r_old.nodes;
+        }
+    end
+    module LocationTree = LocationTree.Make (Record)
 
     type t = {
         tree : LocationTree.t;
@@ -39,12 +73,16 @@ module Profile = struct
         tree = LocationTree.empty;
     }
 
-    let update profile job time = {
-        tree = LocationTree.update job#caller_list (Job.get_loc job) time profile.tree;
-    }
+    let update profile job time = 
+        let record = {
+            Record.time = time;
+            Record.nodes = IntSet.singleton job#node_id;
+        } in {
+            tree = LocationTree.update job#caller_list (Job.get_loc job) record profile.tree; 
+        }
 
     let flush profile = 
-        LocationTree.fold (fun loc time _ -> Format.printf "Location %a takes %.2f seconds@\n" Printcil.loc loc time) profile.tree ()
+        LocationTree.fold (fun loc record _ -> Format.printf "Location %a takes %.2f seconds, visited by %d paths.@\n" Printcil.loc loc record.Record.time (IntSet.cardinal record.Record.nodes)) profile.tree ()
 end
 
 module Make (Key : KeyType) = struct
