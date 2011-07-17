@@ -115,9 +115,6 @@ let end_function_call job =
 			exHist
 	in
 
-    (* Pop the caller_list in InstructionInfo.t *)
-    let job = job#force_return in
-
 	(* Update the state, program counter, and coverage  *)
 	((job#with_stmt stmt)#with_exHist exHist)#with_instrList []
 
@@ -792,6 +789,15 @@ let otter_voice job retopt exps =
 	Output.arg_print_mute := !Output.arg_print_mute - 1;
 	end_function_call job
 
+let otter_sleep job retopt exps =
+    let exp = get_lone_arg exps in
+    let job, bytes = Expression.rval job exp in
+	(if isConcrete_bytes bytes then
+		let t = bytes_to_int_auto bytes in
+        Unix.sleep(t)
+    );
+	end_function_call job
+
 
 let interceptor job interceptor = Profiler.global#call "BuiltinFunctions.interceptor" begin fun () ->
     (* Whenever a new builtin function is added, put it in is_builtin also. *)
@@ -835,6 +841,7 @@ let interceptor job interceptor = Profiler.global#call "BuiltinFunctions.interce
 		(intercept_function_by_name_internal "__PRINT_STATE"           otter_print_state) @@
 		(intercept_function_by_name_internal "__otter_mute"            otter_mute) @@
 		(intercept_function_by_name_internal "__otter_voice"           otter_voice) @@
+		(intercept_function_by_name_internal "__otter_sleep"           otter_sleep) @@
 
 		(* pass on the job when none of those match *)
 		interceptor

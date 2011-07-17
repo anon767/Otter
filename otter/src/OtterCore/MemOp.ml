@@ -247,6 +247,7 @@ let state__start_fcall job callContext fundec argvs = Profiler.global#call "MemO
 		block_to_bytes = block_to_bytes;
 		callContexts = callContext::job#state.callContexts;
 	} in
+    let job = job#push_caller_list in
     (* assign arguments to parameters *)
 	let rec assign_argvs job pars argvs = match pars, argvs with
 		| par::pars, argv::argvs ->
@@ -278,6 +279,7 @@ let state__end_fcall job =
 	let block_to_bytes = job#state.block_to_bytes in
 	let block_to_bytes = frame__clear_varinfos (List.hd job#state.locals) block_to_bytes in
 	let block_to_bytes = frame__clear_varinfos (List.hd job#state.formals) block_to_bytes in
+    let job = job#pop_caller_list in
 	job#with_state { job#state with
 		formals = List.tl job#state.formals;
 		locals = List.tl job#state.locals;
