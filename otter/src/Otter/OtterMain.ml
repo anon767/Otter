@@ -8,6 +8,7 @@ open OtterReporter
 open OtterDriver
 open State
 
+module OtterJobProfiler = Driver.OtterJobProfiler
 
 let doit file =
 	(* connect Cil's debug flag to Output *)
@@ -15,7 +16,7 @@ let doit file =
 
 	Output.printf "Otter, a symbolic executor for C@\n@.";
 
-	let reporter = UserSignal.using_signals begin fun () ->
+	let reporter = UserSignal.using_signals ~usr1_handler:(fun _ -> OtterJobProfiler.flush ()) begin fun () ->
 		(* prepare the file for symbolic execution *)
 		Core.prepare_file file;
 
@@ -25,6 +26,8 @@ let doit file =
 		let _, reporter = Driver.run_basic reporter file in
 		reporter
 	end in
+
+    OtterJobProfiler.flush ();
 
     Output.set_formatter (new Output.plain);
     if !Profiler.do_profiling then Output.printf "== Global profile ==@\n@[%t@]@." Profiler.global#printer;
@@ -49,7 +52,7 @@ let options =
     Output.options @
     InitBytes.options @
     CilUtilities.CilPtranal.options @
-    OtterExtensions.Gcov.options
+    OtterExtensions.JobProfiler.options
 
 let feature : featureDescr = {
 	fd_name = "otter";

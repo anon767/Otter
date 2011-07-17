@@ -48,6 +48,15 @@ let main_loop step queue reporter =
         Output.printf "%s@." (Printexc.to_string exn);
         !checkpoint
 
+module OtterJobProfiler = OtterExtensions.JobProfiler.Make (struct
+    module K = CilData.CilFile
+    type t = K.t
+    let hash = K.hash
+    let equal = K.equal
+    let of_job job = job#file
+    let to_string k = "."
+end)
+
 
 let run ?(random_seed=(!Executeargs.arg_random_seed))
         ?(step=Statement.step)
@@ -81,6 +90,7 @@ let run_core reporter file =
 let run_basic reporter file =
     let interceptor =
         Interceptor.set_output_formatter_interceptor
+        >>> OtterJobProfiler.interceptor
         >>> Interceptor.function_pointer_interceptor
         >>> BuiltinFunctions.interceptor
     in

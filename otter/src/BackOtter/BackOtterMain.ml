@@ -10,6 +10,15 @@ open Cil
 
 let default_conditionals_forking_limit = ref max_int
 
+module BackOtterJobProfiler = OtterExtensions.JobProfiler.Make (struct
+    module K = Module.CombineHashedTypes (CilData.CilFile) (CilData.CilFundec)
+    type t = K.t
+    let hash = K.hash
+    let equal = K.equal
+    let of_job job = (job#file, BackOtterUtilities.get_origin_function job)
+    let to_string (_, fundec) = fundec.svar.vname
+end)
+
 let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
                           reporter file =
 
@@ -73,7 +82,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     let interceptor =
         let (>>>) = Interceptor.(>>>) in
             BackOtterInterceptor.set_output_formatter_interceptor
-        >>> BackOtterGcov.interceptor
+        >>> BackOtterJobProfiler.interceptor
         >>> Interceptor.function_pointer_interceptor
         >>> BackOtterBuiltinFunctions.interceptor
         >>> BuiltinFunctions.interceptor
@@ -92,8 +101,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     in
     let queue, reporter = OtterDriver.Driver.main_loop step queue reporter in
 
-    (* Flush gcovfiles *)
-    BackOtterGcov.flush_gcovfiles ();
+    BackOtterJobProfiler.flush ();
 
     (* Output failing paths for non-entry_fn *)
     List.iter (fun fundec ->
@@ -121,7 +129,7 @@ let doit file =
 
     Output.printf "@\n@\nBackOtter: Bi-directional Symbolic Executor@\n@.";
 
-    UserSignal.using_signals ~usr1_handler:(fun _ -> BackOtterGcov.flush_gcovfiles ()) begin fun () -> try
+    UserSignal.using_signals ~usr1_handler:(fun _ -> BackOtterJobProfiler.flush ()) begin fun () -> try
         Core.prepare_file file;
 
         let find_tag_name tag assocs = List.assoc tag (List.map (fun (a,b)->(b,a)) assocs) in
