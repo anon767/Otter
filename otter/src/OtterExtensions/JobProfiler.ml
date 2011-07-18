@@ -4,6 +4,9 @@ open OtterCore
 let gcov_out = ref "./gcov.out/"
 let gcov_paths = ref []
 let arg_run_gcov = ref false
+let arg_min_report_time = ref 1.
+
+module Entry = InstructionInfo.Entry
 
 module type KeyType = sig
     type t
@@ -13,7 +16,7 @@ module type KeyType = sig
     val to_string : t -> string
 end
 
-module LocationTree = struct
+module EntryTree = struct
     module type RecordType = sig 
         type t 
         val zero : t 
@@ -22,63 +25,110 @@ module LocationTree = struct
     end
 
     module Make (Record : RecordType) = struct
-        module Location = CilUtilities.CilData.CilLocation
-        module LocationMap = Map.Make(Location)
+        module EntryMap = Map.Make(Entry)
 
         type t = {
             record : Record.t;
-            children : t LocationMap.t;
+            children : t EntryMap.t;
         }
 
         let empty = {
             record = Record.zero;
-            children = LocationMap.empty;
+            children = EntryMap.empty;
         }
 
-        let update callstack loc record tree = Profiler.global#call "LocationTree.update" begin fun () ->
+        let update callstack entry record tree = Profiler.global#call "EntryTree.update" begin fun () ->
             let rec update path tree =
                 match path with 
                 | [] -> assert(false)
-                | loc :: [] -> 
+                | entry :: [] -> 
                     { tree with
                         record = Record.merge record tree.record;
                     }
                 | parent :: child :: path ->
-                    let tree' = try LocationMap.find child tree.children with Not_found -> empty in
+                    let tree' = try EntryMap.find child tree.children with Not_found -> empty in
                     let tree' = update (child :: path) tree' in
                     {
                         record = Record.merge_caller record tree.record;
-                        children = LocationMap.add child tree' tree.children;
+                        children = EntryMap.add child tree' tree.children;
                     }
             in
-            update (List.rev (loc :: callstack)) tree
+            update (List.rev (entry :: callstack)) tree
         end
 
-        let rec preorder (ff : Cil.location -> Record.t -> 'a -> 'a) ?(node=Cil.locUnknown) tree acc = 
-            let acc = ff node tree.record acc in
-            LocationMap.fold (fun loc tree acc -> preorder ff ~node:loc tree acc) tree.children acc
+        let rec preorder ff node tree depth acc = 
+            let acc = ff node tree.record depth acc in
+            EntryMap.fold (fun entry tree acc -> preorder ff entry tree (depth+1) acc) tree.children acc
 
-        let rec postorder (ff : Cil.location -> Record.t -> 'a -> 'a) ?(node=Cil.locUnknown) tree acc = 
-            let acc = LocationMap.fold (fun loc tree acc -> postorder ff ~node:loc tree acc) tree.children acc in
-            ff node tree.record acc
+        let rec postorder ff node tree depth acc = 
+            let acc = EntryMap.fold (fun entry tree acc -> postorder ff entry tree (depth+1) acc) tree.children acc in
+            ff node tree.record depth acc
 
-        let fold = postorder
+        let fold ff tree acc = postorder (fun node record _ -> ff node record) Entry.dummy tree 0 acc
     end
 end
 
 module CilLines = struct
-    module LineSet = Job.LineSet
+    open OtterCFG
+    open Cil
+    module LineMap = Map.Make(CoverageData.LineData)
+    class getStatsVisitor file = object (self)
+        val lines = ref LineMap.empty
+        val reachable_stmts = Hashtbl.create 0
+        method private is_reachable_stmt stmt =
+            if Hashtbl.length reachable_stmts = 0 then
+                (* Prepare the table *)
+                let source =
+                    let mainFunc = ProgramPoints.get_main_fundec file in 
+                    Instruction.of_fundec file mainFunc
+                in
+                let processed_instrs = Hashtbl.create 0 in
+                let rec visit instruction =
+                    if Hashtbl.mem processed_instrs instruction then
+                        ()
+                    else (
+                        Hashtbl.add processed_instrs instruction true;
+                        Hashtbl.add reachable_stmts instruction.Instruction.stmt true;
+                        List.iter visit (Instruction.successors instruction);
+                        List.iter visit (Instruction.call_sites instruction);
+                        ()
+                    )
+                in
+                visit source
+            else ()
+            ;
+            try
+                Hashtbl.find reachable_stmts stmt
+            with Not_found -> false
+    
+        method lines = !lines
+    
+        inherit nopCilVisitor
+    
+        method vinst instr =
+            let loc = get_instrLoc instr in
+            lines := LineMap.add (loc.file,loc.line) (FormatPlus.sprintf "%a" CilUtilities.CilPrinter.instr_abbr instr) !lines;
+            SkipChildren (* There's nothing interesting under an [instr] *)
+    
+        method vstmt stmt =
+            if self#is_reachable_stmt stmt then (
+                let loc = get_stmtLoc stmt.skind in
+                lines := LineMap.add (loc.file,loc.line) (FormatPlus.sprintf "%a" CilUtilities.CilPrinter.stmt_abbr stmt) !lines;
+            );
+            DoChildren (* There could be stmts or instrs inside, which we should visit *)
+    end
     let get_lines =
         let module Memo = Memo.Make (CilUtilities.CilData.CilFile) in
         Memo.memo "JobProfiler.get_lines"
             begin fun file ->
-                let vis = new Coverage.getStatsVisitor file in
+                let vis = new getStatsVisitor file in
                 Cil.iterGlobals file (function Cil.GFun(fundec,_) -> ignore (Cil.visitCilFunction (vis:>Cil.cilVisitor) fundec) | _ -> ());
                 vis#lines
             end
     let file = ref Cil.dummyFile
     let set_file file' = file := file'
-    let is_line filename linenum = LineSet.mem (filename, linenum) (get_lines !file)
+    let is_line filename linenum = LineMap.mem (filename, linenum) (get_lines !file)
+    let get_line filename linenum = if is_line filename linenum then LineMap.find (filename, linenum) (get_lines !file) else "-"
 end
 
 module Profile = struct
@@ -104,27 +154,61 @@ module Profile = struct
             nodes = r_old.nodes;
         }
     end
-    module LocationTree = LocationTree.Make (Record)
+    module EntryTree = EntryTree.Make (Record)
 
     type t = {
         name : string;
-        tree : LocationTree.t;
+        tree : EntryTree.t;
     }
     let create name = {
         name = name;
-        tree = LocationTree.empty;
+        tree = EntryTree.empty;
     }
 
     let update profile job time = 
+
         let record = {
             Record.time = time;
             Record.nodes = IntSet.singleton job#node_id;
         } in { profile with
-            tree = LocationTree.update job#caller_list (Job.get_loc job) record profile.tree; 
+            (* TODO: combine caller_list and job's current loc *)
+            tree = EntryTree.update job#caller_list (Job.get_loc job(*ugly*)) record profile.tree; 
         }
 
     let flush profile = 
         if !arg_run_gcov then begin
+
+            let top_down_printer ff tree = 
+                let entry_printer ff loc = 
+                    let label = CilLines.get_line loc.Cil.file loc.Cil.line in
+                    if loc == Cil.locUnknown then
+                        Format.fprintf ff "%s" label
+                    else
+                        let loc_label = OcamlUtilities.FormatPlus.sprintf "%a" Printcil.loc loc in
+                        let max_length = 26 in
+                        let length = String.length loc_label in
+                        let loc_label = if length > max_length then "..."^(String.sub loc_label (length - max_length) max_length) else loc_label in
+                        Format.fprintf ff "%s (%s)" label loc_label 
+                in
+                let _ = Format.fprintf ff "%8s\t%s@\n" "time(s)" "Line (Location)" in
+                EntryTree.preorder (
+                    fun entry record depth _ -> 
+                        let time = record.Record.time in
+                        if time >= !arg_min_report_time then
+                            Format.fprintf ff "%8.1f\t%*s%a@\n" time (2*depth) "" entry_printer entry
+                ) Entry.dummy tree 0 () in
+
+
+            let old_formatter = !Output.formatter in
+            Output.set_formatter (new Output.plain);
+            Output.set_mode Output.MSG_REPORT;
+            Output.printf "@\n";
+            Output.printf "Top-down C execution profile for %s: @\n" profile.name;
+            Output.printf "%a" top_down_printer profile.tree;
+            Output.printf "@\n";
+            Output.formatter := old_formatter;
+
+
             (* Produce gcov-like output *)
             let module StringMap = Map.Make (String) in
             let module IntMap = Map.Make (Int) in
@@ -132,12 +216,13 @@ module Profile = struct
             let module LineMap = Map.Make(Line) in
 
             (* Collapse different locations of same (file, line) into one *)
-            let line_map = LocationTree.fold begin
-                fun loc record line_map -> 
+            let line_map = EntryTree.fold begin
+                fun entry record line_map -> 
                     (* Discard unknown locations *)
-                    if loc == Cil.locUnknown then line_map 
+                    if Entry.equal entry Entry.dummy then line_map 
                     else
-                        let line = (loc.Cil.file, loc.Cil.line) in
+                        let loc = Entry.to_loc entry in
+                        let line = loc.Cil.file, loc.Cil.line in
                         if LineMap.mem line line_map then
                             let record' = LineMap.find line line_map in
                             LineMap.add line (Record.merge record record') line_map

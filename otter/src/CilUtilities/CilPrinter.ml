@@ -21,6 +21,15 @@ let exp ff = function
 	| e -> Printcil.exp ff e
 
 
+(** Print an abbreviated representation of a {!Cil.instr}. 
+		@param ff is the formatter to which to print
+		@param instr is the {!Cil.instr} to print
+*)
+let instr_abbr ff instr = match instr with
+    | Cil.Set _ -> Format.pp_print_string ff "(SET)"
+    | Cil.Call (_,exp,_,_) -> Printcil.exp ff exp
+    | Cil.Asm _ -> Format.pp_print_string ff "(ASM)"
+
 (** Print an abbreviated representation of a {!Cil.stmt}. In particular, the following {!Cil.stmt} are abbreviated:
 	- {!Cil.If} is printed as "[IF (<exp>)]";
 	- {!Cil.Instr} is printed as "[(INSTR)]";

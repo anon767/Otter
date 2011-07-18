@@ -11,13 +11,23 @@
 
 open DataStructures
 
+module Entry = struct
+    include CilUtilities.CilData.CilLocation
+    let equal a b = compare a b = 0
+    let dummy = Cil.locUnknown
+    let of_instr = function
+        | Cil.Call (_,_,_,loc) -> loc
+        | _ -> dummy
+    let to_loc t = t
+end
+
 let instr_id_counter = Counter.make () 
 
 class t first_stmt :
     object ('self)
-        method caller_list : Cil.location list
+        method caller_list : Entry.t list
 
-        method cur_call : Cil.location
+        method cur_call : Entry.t
 
         method instrList : Cil.instr list
         method with_instrList : Cil.instr list -> 'self
@@ -39,7 +49,7 @@ class t first_stmt :
         (** Most recently seen location of function call 
          *  This is used to update caller_list once we step into a function.
          *  TODO: not very elegant. Reimplement this in a better way. *)
-        val mutable cur_call = Cil.locUnknown
+        val mutable cur_call = Entry.dummy
         method cur_call = cur_call
 
         (** [instr]s to execute before moving to the next [stmt] *)
@@ -47,7 +57,7 @@ class t first_stmt :
         method instrList = instrList
         method with_instrList instrList = 
             let cur_call = match instrList with
-                | Cil.Call (_,_,_,loc) :: _ -> loc 
+                | (Cil.Call _ as instr) :: _ -> Entry.of_instr instr
                 | _ -> cur_call
             in
             {< cur_call = cur_call;
