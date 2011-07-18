@@ -23,29 +23,46 @@ module LocationTree = struct
 
     module Make (Record : RecordType) = struct
         module Location = CilUtilities.CilData.CilLocation
-        module LocationSet = Set.Make(Location)
-        module CallstackMap = Map.Make(struct type t = Location.t list let compare = ListPlus.compare Location.compare end)
-        type t = (LocationSet.t * Record.t) CallstackMap.t
-        let empty = CallstackMap.empty
+        module LocationMap = Map.Make(Location)
+
+        type t = {
+            record : Record.t;
+            children : t LocationMap.t;
+        }
+
+        let empty = {
+            record = Record.zero;
+            children = LocationMap.empty;
+        }
 
         let update callstack loc record tree = Profiler.global#call "LocationTree.update" begin fun () ->
-            let tree =
-                let path = loc::callstack in
-                let locs, record' = if CallstackMap.mem path tree then CallstackMap.find path tree else LocationSet.empty, Record.zero in
-                let record' = Record.merge record record' in
-                CallstackMap.add path (locs, record') tree
+            let rec update path tree =
+                match path with 
+                | [] -> assert(false)
+                | loc :: [] -> 
+                    { tree with
+                        record = Record.merge record tree.record;
+                    }
+                | parent :: child :: path ->
+                    let tree' = try LocationMap.find child tree.children with Not_found -> empty in
+                    let tree' = update (child :: path) tree' in
+                    {
+                        record = Record.merge_caller record tree.record;
+                        children = LocationMap.add child tree' tree.children;
+                    }
             in
-            let rec update callstack loc tree =
-                let locs, record' = if CallstackMap.mem callstack tree then CallstackMap.find callstack tree else LocationSet.empty, Record.zero in
-                let record' = Record.merge_caller record record' in
-                let locs = LocationSet.add loc locs in
-                let tree = CallstackMap.add callstack (locs, record') tree in
-                match callstack with [] -> tree | loc :: callstack -> update callstack loc tree
-            in
-            update callstack loc tree
+            update (List.rev (loc :: callstack)) tree
         end
 
-        let fold ff tree acc = CallstackMap.fold (fun callstack (_, record) acc -> match callstack with loc :: _ -> ff loc record acc | [] -> acc) tree acc
+        let rec preorder (ff : Cil.location -> Record.t -> 'a -> 'a) ?(node=Cil.locUnknown) tree acc = 
+            let acc = ff node tree.record acc in
+            LocationMap.fold (fun loc tree acc -> preorder ff ~node:loc tree acc) tree.children acc
+
+        let rec postorder (ff : Cil.location -> Record.t -> 'a -> 'a) ?(node=Cil.locUnknown) tree acc = 
+            let acc = LocationMap.fold (fun loc tree acc -> postorder ff ~node:loc tree acc) tree.children acc in
+            ff node tree.record acc
+
+        let fold = postorder
     end
 end
 
