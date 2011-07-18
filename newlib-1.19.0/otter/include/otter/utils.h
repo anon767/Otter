@@ -11,6 +11,10 @@
 int strchr_i (const char *s, int c);
 int strrchr_i (const char *s, int c);
 
+/* Allocate a char array of length (len+1), 
+ * with all characters symbolic except the last one which is \0. */
+char* symbolic_string(int len);
+
 # ifdef __OTTER_NO_FAILING_SYSCALL__
 
 #  define __OTTER_POSSIBILY_FAILING_SYSCALL_BEGIN__
