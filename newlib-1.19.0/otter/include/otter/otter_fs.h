@@ -18,8 +18,8 @@
 
 #define __otter_fs_IS_TYP_SPECIAL(x) ((x) & 64)
 
-#define __otter_fs_MAX_FDS 64
-#define __otter_fs_MAX_OPEN_FILES 128
+#define __otter_fs_MAX_FDS 5
+#define __otter_fs_MAX_OPEN_FILES 3
 
 struct __otter_fs_inode;
 struct __otter_fs_filelist;
