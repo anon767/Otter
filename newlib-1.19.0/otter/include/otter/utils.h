@@ -4,6 +4,13 @@
 # include "otter/otter_builtins.h"
 # include <errno.h>
 
+/* Similar to strchr/strrchr, but these functions returnt the integer indices of
+ * the character (or -1 if not found), instead of char pointers.
+ * Use these to avoid pointer minus arithmetic.
+ */
+int strchr_i (const char *s, int c);
+int strrchr_i (const char *s, int c);
+
 # ifdef __OTTER_NO_FAILING_SYSCALL__
 
 #  define __OTTER_POSSIBILY_FAILING_SYSCALL_BEGIN__

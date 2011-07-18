@@ -119,6 +119,7 @@ SYSCALL_FILES := \
 	otter/otter_fs.c \
 	otter/otter_fs_util.c \
 	otter/otter_scheduler_stub.c \
+	otter/utils.c \
 	pthread/equal.c \
 	pthread/self.c \
 	pwd/pwd.c \

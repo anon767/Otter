@@ -1,5 +1,6 @@
 #include <otter/otter_fs.h>
 #include <otter/otter_builtins.h>
+#include <otter/utils.h>
 #include <otter/multiotter_builtins.h>
 
 #include <string.h>
@@ -21,20 +22,20 @@
  */
 struct __otter_fs_dnode* find_filename_and_dnode(const char* path, char** basename)
 {
-	const char *basename_finder = strrchr(path, '/');
+	int basename_finder = strrchr_i(path, '/');
 
 	struct __otter_fs_dnode* dnode;
-	if(basename_finder)
+	if(basename_finder >= 0)
 	{
 		// Copy path so that we can truncate the string by writing a null in
 		// place of the last '/'.
 		char* name = strdup(path);
-        int last_slash = basename_finder - path;
+        int last_slash = basename_finder;
         if (last_slash == 0) // root dir
             last_slash = 1;
 		name[last_slash] = 0;
 
-		*basename = basename_finder + 1;
+		*basename = path + (basename_finder + 1);
 		dnode = __otter_fs_find_dnode(name);
 		free(name);
 	}
