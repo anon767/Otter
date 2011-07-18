@@ -59,7 +59,13 @@ let process_completed entry_fn (reason, job) =
                 | _ ->
                     reason
             in reason
-        else reason
+        else 
+            let _ = match reason with
+                | Job.Abandoned (#Errors.t as reason) ->
+                    Output.set_mode Output.MSG_REPORT;
+                    Output.printf "BackOtterTargetTracker.process_completed: failwith @[%a@]@." BackOtterErrors.printer reason
+                | _ -> ()
+            in reason
     in
     (* Convert executions from non-entry functions to Truncated *)
     let reason = 
