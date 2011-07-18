@@ -1,5 +1,6 @@
 #include "otter/otter_fs.h"
 #include "otter/otter_builtins.h"
+#include "otter/utils.h"
 #include "otter/otter_user.h"
 #include "otter/otter_scheduler.h"
 #include "otter/multiotter_builtins.h"
@@ -204,17 +205,19 @@ ssize_t __otter_libc_write_file(
 	return (num);
 }
 
+#ifndef __STDIN_SIZE
+#define __STDIN_SIZE  8
+#endif
 /* generate symbolic data */
 ssize_t __otter_libc_read_tty(void* buf, size_t num)
 {
-	char data;
+	char* data = symbolic_string(__STDIN_SIZE);  // data[__STDIN_SIZE] == 0
 	for(int i = 0; i < num; i++)
 	{
-		__SYMBOLIC(&data);
 		/* This is a device not a file redirected to stdin; use 0 to indicate crtl+D was pressed to stop input */
-		if(data != 0)
+		if(data[i] != 0)
 		{
-			((char *)buf)[i] = data;
+			((char *)buf)[i] = data[i];
 		}
 		else /* it might be nice to make '\n' terminate lines, but that might not happen in general */
 		{
