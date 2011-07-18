@@ -27,11 +27,11 @@ let doit file =
 		reporter
 	end in
 
-    OtterJobProfiler.flush ();
-
     Output.set_formatter (new Output.plain);
     if !Profiler.do_profiling then Output.printf "== Global profile ==@\n@[%t@]@." Profiler.global#printer;
     Output.printf "@[%t@]@." Memo.statistics_printer;
+
+    OtterJobProfiler.flush ();
 
     let steps, _, _ = reporter#get_stats in
     Output.printf "Number of steps: %d@." steps;

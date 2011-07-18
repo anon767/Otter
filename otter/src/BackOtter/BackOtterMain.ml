@@ -101,8 +101,6 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     in
     let queue, reporter = OtterDriver.Driver.main_loop step queue reporter in
 
-    BackOtterJobProfiler.flush ();
-
     (* Output failing paths for non-entry_fn *)
     List.iter (fun fundec ->
         if fundec != entry_fn then (
@@ -163,6 +161,8 @@ let doit file =
     Format.set_margin 120;
     if !Profiler.do_profiling then Format.printf "Global profile:@\n@\n  @[%t@]@." Profiler.global#printer;
     Format.printf "@[%t@]@." Memo.statistics_printer;
+
+    BackOtterJobProfiler.flush ();
 
     Format.printf "Done.@."
 
