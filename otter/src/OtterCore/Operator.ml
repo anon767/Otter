@@ -10,6 +10,8 @@ open Cil
 open OtterBytes
 open Bytes
 
+let arg_minuspp_compare_blocks_by_addr = ref false
+
 let run op operands = op operands
 
 
@@ -350,7 +352,21 @@ let minusPP operands : bytes =
         begin match (bytes1, bytes2) with
         | (Bytes_Address(block1, offset1), Bytes_Address(block2, offset2)) ->
             if not (Bytes.block__equal block1 block2) then
-                failwith "minusPP: different base addresss"
+                if !arg_minuspp_compare_blocks_by_addr then
+                    begin
+                        Output.set_mode Output.MSG_ERROR;
+                        Output.printf "Warning: minusPP: different base addresses@\n";
+                        match unrollType typ1 with
+                        | TPtr(basetyp,_) ->
+                            let base_size = (Cil.bitsSizeOf basetyp)/8 in
+                            let offset1 = Bytes.int_to_bytes block1.memory_block_addr in
+                            let offset2 = Bytes.int_to_bytes block2.memory_block_addr in
+                            let (offset3) = minus [(offset1,!Cil.upointType);(offset2,!Cil.upointType)] in (* TODO: do we need to cast the offsets? *)
+                            let (offset4) = div [(offset3,!Cil.upointType);(int_to_bytes base_size,!Cil.upointType)] in
+                                (offset4)
+                        | _ -> failwith "type of Bytes_Address not TPtr"
+                    end
+                else failwith "minusPP: different base addresses"
             else
             begin match unrollType typ1 with
                 | TPtr(basetyp,_) ->
@@ -433,4 +449,8 @@ let bytes__land b1 b2 =
   else bytes__binop logand b1 b2
 
 
-
+let options = [
+    "--minusPP-compare-blocks-by-addr",
+        Arg.Set arg_minuspp_compare_blocks_by_addr,
+        " A workaround that enables comparing two pointers by memory block addresses in minusPP";
+]

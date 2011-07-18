@@ -52,6 +52,7 @@ let options =
     Output.options @
     InitBytes.options @
     CilUtilities.CilPtranal.options @
+    Operator.options @
     OtterExtensions.JobProfiler.options
 
 let feature : featureDescr = {
