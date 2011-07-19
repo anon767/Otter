@@ -17,9 +17,20 @@ benchmarks = {
             'paste'  : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/paste_comb.c"   -DMAX_ARGC=4 -DMAX_ARG_LENGTHS=1,10,2,2   -D__OTTER_PASTE_ASSERT',
             'ptx'    : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/ptx_comb.c"     -DMAX_ARGC=4 -DMAX_ARG_LENGTHS=1,10,2,2   -D__OTTER_COPY_UNESCAPED_STRING_BOUNDS_CHECKING',
             'seq'    : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/seq_comb.c"     -DMAX_ARGC=4 -DMAX_ARG_LENGTHS=1,10,2,2   -D__OTTER_LONG_DOUBLE_FORMAT_BOUNDS_CHECKING --noUseLogicalOperators',
-            'md5sum' : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/md5sum_comb.c"  -DMAX_ARGC=4 -DMAX_ARG_LENGTHS=1,10,2,2   -D__OTTER_SETUP_FILE_SYSTEM --line-targets=@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/../src/md5sum.c:213',
+            'md5sum' : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/md5sum_comb.c"  -DMAX_ARGC=4 -DMAX_ARG_LENGTHS=1,10,2,2   -D__OTTER_SETUP_FILE_SYSTEM \
+                        --line-targets=@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/../src/md5sum.c:213',
             },
         'command' : '"@trunk@/newlib-1.19.0/otter/otter-with-libc" "@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/__otter_main_driver.c" "@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/__otter_poi.c" --mainfn=__otter_main_driver -lm --timeout=1800 --bypassed-functions=main'
+        },
+    'coreutils-customized' : {
+        'programs' : {
+            'ptx2' : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/ptx_comb.c"  -DMAX_ARGC=4 -DMAX_ARG_LENGTHS=1,10,2,2   -D__OTTER_SETUP_FILE_SYSTEM \
+                      "@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/__otter_main_driver_ptx_customized.c" \
+                      --line-targets=@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/../src/ptx.c:1489 \
+                      --line-targets=@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/../src/ptx.c:1510 \
+                      --minusPP-compare-blocks-by-addr',
+            },
+        'command' : '"@trunk@/newlib-1.19.0/otter/otter-with-libc""@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/__otter_poi.c" --mainfn=__otter_main_driver -lm --timeout=1800 --bypassed-functions=main'
         },
     'synthetic' : {
         'programs' : {
