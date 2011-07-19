@@ -63,10 +63,12 @@ options = {
 def make_test(command, program, strategy, option, seed):
     test_log  = '"@dest@/logs/%d/%s-%s-%s.log"' % (seed, program[0], strategy[0], option[0])
     test_csv  = '"@dest@/csv/%s/%s/%s/%d/entry"' % (option[0], program[0], strategy[0], seed)
+    test_gcov = '"@dest@/logs/%d/%s-%s-%s.gcov"' % (seed, program[0], strategy[0], option[0])
+    test_comb = '"@dest@/logs/%d/%s-%s-%s.comb.c"' % (seed, program[0], strategy[0], option[0])
 
     test_cmd  = 'mkdir -p $(dirname %s)' % test_log + "\n"
     test_cmd += 'mkdir -p $(dirname %s)' % test_csv + "\n"
-    test_cmd += '%s %s %s %s --random-seed=%d 2>&1 | @trunk@/experiments/directed_symbolic_execution/timelines.py > %s' % (command, strategy[1], option[1], program[1], seed, test_log) + "\n"
+    test_cmd += '%s %s %s %s --random-seed=%d --gcov --gcov-path="@trunk@/newlib-1.19.0/otter" --gcov-out=%s --out=%s 2>&1 | @trunk@/experiments/directed_symbolic_execution/timelines.py > %s' % (command, strategy[1], option[1], program[1], seed, test_gcov, test_comb, test_log) + "\n"
     test_cmd += 'cat %s | @trunk@/experiments/directed_symbolic_execution/targetreached.py > %s' % (test_log, test_csv)
     test_file = '@dest@/tests/%d/%s-%s-%s.sh' % (seed, program[0], strategy[0], option[0])
     return (test_file, test_cmd)
