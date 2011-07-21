@@ -4,7 +4,7 @@ open OtterCore
 let gcov_out = ref "./gcov.out/"
 let gcov_paths = ref []
 let arg_run_gcov = ref false
-let arg_min_report_time = ref 1.
+let arg_min_report_time = ref 20.
 
 module Entry = InstructionInfo.Entry
 
@@ -327,4 +327,7 @@ let options = [
             gcov_paths := "" :: args
         end,
         "<path[:path]> The path where files are found when processing gcov-like statistics.";
+    "--gcov-min-report-time",
+        Arg.Set_float arg_min_report_time,
+        Printf.sprintf "<time> The minimum time an instruction has taken in order to be shown in the profile (default: %.2f secs)" (!arg_min_report_time);
 ]
