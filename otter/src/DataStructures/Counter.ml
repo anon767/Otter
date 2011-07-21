@@ -7,4 +7,4 @@ type t = int ref
 let make ?(start=0) () : t = ref start
 
 (** Get the next count in a counter. *)
-let next (c : t) = let i = !c in incr c; i
+let next ?(v=1) (c : t) = let i = !c in c := v + i; i
