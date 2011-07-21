@@ -4,5 +4,6 @@ OcamlUtilities/Memo
 OcamlUtilities/Module
 OcamlUtilities/Output
 OcamlUtilities/Profiler
+OcamlUtilities/Tuple
 OcamlUtilities/UnixPlus
 OcamlUtilities/UserSignal
