@@ -9,6 +9,7 @@ class ['abandoned, 'truncated] t file ?(points_to=(!FunctionJob.default_points_t
     object ('self)
         inherit ['abandoned, 'truncated] OtterCore.Job.t
         inherit BackOtterJobExtension.t
+        method printer : Format.formatter -> unit
     end
 =
     object (self : 'self)
@@ -71,6 +72,11 @@ class ['abandoned, 'truncated] t file ?(points_to=(!FunctionJob.default_points_t
                 let job = job_super#append_decision_path decision in
                 job#postprocess_append_decision_path decision
             else self
+
+        method printer ff =
+            Format.fprintf ff "BackOtterFunctionJob@;";
+            Format.fprintf ff "inherit @[<v>%t@]@;" job_super#printer;
+            Format.fprintf ff "inherit @[<v>%t@]@;" b_super#printer
 
         method become (other : 'self) =
             job_super#become other;

@@ -30,6 +30,8 @@ class ['complete] t :
 
         method profile_call : 'a . string -> ('self -> 'self * 'a) -> ('self * 'a)
 
+        method printer : Format.formatter -> unit
+
         method become : 'self -> unit
     end
 =
@@ -263,6 +265,14 @@ class ['complete] t :
             end in
             (self#_with_node_profiler node_profiler, x)
 
+        method printer ff =
+            let list_printer printer = OcamlUtilities.FormatPlus.pp_print_list printer "@;" in
+            Format.fprintf ff "Info@;";
+            Format.fprintf ff "path_id: %d@;" path_id;
+            Format.fprintf ff "node_id: %d@;" node_id;
+            Format.fprintf ff "path_length: %d@;" path_length;
+            Format.fprintf ff "parent_list: @[<v>%a@]@;" (list_printer (fun ff (path_id, node_id) -> Format.fprintf ff "path_id: %d, node_id: %d@;" path_id node_id)) parent_list;
+            ()
 
         method become (other : 'self) =
             path_id <- other#path_id;

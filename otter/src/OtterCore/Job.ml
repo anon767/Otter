@@ -62,6 +62,8 @@ class ['abandoned, 'truncated] t file' fn :
         method inTrackedFn : bool
         method with_inTrackedFn : bool -> 'self
 
+        method printer : Format.formatter -> unit
+
         method become : 'self -> unit
     end
 =
@@ -93,6 +95,14 @@ class ['abandoned, 'truncated] t file' fn :
         val mutable inTrackedFn = StringSet.mem fn.Cil.svar.Cil.vname trackedFns'
         method inTrackedFn = inTrackedFn
         method with_inTrackedFn inTrackedFn = {< inTrackedFn = inTrackedFn >}
+
+        method printer ff =
+            Format.fprintf ff "Job@;";
+            Format.fprintf ff "decision_path: @[<v>%a@]@;" DecisionPath.print decision_path;
+            Format.fprintf ff "inherit @[<v>%t@]@;" state_super#printer;
+            Format.fprintf ff "inherit @[<v>%t@]@;" info_super#printer;
+            Format.fprintf ff "inherit @[<v>%t@]@;" instr_info_super#printer;
+            ()
 
         (** [x#become y] destructively copies all instance variables from [y] to [x]. This should be used sparingly,
             typically only in object initializers.

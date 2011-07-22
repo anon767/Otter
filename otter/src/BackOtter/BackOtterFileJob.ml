@@ -5,6 +5,7 @@ class ['abandoned, 'truncated] t file cmdline :
     object ('self)
         inherit ['abandoned, 'truncated] FileJob.t
         inherit BackOtterJobExtension.t
+        method printer : Format.formatter -> unit
     end
 =
     object (self : 'self)
@@ -17,6 +18,11 @@ class ['abandoned, 'truncated] t file cmdline :
                 let job = job_super#append_decision_path decision in
                 job#postprocess_append_decision_path decision
             else self
+
+        method printer ff =
+            Format.fprintf ff "BackOtterFileJob@;";
+            Format.fprintf ff "inherit @[<v>%t@]@;" job_super#printer;
+            Format.fprintf ff "inherit @[<v>%t@]@;" b_super#printer
 
         method become (other : 'self) =
             job_super#become other;

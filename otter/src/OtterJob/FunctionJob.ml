@@ -188,7 +188,13 @@ end
 *)
 class ['abandoned, 'truncated] t file ?uninit_void ?(points_to=(!default_points_to) file) fn =
     object (self : 'self)
-        inherit ['abandoned, 'truncated] OtterCore.Job.t file fn
+        inherit ['abandoned, 'truncated] OtterCore.Job.t file fn as super
+
+        method printer ff =
+            Format.fprintf ff "FunctionJob@;";
+            Format.fprintf ff "inherit @[<v>%t@]@;" super#printer;
+            ()
+
         initializer
             let job = self in
 

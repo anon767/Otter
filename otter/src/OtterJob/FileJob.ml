@@ -115,7 +115,13 @@ let init_cmdline_argvs job argstr =
 class ['abandoned, 'truncated] t file cmdline =
     let main_func = ProgramPoints.get_main_fundec file in
     object (self : 'self)
-        inherit ['abandoned, 'truncated] OtterCore.Job.t file main_func
+        inherit ['abandoned, 'truncated] OtterCore.Job.t file main_func as super
+
+        method printer ff =
+            Format.fprintf ff "FileJob@;";
+            Format.fprintf ff "inherit @[<v>%t@]@;" super#printer;
+            ()
+
         initializer
             let job = self in
 

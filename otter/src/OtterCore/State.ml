@@ -98,6 +98,8 @@ class t :
     object ('self)
         method state : 'self state
         method with_state : 'self state -> 'self
+        method printer : Format.formatter -> unit
+
         method become : 'self -> unit
     end
 =
@@ -122,6 +124,11 @@ class t :
 
         (** Set the symbolic execution state *)
         method with_state state = {< state = state >}
+
+        method printer ff =
+            Format.fprintf ff "State@;";
+            Format.fprintf ff "path_condition: @[<v>%a@]@;" PathCondition.print state.path_condition;
+            ()
 
         (** [x#become y] destructively copies all instance variables from [y] to [x]. This should be used sparingly,
             typically only in object initializers.

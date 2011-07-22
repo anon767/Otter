@@ -26,6 +26,8 @@ class t :
           *)
         method postprocess_append_decision_path : Decision.t -> 'self
 
+        method printer : Format.formatter -> unit
+
         method become : 'self -> unit
     end
 =
@@ -59,6 +61,15 @@ class t :
             in
             {< bounding_paths = bounding_paths; 
                latest_function_call = latest_function_call >}
+
+        method printer ff =
+            let module F = OcamlUtilities.FormatPlus in
+            let module C = CilUtilities.CilPrinter in
+            Format.fprintf ff "BackOtterJobExtension@;";
+            Format.fprintf ff "enable_record_decisions: %B@;" enable_record_decisions;
+            Format.fprintf ff "latest_function_call: @[<hov>%a@]@;" (F.option_printer C.varinfo) latest_function_call;
+            Format.fprintf ff "bounding_paths: @[<hov>%a@]@;" (F.option_printer (F.pp_print_list DecisionPath.print "@;")) bounding_paths
+
 
         method become (other : 'self) =
             enable_record_decisions <- other#enable_record_decisions;

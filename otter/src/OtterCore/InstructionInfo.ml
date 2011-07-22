@@ -19,6 +19,7 @@ module Entry = struct
         | Cil.Call (_,_,_,loc) -> loc
         | _ -> dummy
     let to_loc t = t
+    let printer ff entry = Format.fprintf ff "@[<hov>%a@]@;" Printcil.loc entry
 end
 
 let instr_id_counter = Counter.make () 
@@ -37,6 +38,8 @@ class t first_stmt :
 
         method push_caller_list : 'self
         method pop_caller_list : 'self
+
+        method printer : Format.formatter -> unit
 
         method become : 'self -> unit
     end
@@ -73,6 +76,15 @@ class t first_stmt :
 
         (** Called by MemOp.state__end_fcall *)
         method pop_caller_list = {< caller_list = List.tl caller_list >}
+
+        method printer ff =
+            let list_printer printer = OcamlUtilities.FormatPlus.pp_print_list printer "@;" in
+            Format.fprintf ff "InstructionInfo@;";
+            Format.fprintf ff "stmt: @[%a@]@;" Printcil.stmt stmt;
+            Format.fprintf ff "instrList: @[<v>%a@]@;" (list_printer Printcil.instr) instrList;
+            Format.fprintf ff "caller_list: @[<v>%a@]@;" (list_printer Entry.printer) caller_list;
+            Format.fprintf ff "cur_call: @[<hov>%a@]@;" Entry.printer cur_call;
+            ()
 
         method become (other : 'self) =
             caller_list <- other#caller_list;
