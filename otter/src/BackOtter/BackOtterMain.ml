@@ -24,6 +24,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
 
     Random.init random_seed;
     BackOtterTargets.reset_targets ();
+    BackOtterExternalPaths.init file;
 
     let entry_job = BackOtterJob.get_default file in
 
@@ -115,7 +116,8 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     Output.set_mode Output.MSG_REPORT;
     Output.printf "@\nFailing path(s) for %s:@." entry_fn.svar.vname;
     List.iter (fun decisions ->
-        Output.printf "Failing path: @[%a@]@." DecisionPath.print decisions)
+        Output.printf "Failing path: @[%a@]@." DecisionPath.print decisions;
+        Output.printf "Failing path to string: @\n@[%a@]@." DecisionPath.to_string decisions)
         (BackOtterTargets.get_paths entry_fn);
 
     OtterDriver.Driver.flush_queue queue reporter
@@ -179,6 +181,7 @@ let options = [
     BackOtterJob.options @ 
     BackOtterFunctionJob.options @ 
     BackOtterTargetTracker.options @ 
+    BackOtterExternalPaths.options @ 
     BidirectionalQueue.options @ 
     FunctionRanker.options @
     FunctionManager.options

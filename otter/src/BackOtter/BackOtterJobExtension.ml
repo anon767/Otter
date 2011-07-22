@@ -54,7 +54,7 @@ class t :
                 ) [] paths)
             in
             let latest_function_call = match decision with
-                | Decision.DecisionFuncall (_, varinfo) -> Some varinfo
+                | Decision.DecisionFuncall (_,_, varinfo) -> Some varinfo
                 | _ -> None
             in
             {< bounding_paths = bounding_paths; 
