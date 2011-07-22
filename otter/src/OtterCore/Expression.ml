@@ -22,7 +22,7 @@ let fail_if_not job condition error =
       | Ternary.Unknown ->
             (* The check can fail. Spin off a failing path (with the failing condition)
                and return the successful path (and assume the check succeeds) *)
-            let job, pass_fail = (job : _ #Info.t)#fork [ `Fail; `Pass ] in
+            let job, pass_fail = (job : _ #Info.t)#fork_keep_parent [ `Pass; `Fail ] in
             match pass_fail with
               | `Fail ->
                     let job = MemOp.state__add_path_condition job (logicalNot condition) true in

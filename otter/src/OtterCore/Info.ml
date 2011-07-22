@@ -21,6 +21,7 @@ class ['complete] t :
 
         method run : ('self -> 'self) -> 'self list * ('complete * 'self) list
         method fork : 'a . 'a list -> 'self * 'a
+        method fork_keep_parent : 'a . 'a list -> 'self * 'a
         method finish : 'a . 'complete -> 'a
         method fork_finish : 'complete -> 'self
         method try_run : ('self -> 'self) -> catch_finish:('complete * 'self -> 'self) -> 'self
@@ -185,6 +186,7 @@ class ['complete] t :
             indicates that a call site lacks such an annotation, and can be fixed by adding the annotation.}
         *)
         method fork : 'a . 'a list -> 'self * 'a = self#fork_internal ~keep_parent:false
+        method fork_keep_parent : 'a . 'a list -> 'self * 'a = self#fork_internal ~keep_parent:true
 
 
         (** [x#finish complete] must be called within [x#run]: it terminates further execution and returns the result
