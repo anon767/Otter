@@ -48,3 +48,6 @@ let print ff decision_path =
         Format.fprintf ff "Decision: (none)@\n"
     else
         List.iter (fun (d,_) -> Decision.print ff d) decision_path.path
+
+let to_string ff decision_path =
+    List.iter (fun (d,_) -> Decision.to_string ff d) decision_path.path
