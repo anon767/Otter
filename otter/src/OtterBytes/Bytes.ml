@@ -454,13 +454,15 @@ end = struct
      *)
     let block__make =
         let block_counter = Counter.make ~start:1 () in
+        let segment_size = 0x10000 in (* TODO: this is unsound *)
+        let block_addr_counter = Counter.make ~start:segment_size () in
         fun memory_block_name memory_block_size memory_block_type ->
             {
                 memory_block_name;
                 memory_block_size;
                 memory_block_type;
                 memory_block_id = Counter.next block_counter;
-                memory_block_addr = Random.bits ();
+                memory_block_addr = Counter.next ~v:segment_size block_addr_counter;
             }
 
 
