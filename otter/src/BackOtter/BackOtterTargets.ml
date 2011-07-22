@@ -2,6 +2,8 @@
 open OtterCore
 open OtterCFG
 
+let arg_min_paths_as_target = ref 1
+
 module FundecMap = Map.Make (CilUtilities.CilData.CilFundec)
 
 module PathSet = Set.Make (DecisionPath)
@@ -55,6 +57,15 @@ let is_target fundec =
 let get_target_fundecs () =
     let targets = !targets_ref in
     FundecMap.fold (
-        fun target_fundec _ target_fundecs -> target_fundec :: target_fundecs
+        fun target_fundec paths target_fundecs -> 
+            if PathSet.cardinal paths >= (!arg_min_paths_as_target) then
+                target_fundec :: target_fundecs
+            else
+                target_fundecs
     ) targets.fundec_to_pathset []
 
+let options = [
+    "--backotter-min-paths-as-target",
+        Arg.Set_int arg_min_paths_as_target,
+        Printf.sprintf "<n> Set the minimum number of paths collected in a function in order to consider that function as target (default: %d)" (!arg_min_paths_as_target);
+]

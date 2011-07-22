@@ -181,6 +181,7 @@ let options = [
     BackOtterJob.options @ 
     BackOtterFunctionJob.options @ 
     BackOtterTargetTracker.options @ 
+    BackOtterTargets.options @ 
     BackOtterExternalPaths.options @ 
     BidirectionalQueue.options @ 
     FunctionRanker.options @
