@@ -39,3 +39,8 @@ let invalid_arg format = ksprintf Pervasives.invalid_arg format
 let pp_print_list printer sep = fun ff list ->
 	ignore (List.fold_left (fun sep' x -> fprintf ff "%(%)@[%a@]" sep' printer x; sep) "" list)
 
+(** Print a 'a option given a 'a printer *)
+let option_printer printer = fun ff -> function
+    | Some arg -> Format.fprintf ff "Some(@[<hov>%a@])@," printer arg
+    | None -> Format.fprintf ff "None"
+
