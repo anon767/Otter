@@ -1,4 +1,4 @@
-#pragma expect_abandoned(failure("minusPP (p1,p2) not of type (addr,addr)"))
+#pragma expect_abandoned(failure("Cannot process minusPP (make_Bytes1,make_Bytes2)"))
 #pragma no_other_results
 
 int main() {

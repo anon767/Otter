@@ -350,37 +350,32 @@ let minusPP operands : bytes =
             Bytes.bytes__make (Cil.bitsSizeOf typ1/8)
     |   _, _ ->
         begin match (bytes1, bytes2) with
-        | (Bytes_Address(block1, offset1), Bytes_Address(block2, offset2)) ->
-            if not (Bytes.block__equal block1 block2) then
-                if !arg_minuspp_compare_blocks_by_addr then
-                    begin
-                        Output.set_mode Output.MSG_ERROR;
-                        Output.printf "Warning: minusPP: different base addresses@\n";
-                        match unrollType typ1 with
-                        | TPtr(basetyp,_) ->
-                            let base_size = (Cil.bitsSizeOf basetyp)/8 in
-                            let offset1 = Bytes.int_to_bytes block1.memory_block_addr in
-                            let offset2 = Bytes.int_to_bytes block2.memory_block_addr in
-                            let (offset3) = minus [(offset1,!Cil.upointType);(offset2,!Cil.upointType)] in (* TODO: do we need to cast the offsets? *)
-                            let (offset4) = div [(offset3,!Cil.upointType);(int_to_bytes base_size,!Cil.upointType)] in
-                                (offset4)
-                        | _ -> failwith "type of Bytes_Address not TPtr"
-                    end
-                else failwith "minusPP: different base addresses"
-            else
+        | (Bytes_Address(block1, offset1), Bytes_Address(block2, offset2)) when (Bytes.block__equal block1 block2) ->
             begin match unrollType typ1 with
                 | TPtr(basetyp,_) ->
                     let base_size = (Cil.bitsSizeOf basetyp)/8 in
-                    let (offset3) = minus [(offset1,!Cil.upointType);(offset2,!Cil.upointType)] in (* TODO: do we need to cast the offsets? *)
-                    let (offset4) = div [(offset3,!Cil.upointType);(int_to_bytes base_size,!Cil.upointType)] in
-                        (offset4)
+                    let difference = minus [(offset1,!Cil.upointType);(offset2,!Cil.upointType)] in (* TODO: do we need to cast the offsets? *)
+                    div [(difference,!Cil.upointType);(int_to_bytes base_size,!Cil.upointType)]
                 | _ -> failwith "type of Bytes_Address not TPtr"
             end
         | _ ->
+            if !arg_minuspp_compare_blocks_by_addr then
+                begin
+                    Output.set_mode Output.MSG_ERROR;
+                    Output.printf "Warning: process minusPP unsoundly@\n";
+                    match unrollType typ1 with
+                    | TPtr(basetyp,_) ->
+                        let base_size = (Cil.bitsSizeOf basetyp)/8 in
+                        let difference = minus [(bytes1,!Cil.upointType);(bytes2,!Cil.upointType)] in (* TODO: do we need to cast the offsets? *)
+                        div [(difference,!Cil.upointType);(int_to_bytes base_size,!Cil.upointType)]
+                    | _ -> failwith "type of Bytes_Address not TPtr"
+                end
+            else begin
                 Output.set_mode Output.MSG_ERROR;
                 Output.printf "@[make_Bytes1:@ @[%a@]@]@." BytesPrinter.bytes bytes1;
                 Output.printf "@[make_Bytes2:@ @[%a@]@]@." BytesPrinter.bytes bytes2;
-                failwith "minusPP (p1,p2) not of type (addr,addr)"
+                failwith "Cannot process minusPP (make_Bytes1,make_Bytes2)"
+            end
         end
 
 
