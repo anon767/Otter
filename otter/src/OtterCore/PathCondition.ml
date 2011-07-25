@@ -19,7 +19,7 @@ end = struct
     let fold f acc (clauses, tracked, _) = List.fold_left2 f acc clauses tracked
     let print ff (clauses, tracked, length) =
         Format.fprintf ff "length: %d@;" length;
-        Format.fprintf ff "clauses:@[<v>%a@]@;" (OcamlUtilities.FormatPlus.pp_print_list (fun ff (clause, tracked) -> Format.fprintf ff "@[%a@], tracked:%B@;" BytesPrinter.bytes clause tracked) "@;") (List.map2 (fun a b -> (a,b)) clauses tracked);
+        Format.fprintf ff "clauses:@[<v>%a@]@;" (OcamlUtilities.FormatPlus.pp_print_list (fun ff (clause, tracked) -> Format.fprintf ff "@[%a@], tracked:%B" BytesPrinter.bytes clause tracked) "@;") (List.map2 (fun a b -> (a,b)) clauses tracked);
         ()
 end
 

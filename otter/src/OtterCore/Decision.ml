@@ -42,17 +42,17 @@ end = struct
     let print ff decision =
         match decision with
         | DecisionConditional(loc, stmt, truth) ->
-            Format.fprintf ff "Decision: @[%a@]: %s@\n" CilPrinter.stmt_abbr stmt (if truth then "true" else "false")
+            Format.fprintf ff "Decision: @[%a@]: %B@;" CilPrinter.stmt_abbr stmt truth
         | DecisionFuncall(loc, instr, varinfo) ->
-            Format.fprintf ff "Decision: @[%a@]@\n" CilPrinter.varinfo varinfo
+            Format.fprintf ff "Decision: @[%a@]@;" CilPrinter.varinfo varinfo
 
     let to_string ff decision =
         let print_loc ff loc = Format.fprintf ff "(%s,%d,%d)" loc.file loc.line loc.byte in
         match decision with
         | DecisionConditional(loc, stmt, truth) ->
-            Format.fprintf ff "DecisionConditional: %a %s@\n" print_loc loc (if truth then "true" else "false")
+            Format.fprintf ff "DecisionConditional: %a %B@;" print_loc loc truth
         | DecisionFuncall(loc, instr, varinfo) ->
-            Format.fprintf ff "DecisionFuncall: %a %s@\n" print_loc loc varinfo.vname
+            Format.fprintf ff "DecisionFuncall: %a %s@;" print_loc loc varinfo.vname
 
     let from_string =
         let re = Str.regexp "\\(.*\\): (\\(.*\\),\\([0-9]*\\),\\([0-9]*\\)) \\(.*\\)" in

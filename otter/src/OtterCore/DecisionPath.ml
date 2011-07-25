@@ -45,9 +45,9 @@ let id decision_path = if decision_path = empty then -1 else snd (List.hd decisi
 
 let print ff decision_path =
     if decision_path.length = 0 then
-        Format.fprintf ff "Decision: (none)@\n"
+        Format.fprintf ff "Decision: (none)"
     else
-        List.iter (fun (d,_) -> Decision.print ff d) decision_path.path
+        OcamlUtilities.FormatPlus.pp_print_list Decision.print "@;" ff (List.map (fun (p,i) -> p) decision_path.path)
 
 let to_string ff decision_path =
     List.iter (fun (d,_) -> Decision.to_string ff d) decision_path.path
