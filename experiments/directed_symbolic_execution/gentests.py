@@ -42,6 +42,8 @@ def writefile(filename, content):
 
 test_files_map = defaultdict(list)
 
+seeds = range(seed_start, seed_start + num_seeds)
+
 # For each benchmark module, generate its tests
 for module in args:
     _temp = __import__(module[:-3], globals(), locals(), ['benchmarks', 'strategies', 'options', 'make_test'], -1)
@@ -50,7 +52,7 @@ for module in args:
     options    = _temp.options
     make_test  = _temp.make_test
 
-    for seed in range(1, num_seeds+1):
+    for seed in seeds:
         for strategy in strategies.items():
             for option in options.items():
                 for benchmark in benchmarks.values():
@@ -63,7 +65,7 @@ for module in args:
 
 # Generate run order, one per seed
 run_files = []
-for seed in range(1, num_seeds+1):
+for seed in seeds:
     test_files = test_files_map[seed]
     for i in range(0,7): random.shuffle(test_files)
     run_file = '@dest@/tests/%d.list' % seed
@@ -72,4 +74,5 @@ for seed in range(1, num_seeds+1):
 
 # Generate run script
 writefile('@dest@/at.sh', "cat \\\n %s | xargs -P %d -n 1 sh" % (string.join(['"%s"'%s for s in run_files], "\\\n "), num_parallel))
+writefile('./runat.sh', 'at now -f "@dest@/at.sh"')
 
