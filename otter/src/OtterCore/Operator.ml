@@ -10,7 +10,7 @@ open Cil
 open OtterBytes
 open Bytes
 
-let arg_minuspp_compare_blocks_by_addr = ref false
+let unsound_pointer_arithmetic = ref false
 
 let run op operands = op operands
 
@@ -323,10 +323,25 @@ let rec opPI op operands =
             | _ -> make_Bytes_Conditional (conditional__map (fun e -> conditional__bytes (opPI op [(bytes1,typ1);(e,typ2)])) c)
             end
         | _ ->
-            Output.set_mode Output.MSG_ERROR;
-            Output.printf "@[bytes1:@ @[%a@]@]@." BytesPrinter.bytes bytes1;
-            Output.printf "@[bytes2:@ @[%a@]@]@." BytesPrinter.bytes bytes2;
-            failwith "plusPI (p1,p2) not of type (addr,int)"
+            if !unsound_pointer_arithmetic then
+                begin
+                    Output.set_mode Output.MSG_REPORT;
+                    Output.printf "Warning: process opPI unsoundly@\n";
+                    Output.printf "@[bytes1:@ @[%a@]@]@." BytesPrinter.bytes bytes1;
+                    Output.printf "@[bytes2:@ @[%a@]@]@." BytesPrinter.bytes bytes2;
+                    match unrollType typ1 with
+                    | TPtr(basetyp,_) ->
+                        let base_size = (Cil.bitsSizeOf basetyp)/8 in
+                        let offset = mult [(bytes2,typ2);(int_to_bytes base_size,typ2)] in (* TODO: are types correct? *)
+                        op [(bytes1,typ1);(offset,typ2)]
+                    | _ -> failwith "type of Bytes_Address not TPtr"
+                end
+            else begin
+                Output.set_mode Output.MSG_ERROR;
+                Output.printf "@[bytes1:@ @[%a@]@]@." BytesPrinter.bytes bytes1;
+                Output.printf "@[bytes2:@ @[%a@]@]@." BytesPrinter.bytes bytes2;
+                failwith "plusPI (p1,p2) not of type (addr,int)"
+            end
 
 
 let plusPI operands =
@@ -359,10 +374,12 @@ let minusPP operands : bytes =
                 | _ -> failwith "type of Bytes_Address not TPtr"
             end
         | _ ->
-            if !arg_minuspp_compare_blocks_by_addr then
+            if !unsound_pointer_arithmetic then
                 begin
-                    Output.set_mode Output.MSG_ERROR;
+                    Output.set_mode Output.MSG_REPORT;
                     Output.printf "Warning: process minusPP unsoundly@\n";
+                    Output.printf "@[make_Bytes1:@ @[%a@]@]@." BytesPrinter.bytes bytes1;
+                    Output.printf "@[make_Bytes2:@ @[%a@]@]@." BytesPrinter.bytes bytes2;
                     match unrollType typ1 with
                     | TPtr(basetyp,_) ->
                         let base_size = (Cil.bitsSizeOf basetyp)/8 in
@@ -445,7 +462,7 @@ let bytes__land b1 b2 =
 
 
 let options = [
-    "--minusPP-compare-blocks-by-addr",
-        Arg.Set arg_minuspp_compare_blocks_by_addr,
-        " A workaround that enables comparing two pointers by memory block addresses in minusPP";
+    "--unsound-pointer-arithmetic",
+        Arg.Set unsound_pointer_arithmetic,
+        " A workaround that enables pointer arithmetic to be carried out using memory_block_addr";
 ]
