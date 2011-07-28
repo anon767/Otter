@@ -108,10 +108,16 @@ end
 
 include T
 
+(** Return the location *)
+let location  { stmt = stmt; instrs = instrs } =
+    match instrs with
+    | [] -> Cil.get_stmtLoc stmt.Cil.skind
+    | instr :: _ -> Cil.get_instrLoc instr
+
 
 (** Print an instruction. *)
-let printer ff { stmt = stmt; instrs = instrs } =
-    let loc = Cil.get_stmtLoc stmt.Cil.skind in
+let printer ff ({ stmt = stmt; instrs = instrs } as i) =
+    let loc = location i in
     match stmt.Cil.skind with
         | Cil.Instr _ -> Format.fprintf ff "%a:%a:%d" Printcil.loc loc Printcil.n_stmt stmt (List.length instrs)
         | _ -> Format.fprintf ff "%a:%a" Printcil.loc loc Printcil.n_stmt stmt
