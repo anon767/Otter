@@ -38,7 +38,9 @@ let instr_abbr ff instr = match instr with
 		@param ff is the formatter to which to print
 		@param s is the {!Cil.stmt} to print
 *)
-let stmt_abbr ff s = match s.Cil.skind with
+let stmt_abbr ff s = 
+    if s == Cil.dummyStmt then Format.fprintf ff "Cil.dummyStmt" else
+    match s.Cil.skind with
 	| Cil.If (e, _, _, _) -> Format.fprintf ff "IF (@[%a@]@,)" exp e
 	| Cil.Instr _ -> Format.pp_print_string ff "(INSTRS)"
 	| Cil.Loop _ -> Format.pp_print_string ff "(LOOP)"
