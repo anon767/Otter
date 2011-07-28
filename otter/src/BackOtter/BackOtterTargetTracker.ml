@@ -36,12 +36,20 @@ let add_line_target file instruction =
 
 
 let process_completed entry_fn (reason, job) =
-    let instruction = Job.get_instruction job in
+    let locs = (Job.get_loc job) :: (List.map InstructionInfo.Entry.to_loc job#caller_list) in
     let line_targets = get_line_targets job#file in (* Note: __FAILURE()'s first line is added into line_targets in BackOtterMain *)
 
+    (* Convert Instruction.t to (location.file, location.line) *)
+    let loc_to_file_line loc = (loc.file, loc.line) in
+    let locs = List.map loc_to_file_line locs in
+    let line_targets = List.map (fun i -> loc_to_file_line (Instruction.location i)) line_targets in
+
+    (* The job reaches some target if its current location, or any call site along the call stack, reaches the target. *)
+    let rec is_target = function [] -> false | loc :: locs -> if List.mem loc line_targets then true else is_target locs in
+
     (* Track reached targets, and convert executions that report repeated abandoned paths to Truncated *)
-    let reason = 
-        if ListPlus.mem Instruction.equal instruction line_targets then
+    let reason =
+        if is_target locs then
             let reason = match reason with
                 | Job.Abandoned (#Errors.t as reason) ->
                     let fundec = BackOtterUtilities.get_origin_function job in
@@ -63,7 +71,7 @@ let process_completed entry_fn (reason, job) =
             let _ = match reason with
                 | Job.Abandoned (#Errors.t as reason) ->
                     Output.set_mode Output.MSG_REPORT;
-                    Output.printf "BackOtterTargetTracker.process_completed: failwith @[%a@]@." BackOtterErrors.printer reason
+                    Output.printf "BackOtterTargetTracker.process_completed (not target): failwith @[%a@]@." BackOtterErrors.printer reason
                 | _ -> ()
             in reason
     in
