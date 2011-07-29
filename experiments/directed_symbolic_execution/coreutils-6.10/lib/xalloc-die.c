@@ -27,11 +27,11 @@
 
 #include "gettext.h"
 #define _(msgid) gettext (msgid)
-extern void __otter_xalloc_die_failure(void);
+
 void
 xalloc_die (void)
 {
-  __otter_xalloc_die_failure(); error (exit_failure, 0, "%s", _("memory exhausted"));
+  error (exit_failure, 0, "%s", _("memory exhausted"));
 
   /* The `noreturn' cannot be given to error, since it may return if
      its first argument is 0.  To help compilers understand the

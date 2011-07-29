@@ -16,7 +16,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
    François Pinard <pinard@iro.umontreal.ca> */
-extern void __otter_copy_unescaped_string_bounds_checking(char const *string, int i);
+
 #include <config.h>
 
 #include <stdio.h>
@@ -308,8 +308,8 @@ copy_unescaped_string (const char *string)
 
   result = xmalloc (strlen (string) + 1);
   cursor = result;
-  char *original_string = string;
-  while (__otter_copy_unescaped_string_bounds_checking(original_string, string - original_string), *string)
+
+  while (*string)
     if (*string == '\\')
       {
 	string++;

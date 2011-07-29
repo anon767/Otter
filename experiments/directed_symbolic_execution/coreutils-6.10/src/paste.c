@@ -34,7 +34,7 @@
 				start again at its beginning.
    A FILE of `-' means standard input.
    If no FILEs are given, standard input is used. */
-extern void __otter_paste_assert(int);
+
 #include <config.h>
 
 #include <stdio.h>
@@ -95,7 +95,7 @@ collapse_escapes (char const *strptr)
 	{
 	  /* buffer overflow occurs when an odd number of \ occurs at the end of strptr:
 	   * http://git.savannah.gnu.org/cgit/coreutils.git/commit/?id=b58a8b4ef588ec8a365b920d12e27fdd71aa48d1 */
-	  __otter_paste_assert(*(strptr+1) != '\0');
+	  //__otter_paste_assert(*(strptr+1) != '\0');
 
 	  switch (*++strptr)
 	    {
@@ -193,7 +193,7 @@ paste_parallel (size_t nfiles, char **fnamptr)
 	}
       else
 	{
-	  fileptr[files_open] = fopen (fnamptr[files_open], "r");
+	  fileptr[files_open] = fopen (fnamptr[files_open], "r");     /* OTTER: Target? */
 	  if (fileptr[files_open] == NULL)
 	    error (EXIT_FAILURE, errno, "%s", fnamptr[files_open]);
 	  else if (fileno (fileptr[files_open]) == STDIN_FILENO)
