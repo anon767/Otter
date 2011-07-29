@@ -28,3 +28,6 @@ let set_output_formatter_interceptor job interceptor =
         Output.set_formatter (new Output.labeled label);
         interceptor job
 
+let jobinit_interceptor job interceptor =
+    if job#is_initialized then interceptor job
+    else job#initialize

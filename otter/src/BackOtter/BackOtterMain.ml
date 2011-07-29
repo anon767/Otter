@@ -83,6 +83,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     let interceptor =
         let (>>>) = Interceptor.(>>>) in
             BackOtterInterceptor.set_output_formatter_interceptor
+        >>> BackOtterInterceptor.jobinit_interceptor
         >>> BackOtterJobProfiler.interceptor
         >>> Interceptor.function_pointer_interceptor
         >>> BackOtterBuiltinFunctions.interceptor

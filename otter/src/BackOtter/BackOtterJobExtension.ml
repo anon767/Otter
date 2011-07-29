@@ -2,6 +2,10 @@ open OtterCore
 
 class t :
     object ('self)
+        (** A job created by new may be uninitialized. In that case, invoke [initialize] to initialize. *)
+        method initialize : 'self
+        method is_initialized : bool
+
         (** Bounding paths
          *  None: this job is NOT a bounded job
          *  Some []: this is a bounded job, and has fallen out of bound
@@ -32,6 +36,10 @@ class t :
     end
 =
     object (self : 'self)
+        val mutable is_initialized = false
+        method initialize = {< is_initialized = true >}
+        method is_initialized = is_initialized
+
         val mutable enable_record_decisions = true
         method enable_record_decisions = enable_record_decisions
         method with_enable_record_decisions enable_record_decisions = {< enable_record_decisions = enable_record_decisions >}
@@ -72,6 +80,7 @@ class t :
 
 
         method become (other : 'self) =
+            is_initialized <- other#is_initialized;
             enable_record_decisions <- other#enable_record_decisions;
             bounding_paths <- other#bounding_paths;
             latest_function_call <- other#latest_function_call

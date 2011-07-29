@@ -17,7 +17,14 @@ class ['abandoned, 'truncated] t file ?(points_to=(!FunctionJob.default_points_t
         inherit BackOtterJobExtension.t as b_super
 
         initializer
+            (* The "real" job is initialized by being called with #initialize by BackOtterInterceptor.jobinit_interceptor.
+             * Here, at least, initialize the callstack, so that BackOtterUtilities.get_origin_function is happy. *)
             let job = self in
+            let job = job#with_state {job#state with State.callstack = fn :: job#state.State.callstack} in
+            self#become job
+
+        method initialize =
+            let job = b_super#initialize in
 
             let symbolic_globals, concrete_globals = List.fold_left begin fun (symbolic_globals, concrete_globals) g -> 
                 match g with
@@ -65,7 +72,7 @@ class ['abandoned, 'truncated] t file ?(points_to=(!FunctionJob.default_points_t
             (* finally, enter the function *)
             let job = MemOp.state__start_fcall job State.Runtime fn (List.rev rev_args_bytes) in
 
-            self#become job
+            job
 
         method append_decision_path decision = 
             if BackOtterJobExtension.enable_record_decisions self then

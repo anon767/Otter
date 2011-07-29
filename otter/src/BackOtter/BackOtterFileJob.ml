@@ -12,6 +12,10 @@ class ['abandoned, 'truncated] t file cmdline :
         inherit ['abandoned, 'truncated] FileJob.t file cmdline as job_super
         inherit BackOtterJobExtension.t as b_super
 
+        initializer
+            let job = b_super#initialize in
+            self#become job
+
         (* TODO: can we not duplicate this in BackOtterFunctionJob? *)
         method append_decision_path decision = 
             if BackOtterJobExtension.enable_record_decisions self then
