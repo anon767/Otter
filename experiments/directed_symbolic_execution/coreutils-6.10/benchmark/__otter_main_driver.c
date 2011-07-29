@@ -1,6 +1,5 @@
-#line 2 "__otter_main_driver.c"
-
 #include "otter/otter_builtins.h"
+#include "otter/utils.h"
 #include "otter/otter_fs.h"
 #include "otter/otter_user.h"
 #include <stdio.h>
@@ -9,49 +8,75 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#ifndef MAX_ARGC
-#warning "MAX_ARGC not defined; using default 4"
-#define MAX_ARGC 4
-#endif
-
-#ifndef MAX_ARG_LENGTHS
-#warning "MAX_ARG_LENGTHS not defined; using defaults 1,10,2,2"
-#define MAX_ARG_LENGTHS 1,10,2,2
-#endif
-
-#define MAX_FILE         2
-#define MAX_FILE_SIZE    8             // TODO: this should also control the size of stdin
-#define MAX_FILENAME_LENGTH   5
-
-#define MAX_ENVIRON         1
-#define MAX_ENVVAR_LENGTH   20
-#define MAX_ENVVAL_LENGTH   5
-
-extern char **environ;
 extern int main(int argc, char **argv);
 
-char* __otter_environ[MAX_ENVIRON+1];
+// Customized mkroot which has no "." and ".."
+struct __otter_fs_dnode* my_otter_fs_mkroot()
+{
+    struct __otter_fs_dnode* newdir = __otter_multi_gmalloc(sizeof(struct __otter_fs_dnode));
+    (*newdir).linkno = 1;
+    (*newdir).numfiles = 0;
+    (*newdir).numdirs = 0;
+    (*newdir).files = NULL;
+    (*newdir).dirs = NULL;
+    (*newdir).permissions = 0x31ED;
 
-/* Allocate a char array of length (len+1), 
- * with all characters symbolic except the last one which is \0. */
-char* symbolic_string(int len) {
-    int i;
-    char *s = malloc(len+1);
+    return newdir;
+}
 
-    for (i=0;i<len;i++) {
-        char c; __SYMBOLIC(&c);
-        s[i] = c;
+// Customized fs setup which has no stdio and no pwd
+void __otter_main_setup_fs() {
+    setuid(__otter_UID_ROOT);
+
+    /* mark all file descriptors and file table entries as unused */
+    __otter_fs_fd_table = malloc(sizeof(int)*__otter_fs_MAX_FDS); /* local */
+    memset(__otter_fs_fd_table, -1, __otter_fs_MAX_FDS*sizeof(int));
+    __otter_fs_open_file_table = __otter_multi_gcalloc(sizeof(struct __otter_fs_open_file_table_entry), __otter_fs_MAX_OPEN_FILES);
+
+    // Setup root
+    struct __otter_fs_dnode* root = my_otter_fs_mkroot();
+    __otter_fs_root = root;
+    (*root).permissions = 0x01ED;
+
+#define MAX_SIZE  8
+    // Setup a file named "t" in root which has max size MAX_SIZE
+    {
+        int size = MAX_SIZE;
+        char* s = symbolic_string(MAX_SIZE);
+        __otter_fs_touch_with_data("t", __otter_fs_root, s, size);
     }
-    s[len] = 0;
-    return s;
+    // Setup a file named "u" in root which has max size MAX_SIZE
+    {
+        int size = MAX_SIZE;
+        char* s = symbolic_string(MAX_SIZE);
+        __otter_fs_touch_with_data("u", __otter_fs_root, s, size);
+    }
+
+    struct __otter_fs_dnode* dev = __otter_fs_root; //__otter_fs_mkdir("dev", root);
+    struct __otter_fs_inode* tty = __otter_fs_touch("s", dev);
+
+    (*tty).permissions = 0x01B6;
+    (*tty).type = __otter_fs_TYP_TTY;
+    (*dev).permissions = 0x01FF;
+
+    stdin  = fopen("/s", "r"); // assert: fopen returns 0  
+    __ASSERT(fileno(stdin)==0);
+    stdout = fopen("/s", "w"); // assert: fopen returns 1   
+    __ASSERT(fileno(stdout)==1);
+    stderr = fopen("/s", "w"); // assert: fopen returns 2 
+    __ASSERT(fileno(stderr)==2);
+
+    /* open file(s), to make some fd available */
+    //open ("/t", O_RDONLY /*| O_BINARY */);                            // OTTERHACK
 }
 
 #pragma cilnoremove("__otter_main_driver")
 int __otter_main_driver() {
+
     int i;
     int argc;
     char* argv[MAX_ARGC+1];  // One for null-termination
-    
+
     // Set up argc
     __SYMBOLIC(&argc);
     __ASSUME(1<=argc);
@@ -67,34 +92,7 @@ int __otter_main_driver() {
     // (I'm not sure if the null-termination is necessary. Seems not.)
     argv[i] = 0;
 
-    // Set up stdin, stdout and stderr
-	__otter_fs_mount();
-    setuid(__otter_UID_ROOT);
-	stdin  = fopen("/dev/tty", "r"); // assert: fopen returns 0  
-	stdout = fopen("/dev/tty", "w"); // assert: fopen returns 1   
-	stderr = fopen("/dev/tty", "w"); // assert: fopen returns 2 
-
-#ifdef __OTTER_SETUP_FILE_SYSTEM
-    // Two "symbolic" files, each containing 8 symbolic bytes
-    struct __otter_fs_dnode* dnode = __otter_fs_mkdir("e", __otter_fs_root);
-    {
-        int size = 8; // __SYMBOLIC(&size); __ASSUME(size>0 && size<=8);
-        char* s = symbolic_string(size);
-        __otter_fs_touch_with_data("t.t", dnode, s, size);
-    }
-    {
-        int size = 8; // __SYMBOLIC(&size); __ASSUME(size>0 && size<=8);
-        char* s = symbolic_string(size);
-        __otter_fs_touch_with_data("t2.t", dnode, s, size);
-    }
-#endif
-    
-#ifdef __OTTER_SETUP_ENVIRON
-    for (i=0;i<MAX_ENVIRON;i++)
-        __otter_environ[i] = symbolic_string(MAX_ENVVAR_LENGTH + 1 + MAX_ENVVAL_LENGTH);  // "name=value"
-    __otter_environ[MAX_ENVIRON] = 0;
-    environ = &__otter_environ[0];
-#endif
+    __otter_main_setup_fs();
 
     return main(argc, argv);
 }
