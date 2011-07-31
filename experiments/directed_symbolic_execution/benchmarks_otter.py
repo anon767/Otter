@@ -18,18 +18,21 @@ benchmarks = {
             'ptx'    : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/ptx_comb.c"     -DMAX_ARGC=4 -DMAX_ARG_LENGTHS=1,10,2,2   --line-targets=@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/../src/ptx.c:312',
             'seq'    : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/seq_comb.c"     -DMAX_ARGC=4 -DMAX_ARG_LENGTHS=1,10,2,2   --line-targets=@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/../src/seq.c:215 --noUseLogicalOperators',
             'md5sum' : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/md5sum_comb.c"  -DMAX_ARGC=4 -DMAX_ARG_LENGTHS=1,10,2,2   -D__OTTER_SETUP_FILE_SYSTEM  --line-targets=@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/../src/md5sum.c:213',
-            # tac requires init-local=symbolic
             },
-        'command' : '/usr/bin/time "@trunk@/newlib-1.19.0/otter/otter-with-libc" "@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/__otter_main_driver.c" --mainfn=__otter_main_driver -lm --timeout=1800 --bypassed-functions=main'
+        'command' : '"@trunk@/newlib-1.19.0/otter/otter-with-libc" "@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/__otter_main_driver.c" --mainfn=__otter_main_driver -lm --timeout=1800 --bypassed-functions=main --init-malloc=zero --init-local=zero '
         },
     'coreutils-customized' : {
         'programs' : {
-            'ptx2' : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/ptx_comb.c"  -DMAX_ARGC=4 -DMAX_ARG_LENGTHS=1,10,2,2   -D__OTTER_SETUP_FILE_SYSTEM \
-                      "@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/__otter_main_driver_ptx_customized.c" \
-                       --line-targets=@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/../src/ptx.c:1510 \
-                       --unsound-pointer-arithmetic',
+            'ptx2' : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/ptx_comb.c"  -DMAX_ARGC=4 -DMAX_ARG_LENGTHS=1,10,2,2 --line-targets=@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/../src/ptx.c:1510 --unsound-pointer-arithmetic',
+            'pr'   : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/pr_comb.c" -DMAX_ARGC=3 -DMAX_ARG_LENGTHS=1,2,2 --line-targets=@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/../src/pr.c:2674',
             },
-        'command' : '"@trunk@/newlib-1.19.0/otter/otter-with-libc""@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/__otter_poi.c" --mainfn=__otter_main_driver -lm --timeout=1800 --bypassed-functions=main'
+        'command' : '"@trunk@/newlib-1.19.0/otter/otter-with-libc" "@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/__otter_main_driver.c" --mainfn=__otter_main_driver -lm --timeout=3600 --bypassed-functions=main --init-malloc=zero --init-local=zero -D__OTTER_SETUP_FILE_SYSTEM -D__OTTER_NO_STDIO'
+        },
+    'coreutils-customized-symbolic-local' : {
+        'programs' : {
+            'tac'  : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/tac_comb.c" -DMAX_ARGC=4 -DMAX_ARG_LENGTHS=1,2,2,2 --line-targets=@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/../lib/regexec.c:568',
+            },
+        'command' : '"@trunk@/newlib-1.19.0/otter/otter-with-libc" "@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/__otter_main_driver.c" --mainfn=__otter_main_driver -lm --timeout=7200 --bypassed-functions=main --init-malloc=symbolic --init-local=symbolic -D__OTTER_SETUP_FILE_SYSTEM -D__OTTER_NO_STDIO -D__OTTER_MAX_FILE_SIZE=1 -D__OTTER_FIXED_ARGC'
         },
     'synthetic' : {
         'programs' : {
@@ -56,9 +59,8 @@ strategies = {
 }
 
 options = {
-    'std'  : '--convert-non-target-reached-abandoned-to-truncated --doRunRmtmps --init-malloc=zero --init-local=zero --max-abandoned=1 --printLittle --backotter-timing-method=weighted --backotter-no-overlap-path-matching',
+    'std'  : '--convert-non-target-reached-abandoned-to-truncated --doRunRmtmps --max-abandoned=1 --printErrorsOnly --backotter-timing-method=weighted --backotter-no-overlap-path-matching',
 }
-
 def make_test(command, program, strategy, option, seed):
     test_log  = '"@dest@/logs/%d/%s-%s-%s.log"' % (seed, program[0], strategy[0], option[0])
     test_csv  = '"@dest@/csv/%s/%s/%s/%d/entry"' % (option[0], program[0], strategy[0], seed)
