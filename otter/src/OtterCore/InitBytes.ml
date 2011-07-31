@@ -20,7 +20,7 @@ let options = [
         Arg.Symbol (fst (List.split init_methods), fun name -> init_local := get_init_method name),
         " Set the default init method for local variables (default: " ^ (fst (List.find (fun (_, x) -> x == !init_local) init_methods)) ^ ")";
     "--init-malloc",
-        Arg.Symbol (fst (List.split init_methods), fun name -> init_local := get_init_method name),
+        Arg.Symbol (fst (List.split init_methods), fun name -> init_malloc := get_init_method name),
         " Set the default init method for malloc-ed memory (default: " ^ (fst (List.find (fun (_, x) -> x == !init_malloc) init_methods)) ^ ")";
 ]
 
