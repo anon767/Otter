@@ -38,20 +38,27 @@ void __otter_main_setup_fs() {
     __otter_fs_root = root;
     (*root).permissions = 0x01ED;
 
-#define MAX_SIZE  8
-    // Setup a file named "t" in root which has max size MAX_SIZE
+#ifdef __OTTER_SETUP_FILE_SYSTEM
+  #ifndef __OTTER_MAX_FILE_SIZE
+    #define __OTTER_MAX_FILE_SIZE  8
+  #endif
+    // Setup a file named "t" in root which has max size __OTTER_MAX_FILE_SIZE
     {
-        int size = MAX_SIZE;
-        char* s = symbolic_string(MAX_SIZE);
+        int size = __OTTER_MAX_FILE_SIZE;
+        char* s = symbolic_string(__OTTER_MAX_FILE_SIZE);
         __otter_fs_touch_with_data("t", __otter_fs_root, s, size);
     }
-    // Setup a file named "u" in root which has max size MAX_SIZE
+  #ifdef __OTTER_SETUP_TWO_FILES
+    // Setup a file named "u" in root which has max size __OTTER_MAX_FILE_SIZE
     {
-        int size = MAX_SIZE;
-        char* s = symbolic_string(MAX_SIZE);
+        int size = __OTTER_MAX_FILE_SIZE;
+        char* s = symbolic_string(__OTTER_MAX_FILE_SIZE);
         __otter_fs_touch_with_data("u", __otter_fs_root, s, size);
     }
+  #endif
+#endif
 
+#ifndef __OTTER_NO_STDIO
     struct __otter_fs_dnode* dev = __otter_fs_root; //__otter_fs_mkdir("dev", root);
     struct __otter_fs_inode* tty = __otter_fs_touch("s", dev);
 
@@ -65,6 +72,7 @@ void __otter_main_setup_fs() {
     __ASSERT(fileno(stdout)==1);
     stderr = fopen("/s", "w"); // assert: fopen returns 2 
     __ASSERT(fileno(stderr)==2);
+#endif
 
     /* open file(s), to make some fd available */
     //open ("/t", O_RDONLY /*| O_BINARY */);                            // OTTERHACK
@@ -78,9 +86,13 @@ int __otter_main_driver() {
     char* argv[MAX_ARGC+1];  // One for null-termination
 
     // Set up argc
+#ifdef __OTTER_FIXED_ARGC
+    argc = MAX_ARGC;
+#else
     __SYMBOLIC(&argc);
     __ASSUME(1<=argc);
     __ASSUME(argc<=MAX_ARGC);
+#endif
 
     // Set up argv
     int arg_lengths[] = {MAX_ARG_LENGTHS};
