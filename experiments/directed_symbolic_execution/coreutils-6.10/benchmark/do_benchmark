@@ -73,7 +73,7 @@ log := $(log)
 
 prepare :
 	@mkdir -p $(log)
-	@$(newlib)/otter/otter-with-libc --save-temps -c __otter_main_driver.c __otter_poi.c >& $(log)/prepare.log \
+	@$(newlib)/otter/otter-with-libc --save-temps -c __otter_main_driver.c >& $(log)/prepare.log \
 		|| { cat $(log)/prepare.log; $(RM) -r $(log); exit 1; }
 	@echo
 	@$(if $(NOTE),echo Note: $(NOTE))
@@ -112,7 +112,7 @@ $(log)/$(forward)-$(backward)-$(program)-$(work).txt : prepare
 		--function-job-points-to=unsound-typed-void \
 		--function-job-uninit-void \
 		--line-targets-file=line_targets/$(program)_comb.line_targets \
-		__otter_main_driver.o __otter_poi.o $(build)/src/$(program)_comb.c \
+		__otter_main_driver.o $(build)/src/$(program)_comb.c \
 		$(newlib)/otter/lib/libc.a \
 		$(newlib)/otter/lib/libottersys.a \
 		$(newlib)/otter/lib/libm.a \
