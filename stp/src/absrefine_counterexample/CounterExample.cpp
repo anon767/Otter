@@ -547,10 +547,6 @@ namespace BEEV
         output = bm->NewParameterized_BooleanVar(form[0],form[1]);
         output = ComputeFormulaUsingModel(output);
         break;
-      case FOR:
-        //output = Check_FiniteLoop_UsingModel(form);
-        output = ASTTrue;
-        break;
       default:
           cerr << _kind_names[k];
       FatalError(" ComputeFormulaUsingModel: "
@@ -878,6 +874,7 @@ namespace BEEV
       {
         bm->GetRunTimes()->start(RunTimes::CounterExampleGeneration);
         CounterExampleMap.clear();
+        ComputeFormulaMap.clear();
 
         ToSAT::ASTNodeToSATVar satVarToSymbol =
             tosat->SATVar_to_SymbolIndexMap();
@@ -888,7 +885,6 @@ namespace BEEV
             PrintSATModel(SatSolver, m);
           }
         //check if the counterexample is good or not
-        ComputeFormulaMap.clear();
         if (bm->counterexample_checking_during_refinement)
           bm->bvdiv_exception_occured = false;
         ASTNode orig_result = ComputeFormulaUsingModel(original_input);

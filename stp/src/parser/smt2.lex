@@ -78,8 +78,7 @@
     }
     else if (BEEV::parserInterface->letMgr.isLetDeclared(str)) // a let.
     {
-    	nptr= BEEV::parserInterface->LookupOrCreateSymbol(str);
-    	nptr = BEEV::parserInterface->letMgr.ResolveID(nptr);
+    	nptr = BEEV::parserInterface->letMgr.resolveLet(str);
     	found = true;
     }
 
@@ -88,7 +87,7 @@
 	  // Check valuesize to see if it's a prop var.  I don't like doing
 	  // type determination in the lexer, but it's easier than rewriting
 	  // the whole grammar to eliminate the term/formula distinction.  
-	  smt2lval.node = BEEV::parserInterface->newNode(BEEV::parserInterface->letMgr.ResolveID(nptr));
+	  smt2lval.node = BEEV::parserInterface->newNode(nptr);
 	  if ((smt2lval.node)->GetType() == BEEV::BOOLEAN_TYPE)
 	    return FORMID_TOK;
 	  else 
@@ -159,17 +158,20 @@ bv{DIGIT}+	{ smt2lval.str = new std::string(smt2text+2); return BVCONST_DECIMAL_
 ":difficulty"    { return DIFFICULTY_TOK; }
 ":smt-lib-version"  { return VERSION_TOK; }
 ":status"        { return STATUS_TOK; }
+":print-success"        { return PRINT_TOK; }
+
 
  /* COMMANDS */
 "set-logic"         { return LOGIC_TOK; }  
 "set-info"  		{ return NOTES_TOK;  }
+"set-option"  		{ return OPTION_TOK;  }
 "declare-fun"		{ return DECLARE_FUNCTION_TOK; }
+"push"				{ return PUSH_TOK;}
+"pop"				{ return POP_TOK;}
+ 
  /*
-	"set-option" 
 	"declare-sort" 
 	"define-sort"  
-	"push"  
-	"pop"
 */ 
 "assert" 			{ return FORMULA_TOK; }
 "check-sat"			{ return CHECK_SAT_TOK; }

@@ -67,6 +67,14 @@ namespace BEEV
       {
         return false;
       }
+
+    if (!pushNeg && key.isSimplfied())
+      {
+        output = key;
+        return true;
+      }
+
+
     ASTNodeMap::iterator it, itend;
     it = pushNeg ? SimplifyNegMap->find(key) : SimplifyMap->find(key);
     itend = pushNeg ? SimplifyNegMap->end() : SimplifyMap->end();
@@ -106,11 +114,16 @@ namespace BEEV
     // to cache.
     if (0 == key.Degree())
       return;
-    
+
     if (pushNeg)
       (*SimplifyNegMap)[key] = value;
     else
       (*SimplifyMap)[key] = value;
+
+    if (!pushNeg && key == value)
+      {
+        key.hasBeenSimplfied();
+      }
   }
 
   // Substitution Map methods....
@@ -177,17 +190,37 @@ namespace BEEV
     MultInverseMap[key] = value;
   }
 
-  bool Simplifier::CheckAlwaysTrueFormSet(const ASTNode& key)
+  // Check if key, or NOT(key) is found in the alwaysTrueSet.
+  bool Simplifier::CheckAlwaysTrueFormSet(const ASTNode& key, bool& result)
   {
-    HASHSET<int>::const_iterator it2 = AlwaysTrueHashSet.find(key.GetNodeNum());
     HASHSET<int>::const_iterator it_end_2 = AlwaysTrueHashSet.end();
+    HASHSET<int>::const_iterator it2 = AlwaysTrueHashSet.find(key.GetNodeNum());
 
-    return  it2 != it_end_2;
+    if(it2 != it_end_2)
+    {
+      result = true; // The key should be replaced by TRUE.
+      return true;
+    }
+
+    int toSearch;
+    if (key.GetKind() == NOT)
+        toSearch = key.GetNodeNum()-1;
+    else
+        toSearch = key.GetNodeNum()+1;
+
+    it2 = AlwaysTrueHashSet.find(toSearch);
+    if(it2 != it_end_2)
+        {
+          result = false;
+          return true;
+        }
+
+    return false;
   }
 
   void Simplifier::UpdateAlwaysTrueFormSet(const ASTNode& key)
   {
-	  AlwaysTrueHashSet.insert(key.GetNodeNum());
+    AlwaysTrueHashSet.insert(key.GetNodeNum());
   }
 
   ASTNode 
@@ -282,7 +315,6 @@ namespace BEEV
     ASTVec ca = a.GetChildren();
     if (!(IMPLIES == kind || 
           ITE == kind     || 
-          FOR == kind     ||
           PARAMBOOL==kind ||
           isAtomic(kind)))
       {
@@ -349,9 +381,6 @@ namespace BEEV
         break;
       case ITE:
         output = SimplifyIteFormula(a, pushNeg, VarConstMap);
-        break;
-      case FOR:
-        output = SimplifyForFormula(a, pushNeg, VarConstMap);
         break;
       default:
         //kind can be EQ,NEQ,BVLT,BVLE,... or a propositional variable
@@ -1023,23 +1052,6 @@ namespace BEEV
         }
     }
 
-    if (k1 == BVCONST && k2 == BVSX)
-    {
-    	// Each of the bits in the extended part, and one into the un-extended part must be the same.
-    	bool foundZero=false, foundOne=false;
-    	const unsigned original_width = in2[0].GetValueWidth();
-    	const unsigned new_width = in2.GetValueWidth();
-    	for (int i = original_width-1; i < new_width;i++)
-    		if (CONSTANTBV::BitVector_bit_test(in1.GetBVConst(),i))
-    			foundOne=true;
-    		else
-    			foundZero=true;
-    	if (foundZero && foundOne)
-    		return ASTFalse;
-    	ASTNode lhs = nf->CreateTerm(BVEXTRACT, original_width, in1, _bm->CreateBVConst(32,original_width-1), _bm->CreateZeroConst(32));
-    	ASTNode rhs = nf->CreateTerm(BVEXTRACT, original_width, in2, _bm->CreateBVConst(32,original_width-1), _bm->CreateZeroConst(32));
-    	return nf->CreateNode(EQ, lhs,rhs);
-    }
 
     //last resort is to CreateNode
     return nf->CreateNode(EQ, in1, in2);
@@ -1078,15 +1090,14 @@ namespace BEEV
       return t2;
     if (t1 == t2)
       return t1;
-    if (CheckAlwaysTrueFormSet(t0))
+
+    bool result;
+    if (CheckAlwaysTrueFormSet(t0,result))
       {
-        return t1;
-      }
-    if (CheckAlwaysTrueFormSet(nf->CreateNode(NOT, t0))
-        || (NOT == t0.GetKind() 
-            && CheckAlwaysTrueFormSet(t0[0])))
-      {
-        return t2;
+        if (result)
+          return t1;
+        else
+          return t2;
       }
 
     return nf->CreateArrayTerm(ITE, t1.GetIndexWidth(),t1.GetValueWidth(), t0, t1, t2);
@@ -1110,16 +1121,16 @@ namespace BEEV
           return t2;
         if (t1 == t2)
           return t1;
-        if (CheckAlwaysTrueFormSet(t0))
+
+        bool result;
+        if (CheckAlwaysTrueFormSet(t0,result))
           {
-            return t1;
+            if (result)
+              return t1;
+            else
+              return t2;
           }
-        if (CheckAlwaysTrueFormSet(nf->CreateNode(NOT, t0))
-            || (NOT == t0.GetKind() 
-                && CheckAlwaysTrueFormSet(t0[0])))
-          {
-            return t2;
-          }
+
       }
     ASTNode result = nf->CreateNode(ITE, t0, t1, t2);
     assert(BVTypeCheck(result));
@@ -1256,10 +1267,14 @@ namespace BEEV
     //pushnegation if there are odd number of NOTs
     bool pn = (NotCount % 2 == 0) ? false : true;
 
-    if (CheckAlwaysTrueFormSet(o))
+    bool alwaysTrue;
+    if (CheckAlwaysTrueFormSet(o,alwaysTrue))
       {
-        output = pn ? ASTFalse : ASTTrue;
-        return output;
+        if (alwaysTrue)
+          return ( pn ? ASTFalse : ASTTrue);
+
+        // We don't do the false case because it is sometimes
+        // called at the top level.
       }
 
     if (CheckSimplifyMap(o, output, pn))
@@ -1409,6 +1424,7 @@ namespace BEEV
       {
         c0 = SimplifyFormula(a[0], false, VarConstMap);
         c1 = SimplifyFormula(a[1], false, VarConstMap);
+        bool atResult;
         if (ASTFalse == c0)
           {
             output = ASTTrue;
@@ -1421,28 +1437,25 @@ namespace BEEV
           {
             output = ASTTrue;
           }
-        else if (CheckAlwaysTrueFormSet(c0))
+        else if (CheckAlwaysTrueFormSet(c0, atResult))
           {
             // c0 AND (~c0 OR c1) <==> c1
-            //
-            //applying modus ponens
-            output = c1;
-          }
-        else if (CheckAlwaysTrueFormSet(c1) || 
-                 CheckAlwaysTrueFormSet(nf->CreateNode(NOT, c0)) ||
-                 (NOT == c0.GetKind() && CheckAlwaysTrueFormSet(c0[0])))
-          {
             //(~c0 AND (~c0 OR c1)) <==> TRUE
-            //
             //(c0 AND ~c0->c1) <==> TRUE
-            output = ASTTrue;
-          }
-        else if (CheckAlwaysTrueFormSet(nf->CreateNode(NOT, c1)) ||
-                 (NOT == c1.GetKind() && CheckAlwaysTrueFormSet(c1[0])))
-          {
             //(~c1 AND c0->c1) <==> (~c1 AND ~c1->~c0) <==> ~c0
             //(c1 AND c0->~c1) <==> (c1 AND c1->~c0) <==> ~c0
-            output = nf->CreateNode(NOT, c0);
+
+            if (atResult)
+              output = c1;
+            else
+              output = ASTTrue;
+          }
+        else if (CheckAlwaysTrueFormSet(c1, atResult))
+          {
+            if (atResult)
+              output = ASTTrue;
+            else
+              output = nf->CreateNode(NOT, c0);
           }
         else
           {
@@ -1482,6 +1495,8 @@ namespace BEEV
     else
       c0 = SimplifyFormula(c0, false, VarConstMap);
 
+    bool alwaysResult;
+
     if (ASTTrue == c0)
       {
         output = c1;
@@ -1509,21 +1524,19 @@ namespace BEEV
       {
         output = ASTFalse;
       }
-    else if (CheckAlwaysTrueFormSet(c0))
+    else if (CheckAlwaysTrueFormSet(c0,alwaysResult))
       {
-        output = c1;
+        if (alwaysResult)
+          output = c1;
+        else
+          output = nf->CreateNode(NOT, c1);
       }
-    else if (CheckAlwaysTrueFormSet(c1))
+    else if (CheckAlwaysTrueFormSet(c1,alwaysResult))
       {
-        output = c0;
-      }
-    else if (CheckAlwaysTrueFormSet(nf->CreateNode(NOT, c0)))
-      {
-        output = nf->CreateNode(NOT, c1);
-      }
-    else if (CheckAlwaysTrueFormSet(nf->CreateNode(NOT, c1)))
-      {
-        output = nf->CreateNode(NOT, c0);
+        if (alwaysResult)
+          output = c0;
+        else
+          output = nf->CreateNode(NOT, c0);
       }
     else
       {
@@ -1564,6 +1577,8 @@ namespace BEEV
         t2 = SimplifyFormula(a[2], false, VarConstMap);
       }
 
+    bool alwaysTrue;
+
     if (ASTTrue == t0)
       {
         output = t1;
@@ -1600,14 +1615,12 @@ namespace BEEV
       {
         output = nf->CreateNode(AND, t0, t1);
       }
-    else if (CheckAlwaysTrueFormSet(t0))
+    else if (CheckAlwaysTrueFormSet(t0,alwaysTrue))
       {
-        output = t1;
-      }
-    else if (CheckAlwaysTrueFormSet(nf->CreateNode(NOT, t0)) ||
-             (NOT == t0.GetKind() && CheckAlwaysTrueFormSet(t0[0])))
-      {
-        output = t2;
+        if (alwaysTrue)
+          output = t1;
+        else
+          output = t2;
       }
     else
       {
@@ -1661,6 +1674,9 @@ namespace BEEV
     if (n.isConstant())
       return true;
 
+    if (n.isSimplfied())
+      return true;
+
     //If it's a symbol that's not in the substitition Map.
     if (n.GetKind() == SYMBOL && CheckSubstitutionMap(n))
       return false;
@@ -1675,6 +1691,135 @@ namespace BEEV
 
     return (it->second == n);
   }
+
+ // If both of the children are sign extended. Makes this node sign extended too.
+  ASTNode Simplifier::pullUpBVSX(ASTNode output)
+  {
+    assert(output.GetChildren().size() ==2);
+    assert(output[0].GetKind() == BVSX);
+    assert(output[1].GetKind() == BVSX);
+    const Kind k = output.GetKind();
+
+    assert(BVMULT == k || SBVDIV == k || BVPLUS ==k);
+    const int inputValueWidth = output.GetValueWidth();
+
+    int lengthA = output.GetChildren()[0][0].GetValueWidth();
+    int lengthB = output.GetChildren()[1][0].GetValueWidth();
+    int maxLength;
+    if (BVMULT == output.GetKind())
+      maxLength = lengthA + lengthB;
+    else if (BVPLUS == output.GetKind() || SBVDIV == output.GetKind())
+      maxLength = std::max(lengthA,lengthB)+1;
+    else
+      FatalError("Unexpected.");
+    if (maxLength < output.GetValueWidth())
+      {
+        ASTNode newA =  nf->CreateTerm(BVEXTRACT, maxLength, output.GetChildren()[0], _bm->CreateBVConst(32,maxLength-1), _bm->CreateZeroConst(32));
+        newA = SimplifyTerm(newA);
+        ASTNode newB =  nf->CreateTerm(BVEXTRACT, maxLength, output.GetChildren()[1], _bm->CreateBVConst(32,maxLength-1), _bm->CreateZeroConst(32));
+        newB = SimplifyTerm(newB);
+
+        ASTNode mult = nf->CreateTerm(output.GetKind(), maxLength, newA,newB);
+        output = nf->CreateTerm(BVSX, inputValueWidth, mult, _bm->CreateBVConst(32,inputValueWidth));
+      }
+    return output;
+  }
+
+  // If the shift is bigger than the bitwidth, replace by an extract.
+  ASTNode Simplifier::convertArithmeticKnownShiftAmount(const Kind k, const ASTVec& children, STPMgr& bm, NodeFactory *nf)
+  {
+    const ASTNode a =children[0];
+    const ASTNode b =children[1];
+    const int width = children[0].GetValueWidth();
+    ASTNode output;
+
+    assert(b.isConstant());
+    assert(k == BVSRSHIFT);
+
+    if (CONSTANTBV::Set_Max(b.GetBVConst()) > 1 + log2(width))
+      {
+        ASTNode top = bm.CreateBVConst(32,width-1);
+        return nf->CreateTerm(BVSX, width, nf->CreateTerm(BVEXTRACT,1, children[0], top,top ), bm.CreateBVConst(32,width));
+      }
+    else
+    {
+        if  (b.GetUnsignedConst() >= width)
+          {
+            ASTNode top = bm.CreateBVConst(32,width-1);
+            return nf->CreateTerm(BVSX, width, nf->CreateTerm(BVEXTRACT,1, children[0], top,top ), bm.CreateBVConst(32,width));
+          }
+    }
+
+    return ASTNode();
+  }
+
+
+  // If the rhs of a left or right shift is known. Then replace it with a concat / extract.
+  ASTNode Simplifier::convertKnownShiftAmount(const Kind k, const ASTVec& children, STPMgr& bm, NodeFactory *nf)
+  {
+    const ASTNode a =children[0];
+    const ASTNode b =children[1];
+    const int width = children[0].GetValueWidth();
+    ASTNode output;
+
+    assert(b.isConstant());
+    assert(k == BVLEFTSHIFT || BVRIGHTSHIFT ==k);
+
+  if (CONSTANTBV::Set_Max(b.GetBVConst()) > 1 + log2(width))
+    {
+      // Intended to remove shifts by very large amounts
+      // that don't fit into the unsigned.  at thhe start
+      // of the "else" branch.
+      output = bm.CreateZeroConst(width);
+    }
+  else
+    {
+      const unsigned int shift = b.GetUnsignedConst();
+      if (shift >= width)
+        {
+          output = bm.CreateZeroConst(width);
+        }
+      else if (shift == 0)
+        {
+          output = a; // unchanged.
+        }
+      else
+        {
+          if (k == BVLEFTSHIFT)
+            {
+              ASTNode zero = bm.CreateZeroConst(shift);
+              ASTNode hi = bm.CreateBVConst(32, width - shift -1);
+              ASTNode low = bm.CreateZeroConst(32);
+              ASTNode extract =
+                nf->CreateTerm(BVEXTRACT, width - shift,
+                                a, hi, low);
+              BVTypeCheck(extract);
+              output =
+                nf->CreateTerm(BVCONCAT, width,
+                                extract, zero);
+              BVTypeCheck(output);
+            }
+          else if (k == BVRIGHTSHIFT)
+            {
+              ASTNode zero = bm.CreateZeroConst(shift);
+              ASTNode hi = bm.CreateBVConst(32, width -1);
+              ASTNode low = bm.CreateBVConst(32, shift);
+              ASTNode extract =
+                nf->CreateTerm(BVEXTRACT, width - shift,
+                                a, hi, low);
+              BVTypeCheck(extract);
+              output =
+                nf->CreateTerm(BVCONCAT, width, zero, extract);
+              BVTypeCheck(output);
+            }
+          else
+            FatalError("herasdf");
+        }
+    }
+  return output;
+}
+
+
 
   //This function simplifies terms based on their kind
   ASTNode 
@@ -1976,7 +2121,11 @@ namespace BEEV
                 }
             }
 
-          if (BVMULT == output.GetKind())
+          if ((BVMULT == output.GetKind() || BVPLUS == output.GetKind()) && output.GetChildren().size() == 2 && output.GetChildren()[0].GetKind() == BVSX && output.GetChildren()[1].GetKind() == BVSX )
+            {
+              output = pullUpBVSX(output);
+            }
+          else if (BVMULT == output.GetKind())
             {
               output = makeTower(BVMULT,output.GetChildren());
             }
@@ -2708,57 +2857,7 @@ namespace BEEV
           const unsigned int width = a.GetValueWidth();
           if (BVCONST == b.GetKind()) // known shift amount.
             {
-              if (CONSTANTBV::Set_Max(b.GetBVConst()) > 1 + log2(width))
-                {
-                  // Intended to remove shifts by very large amounts
-                  // that don't fit into the unsigned.  at thhe start
-                  // of the "else" branch.
-                  output = _bm->CreateZeroConst(width);
-                }
-              else
-                {
-                  const unsigned int shift = b.GetUnsignedConst();
-                  if (shift >= width)
-                    {
-                      output = _bm->CreateZeroConst(width);
-                    }
-                  else if (shift == 0)
-                    {
-                      output = a; // unchanged.
-                    }
-                  else
-                    {
-                      if (k == BVLEFTSHIFT)
-                        {
-                          ASTNode zero = _bm->CreateZeroConst(shift);
-                          ASTNode hi = _bm->CreateBVConst(32, width - shift -1);
-                          ASTNode low = _bm->CreateZeroConst(32);
-                          ASTNode extract = 
-                            nf->CreateTerm(BVEXTRACT, width - shift,
-                                            a, hi, low);
-                          BVTypeCheck(extract);
-                          output = 
-                            nf->CreateTerm(BVCONCAT, width,
-                                            extract, zero);
-                          BVTypeCheck(output);
-                        }
-                      else if (k == BVRIGHTSHIFT)
-                        {
-                          ASTNode zero = _bm->CreateZeroConst(shift);
-                          ASTNode hi = _bm->CreateBVConst(32, width -1);
-                          ASTNode low = _bm->CreateBVConst(32, shift);
-                          ASTNode extract = 
-                            nf->CreateTerm(BVEXTRACT, width - shift,
-                                            a, hi, low);
-                          BVTypeCheck(extract);
-                          output = 
-                            nf->CreateTerm(BVCONCAT, width, zero, extract);
-                          BVTypeCheck(output);
-                        }
-                      else
-                        FatalError("herasdf");
-                    }
-                }
+              output = convertKnownShiftAmount(k, inputterm.GetChildren(), *_bm, nf);
             }
           else if (a == _bm->CreateZeroConst(width))
           {
@@ -2838,40 +2937,63 @@ namespace BEEV
         }
       case READ:
         {
-          ASTNode out1;
-          //process only if not  in the substitution map. simplifymap
-          //has been checked already
-          if (!CheckSubstitutionMap(inputterm, out1))
-            {
-              if (WRITE == inputterm[0].GetKind())
+              ASTNode out1;
+
+              ASTNode array_term = SimplifyArrayTerm(inputterm[0], VarConstMap);
+              ASTNode read_index = SimplifyTerm(inputterm[1], VarConstMap);
+
+              if (SYMBOL == array_term.GetKind())
                 {
-            	  out1 = RemoveWrites_TopLevel(inputterm);
+                  out1 = nf->CreateTerm(READ, inputterm.GetValueWidth(), array_term, read_index);
                 }
-              else if (ITE == inputterm[0].GetKind())
+              else if (WRITE == array_term.GetKind())
                 {
-                  ASTNode cond = 
+                  ASTNode eq = CreateSimplifiedEQ(read_index, array_term[1]);
+                  if (eq == ASTTrue)
+                    out1 = array_term[2];
+                  else if (eq == ASTFalse)
+                    {
+                      out1 = nf->CreateTerm(READ, inputterm.GetValueWidth(), array_term[0], read_index);
+                      out1 = SimplifyTerm(out1, VarConstMap);
+                    }
+                  else
+                    {
+                      out1 = nf->CreateTerm(READ, inputterm.GetValueWidth(), array_term, read_index);
+                    }
+                }
+              else if (ITE == array_term.GetKind())
+                {
+                  // Pushes the READ through ITES, which is potentially exponential.
+                  // At present, because there's no write refinement or similar, the
+                  // array transformer is going to do this later anyway. So, we do it
+                  // here. But it's ugggglly.
+
+                  ASTNode cond =
                     SimplifyFormula(inputterm[0][0], false, VarConstMap);
-                  ASTNode index = 
-                    SimplifyTerm(inputterm[1], VarConstMap);
-                  ASTNode read1 = 
+                  ASTNode read1 =
                     nf->CreateTerm(READ,
-                                    inputValueWidth, 
-                                    inputterm[0][1], index);
-                  ASTNode read2 = 
+                                    inputValueWidth,
+                                    inputterm[0][1], read_index);
+                  ASTNode read2 =
                     nf->CreateTerm(READ,
-                                    inputValueWidth, 
-                                    inputterm[0][2], index);
+                                    inputValueWidth,
+                                    inputterm[0][2], read_index);
                   read1 = SimplifyTerm(read1, VarConstMap);
                   read2 = SimplifyTerm(read2, VarConstMap);
                   out1 = CreateSimplifiedTermITE(cond, read1, read2);
                 }
               else
                 {
-                  //arr is a SYMBOL for sure
-                  out1 = inputterm;
-                  assert(hasBeenSimplified(inputterm[1]));
+                  FatalError("ffff");
                 }
-            }
+
+              assert(!out1.IsNull());
+
+          //process only if not  in the substitution map. simplifymap
+          //has been checked already
+          if (!CheckSubstitutionMap(out1, out1) && out1.GetKind() == READ && WRITE == out1[0].GetKind())
+              out1 = RemoveWrites_TopLevel(out1);
+
           //it is possible that after all the procesing the READ term
           //reduces to READ(Symbol,const) and hence we should check the
           //substitutionmap once again.
@@ -2898,13 +3020,15 @@ namespace BEEV
         }
       case SBVDIV:
         {
+          output = inputterm;
           if (inputterm[0] == inputterm[1])
           {
             output = _bm->CreateOneConst(inputValueWidth);
             break;
           }
+          if (SBVDIV == output.GetKind() && output.GetChildren().size() == 2 && output.GetChildren()[0].GetKind() == BVSX && output.GetChildren()[1].GetKind() == BVSX )
+            output = pullUpBVSX(output);
 
-          output = inputterm;
           break;
         }
       case WRITE:
@@ -3451,7 +3575,8 @@ namespace BEEV
   ASTNode Simplifier::SimplifyArrayTerm(const ASTNode& term,
 		ASTNodeMap* VarConstMap) {
 
-	assert(term.GetIndexWidth() > 0);
+        const unsigned iw = term.GetIndexWidth();
+	assert(iw > 0);
 
 	ASTNode output;
 	if (CheckSimplifyMap(term, output, false)) {
@@ -3462,7 +3587,6 @@ namespace BEEV
 	case SYMBOL:
 		return term;
 	case ITE: {
-		unsigned iw = term.GetIndexWidth();
 		output = CreateSimplifiedTermITE(
 				SimplifyFormula(term[0],VarConstMap),
 				SimplifyArrayTerm(term[1], VarConstMap),
@@ -3471,7 +3595,6 @@ namespace BEEV
 	}
 		break;
 	case WRITE: {
-		unsigned iw = term.GetIndexWidth();
 		ASTNode array = SimplifyArrayTerm(term[0], VarConstMap);
 		ASTNode idx = SimplifyTerm(term[1]);
 		ASTNode val = SimplifyTerm(term[2]);
@@ -3488,7 +3611,7 @@ namespace BEEV
 	assert(term.GetIndexWidth() == output.GetIndexWidth());
 	assert(BVTypeCheck(output));
 	return output;
-}
+ }
 
 
 
@@ -3508,7 +3631,7 @@ namespace BEEV
     if (CheckSimplifyMap(term, output, false))
       {
         return output;
-      }
+     }
 
     ASTVec writeIndices, writeValues;
     unsigned int width = term.GetValueWidth();

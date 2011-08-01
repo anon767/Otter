@@ -33,14 +33,13 @@ namespace BEEV
 
     bm.GetRunTimes()->start(RunTimes::RemoveUnconstrained);
 
-    // If there are substitutions still to write through, I suspect that'd be bad.
-    result = simplifier->applySubstitutionMap(result);
-    simplifier->haveAppliedSubstitutionMap();
+    if(simplifier->hasUnappliedSubstitutions())
+      result = simplifier->applySubstitutionMap(result);
 
+    // In some rare cases, the simplifier might not have removed a term
+    // that can be substituted away. e.g. read(A,0), if read(A,0) == 1,
+    // in the substitution map.
     result = topLevel_other(result, simplifier);
-
-    // There should be no unapplied substitutions.
-    assert(result == simplifier->applySubstitutionMap(result));
 
     // It is idempotent if there are no big ANDS (we have a special hack), and,
     // if we don't introduced any new "disjoint extracts."
@@ -111,7 +110,7 @@ namespace BEEV
         ASTNode& var = extracts[i]->n;
         assert(var.GetKind() == SYMBOL);
         const int size = var.GetValueWidth();
-        ASTNode toVar[size];
+        std::vector<ASTNode> toVar(size);
 
         // Create a mutable copy that we can iterate over.
         vector <MutableASTNode*> mut;

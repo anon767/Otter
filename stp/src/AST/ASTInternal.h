@@ -62,9 +62,6 @@ namespace BEEV
     // Kind. It's a type tag and the operator.
     enumeration<Kind,unsigned char> _kind;
 
-    // The vector of children
-    ASTVec _children;
-
     // A weak reference to the owner STPMgr
     std::tr1::weak_ptr<STPMgr> _bm;
 
@@ -72,7 +69,6 @@ namespace BEEV
     //of a node should always be greater than its descendents (which
     //is easily achieved by incrementing the number each time a new
     //node is created).
-    //FIXME: Get rid of this
     unsigned int _node_num;
 
     /*******************************************************************
@@ -82,11 +78,8 @@ namespace BEEV
      *                                                                 *
      * Width of the index of an array. Positive for array, 0 otherwise *
      *******************************************************************/
-#ifdef LESSBYTES_PERNODE
-    unsigned char _index_width;
-#else
     unsigned int  _index_width;
-#endif
+
 
     /*******************************************************************
      * ASTNode is of type BV      <==> ((indexwidth=0)&&(valuewidth>0))*
@@ -95,11 +88,7 @@ namespace BEEV
      *                                                                 *
      * Number of bits of bitvector. +ve for array/bitvector,0 otherwise*
      *******************************************************************/
-#ifdef LESSBYTES_PERNODE
-    unsigned char _value_width;
-#else
     unsigned int  _value_width;
-#endif
 
     /****************************************************************
      * Protected Member Functions                                   *
@@ -123,10 +112,7 @@ namespace BEEV
     }
 
     // Get the child nodes of this node
-    virtual ASTVec const &GetChildren() const
-    {
-      return _children;
-    }
+    virtual ASTVec const &GetChildren() const = 0;
 
     // Constructor
     ASTInternal(std::tr1::weak_ptr<STPMgr> bm, int nodenum = 0) :
@@ -146,15 +132,6 @@ namespace BEEV
     {
     }
 
-    // Constructor (kind and children).
-    ASTInternal(Kind kind, const ASTVec &children, std::tr1::weak_ptr<STPMgr> bm, int nodenum = 0) :
-      _kind(kind), _children(children),
-      _bm(bm),
-      _node_num(nodenum),
-      _index_width(0), _value_width(0)
-    {
-    }
-
     // Copy constructor.  This copies the contents of the child nodes
     // array, along with everything else.  Assigning the smart pointer,
     // ASTNode, does NOT invoke this; This should only be used for
@@ -162,10 +139,10 @@ namespace BEEV
     // FIXME:  I don't think children need to be copied.
     ASTInternal(const ASTInternal &int_node) :
       _kind(int_node._kind),
-      _children(int_node._children),
+      //_children(int_node._children),
       _bm(int_node._bm),
       _node_num(int_node._node_num), 
-      _index_width(int_node._index_width), 
+      _index_width(int_node._index_width),
       _value_width(int_node._value_width)
     {
     }
@@ -190,6 +167,18 @@ namespace BEEV
     {
       return _node_num;
     } //End of GetNodeNum()
+
+
+    virtual bool isSimplified() const
+    {
+      return false;
+    }
+
+    virtual void hasBeenSimplified() const
+    {
+      cerr << "astinternal has been";
+    }
+
 
     void SetNodeNum(int nn)
     {

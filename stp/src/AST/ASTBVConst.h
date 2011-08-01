@@ -111,7 +111,15 @@ namespace BEEV
     // compilers will accept)
     virtual void nodeprint(ostream& os, bool c_friendly = false);
     
+    const static ASTVec astbv_empty_children;
+
   public:
+
+    virtual ASTVec const &
+    GetChildren() const
+    {
+      return astbv_empty_children;
+    }
 
     /****************************************************************
      * Public Member Functions                                      *

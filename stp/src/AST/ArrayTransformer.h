@@ -1,6 +1,6 @@
 // -*- c++ -*-
 /********************************************************************
- * AUTHORS: Vijay Ganesh
+ * AUTHORS: Vijay Ganesh, Trevor Hansen
  *
  * BEGIN DATE: November, 2005
  *
@@ -12,7 +12,7 @@
 
 #include "AST.h"
 #include "../STPManager/STPManager.h"
-
+#include "../AST/NodeFactory/SimplifyingNodeFactory.h"
 
 namespace BEEV
 {
@@ -35,8 +35,9 @@ namespace BEEV
           symbol = _symbol;
         }
 
-        ASTNode ite;  // if not using refinement this will be the ITE for the read. Otherwise == symbol.
-        ASTNode symbol; // each read is allocated a distinct fresh variable.
+        ASTNode ite;     // if not using refinement this will be the ITE for the read. Otherwise == symbol.
+        ASTNode symbol;  // each read is allocated a distinct fresh variable.
+        ASTNode index_symbol;  // A symbol constrained to equal the index expression.
       };
 
       // MAP: This maps from arrays to their indexes.
@@ -57,7 +58,7 @@ namespace BEEV
     /****************************************************************
      * Private Typedefs and Data                                    *
      ****************************************************************/
-    
+
     // Handy defs
     ASTNode ASTTrue, ASTFalse, ASTUndefined;
 
@@ -85,7 +86,6 @@ namespace BEEV
      * Private Member Functions                                     *
      ****************************************************************/
     
-    ASTNode TranslateSignedDivModRem(const ASTNode& in);
     ASTNode TransformTerm(const ASTNode& inputterm);
     void assertTransformPostConditions(const ASTNode & term, ASTNodeSet& visited);
 
@@ -94,6 +94,7 @@ namespace BEEV
     ASTNode TransformFormula(const ASTNode& form);
 
   public:
+    static ASTNode TranslateSignedDivModRem(const ASTNode& in, NodeFactory*nf, STPMgr *bm);
 
     //fill the arrayname_readindices vector if e0 is a READ(Arr,index)
     //and index is a BVCONST
@@ -111,12 +112,17 @@ namespace BEEV
       debug_transform(0),
       TransformMap(NULL)
     {
-      nf = bm->defaultNodeFactory;
+      nf = new SimplifyingNodeFactory(*(bm->hashingNodeFactory), *bm);
 
       runTimes = bm->GetRunTimes();
       ASTTrue  = bm->CreateNode(TRUE);
       ASTFalse = bm->CreateNode(FALSE);
       ASTUndefined = bm->CreateNode(UNDEFINED);
+    }
+
+    ~ArrayTransformer()
+    {
+      delete nf;
     }
 
     // Takes a formula, transforms it by replacing array reads with
@@ -127,6 +133,21 @@ namespace BEEV
     {
       arrayToIndexToRead.clear();
     }
+
+    void printArrayStats()
+    {
+      cerr << "Array Sizes:";
+
+      for (ArrType::const_iterator
+             iset = arrayToIndexToRead.begin(),
+             iset_end = arrayToIndexToRead.end();
+           iset != iset_end; iset++)
+        {
+          cerr << iset->second.size() << " : ";
+        }
+      cerr << endl;
+    }
+
   }; //end of class Transformer
 
 };//end of namespace

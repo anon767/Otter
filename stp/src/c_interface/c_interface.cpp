@@ -51,8 +51,6 @@ void vc_setFlags(VC vc, char c, int param_value) {
   helpstring +=  
     "-d  : check counterexample\n";
   helpstring +=  
-    "-e  : expand finite-for construct\n";
-  helpstring +=  
     "-f  : number of abstraction-refinement loops\n";
   helpstring +=  
     "-h  : help\n";
@@ -83,13 +81,6 @@ void vc_setFlags(VC vc, char c, int param_value) {
   case 'd':
     b->UserFlags.construct_counterexample_flag = true;
     b->UserFlags.check_counterexample_flag = true;
-    break;
-  case 'e':
-    b->UserFlags.expand_finitefor_flag = true;
-    break;
-  case 'f':
-    b->UserFlags.num_absrefine_flag = true;
-    b->UserFlags.num_absrefine = param_value;
     break;
   case 'h':
     fprintf(stderr,BEEV::usage,BEEV::prog);
@@ -185,6 +176,12 @@ VC vc_createValidityChecker(void) {
                   bvsolver, arrayTransformer, 
                   tosat, Ctr_Example);
   
+  // This expects the simplifying node factory to be used to create all the nodes.
+  // i.e. for sbvdiv to be transformed away. The c-interface uses the hashing node
+  // factory. I tried to enable the simplfyingnode factory. But some c-api-tests
+  // failed with assertion errors.
+  bm->UserFlags.set("bitblast-simplification","0");
+
   BEEV::GlobalSTP = stp;
   decls = new BEEV::ASTVec();
   //created_exprs.clear();

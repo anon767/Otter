@@ -58,7 +58,12 @@ namespace BEEV
 
     ASTNode makeTower(const Kind k , const ASTVec& children);
 
+    ASTNode pullUpBVSX(const ASTNode output);
+
   public:
+    static ASTNode convertArithmeticKnownShiftAmount(const Kind k, const ASTVec& children, STPMgr& bm, NodeFactory *nf);
+    static ASTNode convertKnownShiftAmount(const Kind k, const ASTVec& children, STPMgr& bm, NodeFactory *nf);
+
 
     /****************************************************************
      * Public Member Functions                                      *
@@ -94,14 +99,14 @@ namespace BEEV
                   const ASTNode& key, ASTNode& output);
 
       
-    //functions for checking and updating simplifcation map
+    //functions for checking and updating simplification map
     bool CheckSimplifyMap(const ASTNode& key, 
                           ASTNode& output, 
                           bool pushNeg, ASTNodeMap* VarConstMap=NULL);
     void UpdateSimplifyMap(const ASTNode& key, 
                            const ASTNode& value, 
                            bool pushNeg, ASTNodeMap* VarConstMap=NULL);
-    bool CheckAlwaysTrueFormSet(const ASTNode& key);
+    bool CheckAlwaysTrueFormSet(const ASTNode& key, bool& result);
     void UpdateAlwaysTrueFormSet(const ASTNode& val);
     bool CheckMultInverseMap(const ASTNode& key, ASTNode& output);
     void UpdateMultInverseMap(const ASTNode& key, const ASTNode& value);
@@ -237,6 +242,11 @@ namespace BEEV
       return ReadOverWrite_NewName_Map;
     } // End of ReadOverWriteMap()
       
+    bool hasUnappliedSubstitutions()
+    {
+      return substitutionMap.hasUnappliedSubstitutions();
+    }
+
     ASTNodeMap * Return_SolverMap()
     {
     	return substitutionMap.Return_SolverMap();

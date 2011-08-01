@@ -50,6 +50,7 @@
   //ASTNode,ASTVec
   BEEV::ASTNode *node;
   BEEV::ASTVec *vec;
+  vector<char*> * stringVec;
   char* str;
 
   //Hash_Map to hold Array Updates during parse A map from array index
@@ -62,7 +63,6 @@
 %token  AND_TOK                 "AND"
 %token  OR_TOK                  "OR"
 %token  NOT_TOK                 "NOT"
-%token  FOR_TOK                 "FOR"
 %token  EXCEPT_TOK              "EXCEPT"
 %token  XOR_TOK                 "XOR"
 %token  NAND_TOK                "NAND"
@@ -163,8 +163,9 @@
 %nonassoc '{' '.' '('
 %nonassoc BV_TOK
 
-%type <vec>  Exprs FORM_IDs reverseFORM_IDs
-%type <vec>  Asserts 
+%type <vec>  Exprs 
+%type <vec>  Asserts
+%type <stringVec>  FORM_IDs reverseFORM_IDs  
 %type <node> Expr Formula ForDecl IfExpr ElseRestExpr IfForm ElseRestForm Assert Query ArrayUpdateExpr
 %type <Index_To_UpdateValue> Updates
 
@@ -176,6 +177,7 @@
 %token <str> BIN_BASED_NUMBER
 %token <str> DEC_BASED_NUMBER
 %token <str> HEX_BASED_NUMBER
+%token <str> STRING_TOK
 
 %%
 
@@ -285,7 +287,10 @@ Asserts         :      Assert
 }
 ;
 
-Assert          :      ASSERT_TOK Formula ';' { $$ = $2; }                
+Assert          :      ASSERT_TOK Formula ';' 
+{ 
+  $$ = $2;
+ }                
 ;
 
 Query           :      QUERY_TOK Formula ';' { parserInterface->AddQuery(*$2); $$ = $2;}
@@ -303,11 +308,12 @@ VarDecls        :      VarDecl ';'
 
 VarDecl         :      FORM_IDs ':' Type 
 {
-  for(ASTVec::iterator i=$1->begin(),iend=$1->end();i!=iend;i++) {
-    parserInterface->letMgr._parser_symbol_table.insert(*i);
-    i->SetIndexWidth($3.indexwidth);
-    i->SetValueWidth($3.valuewidth);
-    ParserBM->ListOfDeclaredVars.push_back(*i);
+  for(vector<char*>::iterator i=$1->begin(),iend=$1->end();i!=iend;i++) {
+    ASTNode s = BEEV::parserInterface->LookupOrCreateSymbol(*i);
+    s.SetIndexWidth($3.indexwidth);
+    s.SetValueWidth($3.valuewidth);
+    parserInterface->letMgr._parser_symbol_table.insert(s);
+    ParserBM->ListOfDeclaredVars.push_back(s);
   }
   delete $1;
 }
@@ -320,11 +326,7 @@ VarDecl         :      FORM_IDs ':' Type
   if($3.valuewidth != $5->GetValueWidth())
     yyerror("Fatal Error: parsing: LET Expr: Type check fail: ");
                          
-  for(ASTVec::iterator i=$1->begin(),iend=$1->end();i!=iend;i++) {                         
-    //set the valuewidth of the identifier
-    i->SetValueWidth($5->GetValueWidth());
-    i->SetIndexWidth($5->GetIndexWidth());
-                           
+  for(vector<char*>::iterator i=$1->begin(),iend=$1->end();i!=iend;i++) {                         
     parserInterface->letMgr.LetExprMgr(*i,*$5);
   }
     delete $5;
@@ -339,11 +341,7 @@ VarDecl         :      FORM_IDs ':' Type
   if($3.valuewidth != $5->GetValueWidth())
     yyerror("Fatal Error: parsing: LET Expr: Type check fail: ");
                          
-  for(ASTVec::iterator i=$1->begin(),iend=$1->end();i!=iend;i++) {                         
-    //set the valuewidth of the identifier
-    i->SetValueWidth($5->GetValueWidth());
-    i->SetIndexWidth($5->GetIndexWidth());
-                           
+  for(vector<char*>::iterator i=$1->begin(),iend=$1->end();i!=iend;i++) {                         
     parserInterface->letMgr.LetExprMgr(*i,*$5);
   }
   delete $5;
@@ -351,23 +349,23 @@ VarDecl         :      FORM_IDs ':' Type
 }                
 ;
 
-reverseFORM_IDs  :      FORMID_TOK
+reverseFORM_IDs  :      STRING_TOK
 {
-  $$ = new ASTVec;                      
-  $$->push_back(*$1);
-  delete $1;
+  $$ = new vector<char*>();                      
+  $$->push_back($1);
+ // delete $1;
 }
-|      FORMID_TOK ',' reverseFORM_IDs
+|      STRING_TOK ',' reverseFORM_IDs
 {
-  $3->push_back(*$1);
+  $3->push_back($1);
   $$ = $3;
-  delete $1;
+ // delete $1;
 }
 ;
 
 FORM_IDs         :     reverseFORM_IDs
 {
-  $$ = new ASTVec($1->rbegin(),$1->rend());
+  $$ = new vector<char*>($1->rbegin(),$1->rend());
   delete $1;
 }
 ;
@@ -489,69 +487,6 @@ Formula         :     '(' Formula ')'
   $$ = n;
   delete $1;
   delete $3;
-}
-|      FOR_TOK '(' ForDecl ';' BVCONST_TOK ';' BVCONST_TOK ';' BVCONST_TOK ';' EXCEPT_TOK Formula ')' '{' Formula '}'
-{
-  //Allows a compact representation of
-  //parameterized set of formulas (bounded
-  //universal quantification)
-  //
-  //parameter name (a variable)
-  //
-  //initial value (BVCONST)
-  //
-  //limit value (BVCONST)
-  //
-  //increment value (BVCONST)
-  //
-  //formula (it can be a nested forloop)                         
-                           
-  ASTVec vec;
-  vec.push_back(*$3);
-  vec.push_back(*$5);
-  vec.push_back(*$7);
-  vec.push_back(*$9);
-  vec.push_back(*$12);
-  vec.push_back(*$15);
-  ASTNode * n = new ASTNode(parserInterface->nf->CreateNode(FOR,vec));
-  $$ = n;
-  delete $3;
-  delete $5;
-  delete $7;
-  delete $9;
-  delete $12;                  
-  delete $15;
-}
-|      FOR_TOK '(' ForDecl ';' BVCONST_TOK ';' BVCONST_TOK ';' BVCONST_TOK ')' '{' Formula '}'
-{
-  //Allows a compact representation of
-  //parameterized set of formulas (bounded
-  //universal quantification)
-  //
-  //parameter name (a variable)
-  //
-  //initial value (BVCONST)
-  //
-  //limit value (BVCONST)
-  //
-  //increment value (BVCONST)
-  //
-  //formula (it can be a nested forloop)                         
-                           
-  ASTVec vec;
-  vec.push_back(*$3);
-  vec.push_back(*$5);
-  vec.push_back(*$7);
-  vec.push_back(*$9);
-  vec.push_back(parserInterface->CreateNode(FALSE));
-  vec.push_back(*$12);
-  ASTNode * n = new ASTNode(parserInterface->nf->CreateNode(FOR,vec));
-  $$ = n;
-  delete $3;
-  delete $5;
-  delete $7;
-  delete $9;
-  delete $12;
 }
 |      NOT_TOK Formula 
 {
@@ -695,6 +630,10 @@ ElseRestForm    :      ELSE_TOK Formula ENDIF_TOK  { $$ = $2; }
   delete $2;
   delete $4;
   delete $5;
+} | STRING_TOK
+{
+   cerr << "Unresolved symbol:" << $1 << endl;
+   yyerror("bad symbol"); 
 }
 ;
 
@@ -1109,6 +1048,10 @@ Expr            :      TERMID_TOK { $$ = new ASTNode(parserInterface->letMgr.Res
 |      LET_TOK LetDecls IN_TOK Expr
 {
   $$ = $4;
+} | STRING_TOK
+{
+   cerr << "Unresolved symbol:" << $1 << endl;
+   yyerror("bad symbol"); 
 }
 ;
 
@@ -1163,15 +1106,13 @@ LetDecls        :       LetDecl
 |       LetDecls ',' LetDecl 
 ;
 
-LetDecl         :       FORMID_TOK '=' Expr 
+LetDecl         :       STRING_TOK '=' Expr 
 {
   //Expr must typecheck
   BVTypeCheck(*$3);
 
   //set the valuewidth of the identifier
-  $1->SetValueWidth($3->GetValueWidth());
-  $1->SetIndexWidth($3->GetIndexWidth());
-
+  
   //populate the hashtable from LET-var -->
   //LET-exprs and then process them:
   //
@@ -1180,11 +1121,11 @@ LetDecl         :       FORMID_TOK '=' Expr
   //
   //2. Ensure that LET variables are not
   //2. defined more than once
-  parserInterface->letMgr.LetExprMgr(*$1,*$3);
+  parserInterface->letMgr.LetExprMgr($1,*$3);
   delete $1;
   delete $3;
 }
-|       FORMID_TOK ':' Type '=' Expr
+|       STRING_TOK ':' Type '=' Expr
 {
   //do type checking. if doesn't pass then abort
   BVTypeCheck(*$5);
@@ -1194,29 +1135,21 @@ LetDecl         :       FORMID_TOK '=' Expr
   if($3.valuewidth != $5->GetValueWidth())
     yyerror("Fatal Error: parsing: LET Expr: Type check fail: ");
 
-  //set the valuewidth of the identifier
-  $1->SetValueWidth($5->GetValueWidth());
-  $1->SetIndexWidth($5->GetIndexWidth());
-
-  parserInterface->letMgr.LetExprMgr(*$1,*$5);
+  parserInterface->letMgr.LetExprMgr($1,*$5);
   delete $1;
   delete $5;
 }
-|       FORMID_TOK '=' Formula
+|       STRING_TOK '=' Formula
 {
   //Expr must typecheck
   BVTypeCheck(*$3);
 
-  //set the valuewidth of the identifier
-  $1->SetValueWidth($3->GetValueWidth());
-  $1->SetIndexWidth($3->GetIndexWidth());
-
   //Do LET-expr management
-  parserInterface->letMgr.LetExprMgr(*$1,*$3);
+  parserInterface->letMgr.LetExprMgr($1,*$3);
   delete $1;
   delete $3;
 }
-|       FORMID_TOK ':' Type '=' Formula
+|       STRING_TOK ':' Type '=' Formula
 {
   //do type checking. if doesn't pass then abort
   BVTypeCheck(*$5);
@@ -1226,12 +1159,8 @@ LetDecl         :       FORMID_TOK '=' Expr
   if($3.valuewidth != $5->GetValueWidth())
     yyerror("Fatal Error: parsing: LET Expr: Type check fail: ");
 
-  //set the valuewidth of the identifier
-  $1->SetValueWidth($5->GetValueWidth());
-  $1->SetIndexWidth($5->GetIndexWidth());
-
   //Do LET-expr management
-  parserInterface->letMgr.LetExprMgr(*$1,*$5);
+  parserInterface->letMgr.LetExprMgr($1,*$5);
   delete $1;
   delete $5;
 }                

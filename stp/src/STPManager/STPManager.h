@@ -151,6 +151,7 @@ namespace BEEV
   public:
 
     bool LookupSymbol(const char * const name);
+    bool LookupSymbol(const char * const name, ASTNode& output);
     
     /****************************************************************
      * Public Flags                                                 *
@@ -181,6 +182,9 @@ namespace BEEV
     //count is used in the creation of new variables
     unsigned int _symbol_count;
 
+    // The value to append to the filename when saving the CNF.
+    unsigned int CNFFileNameCounter;
+
     /****************************************************************
      * Public Member Functions                                      *
      ****************************************************************/
@@ -192,7 +196,8 @@ namespace BEEV
       _bvconst_unique_table(),
       _interior_unique_table(),
       UserFlags(),
-      _symbol_count(0)
+      _symbol_count(0),
+      CNFFileNameCounter(0)
     {
       _max_node_num = 0;
       Begin_RemoveWrites = false;
@@ -212,7 +217,6 @@ namespace BEEV
       ASTUndefined = CreateNode(UNDEFINED);
       runTimes     = new RunTimes();
       _current_query = ASTUndefined;
-      UserFlags.num_absrefine = 2;
       CreateBVConstVal = NULL;
     }    
     
@@ -286,8 +290,9 @@ namespace BEEV
     ASTNode CreateZeroConst(unsigned int width);
     ASTNode CreateBVConst(CBV bv, unsigned width);
     ASTNode CreateBVConst(const char *strval, int base);
-    ASTNode CreateBVConst(string& strval, int base, int bit_width);    
+    ASTNode CreateBVConst(string strval, int base, int bit_width);
     ASTNode CreateBVConst(unsigned int width, unsigned long long int bvconst);
+    ASTNode charToASTNode(unsigned char* strval, int base , int bit_width);
     
     /****************************************************************
      * Create Node functions                                        *

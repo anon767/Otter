@@ -27,6 +27,8 @@ namespace BEEV
     friend class ASTNodeHasher;
     friend class ASTNodeEqual;
 
+    const static ASTVec empty_children;
+
   private:
     /****************************************************************
      * Private Data                                                 *
@@ -92,6 +94,12 @@ namespace BEEV
 
   public:
 
+    virtual ASTVec const &GetChildren() const
+        {
+          return empty_children;
+        }
+
+
     /****************************************************************
      * Public Member Functions                                      *
      ****************************************************************/
@@ -100,7 +108,6 @@ namespace BEEV
     ASTSymbol(const char * const name, std::tr1::weak_ptr<STPMgr> bm) :
       ASTInternal(SYMBOL, bm), _name(name)
     {
-      //printf("inside ASTSymbol constructor %s\n", _name);
     }
 
     // Destructor (does nothing, but is declared virtual here.

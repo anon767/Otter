@@ -58,7 +58,6 @@ ANYTHING ({LETTER}|{DIGIT}|{OPCHAR})
 "NAND"		 { return NAND_TOK;}
 "NOR"		 { return NOR_TOK;}
 "NOT"		 { return NOT_TOK; }
-"FOR"		 { return FOR_TOK; }
 "EXCEPT"	 { return EXCEPT_TOK; }
 "OR"		 { return OR_TOK; }
 "/="		 { return NEQ_TOK; }
@@ -125,18 +124,36 @@ ANYTHING ({LETTER}|{DIGIT}|{OPCHAR})
 "POP"            { return POP_TOK;}
 
 (({LETTER})|(_)({ANYTHING}))({ANYTHING})*	{
-  BEEV::ASTNode nptr = parserInterface->LookupOrCreateSymbol(yytext); 
+  
+   ASTNode nptr;
+   
+   if (BEEV::parserInterface->LookupSymbol(yytext,nptr)) // it's a symbol.
+    {
+	    cvclval.node = BEEV::parserInterface->newNode(nptr);
+		if ((cvclval.node)->GetType() == BEEV::BOOLEAN_TYPE)
+		  return FORMID_TOK;
+		else 
+		  return TERMID_TOK;
+    }
 
-  // Check valuesize to see if it's a prop var.  I don't like doing
-  // type determination in the lexer, but it's easier than rewriting
-  // the whole grammar to eliminate the term/formula distinction.  
-  cvclval.node = 
-    new BEEV::ASTNode(parserInterface->letMgr.ResolveID(nptr));
-  //cvclval.node = new BEEV::ASTNode(nptr);
-  if ((cvclval.node)->GetType() == BOOLEAN_TYPE)
-    return FORMID_TOK;
-  else 
-    return TERMID_TOK;  
+    // Making 4.4M strings took 1B instructions. So I split out the above case 
+    // which occurs >90% of the time (so avoiding turning the char* into a string).
+    string str(yytext);
+    if (BEEV::parserInterface->letMgr.isLetDeclared(str)) // a let.
+    {
+    	nptr= BEEV::parserInterface->letMgr.resolveLet(str);
+    	cvclval.node = BEEV::parserInterface->newNode(nptr);
+	  
+	    if ((cvclval.node)->GetType() == BEEV::BOOLEAN_TYPE)
+	      return FORMID_TOK;
+	    else 
+	      return TERMID_TOK;
+    }
+	   
+    // It hasn't been found. So it's not already declared.
+    // it has not been seen before.
+	cvclval.str = strdup(yytext);
+	return STRING_TOK;
 }
 
 .                { cvcerror("Illegal input character."); }

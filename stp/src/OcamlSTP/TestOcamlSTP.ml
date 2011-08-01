@@ -222,7 +222,7 @@ let () =
         test_bv2 "bv_signed_rem" bv_signed_rem (mod) ~lrange:[ -2; -1; 0; 1 ] ~rrange:[ -2; -1; 1 ] ~skiprv:true;
         let smod x y =
             let z = x - y * truncate (floor (float x /. float y)) in
-            if z == 0 && (x < 0) != (y < 0) then y else z
+            if z == 0 && (x < 0) != (y < 0) then 0 else z
         in
         test_bv2 "bv_signed_mod" bv_signed_mod smod ~lrange:[ -2; -1; 0; 1 ] ~rrange:[ -2; -1; 1 ] ~skiprv:true;
 
@@ -357,6 +357,10 @@ let () =
         let z = bv_zero_extend s y 6 in
         test_query s (bv_lt s y (bv_of_int s 4 5)) `True;
         test_query s (bv_lt s z (bv_of_int s 6 5)) `True;
+        test_query s (bv_eq s y (bv_of_int s 4 0)) `Unknown;
+        test_query s (bv_eq s z (bv_of_int s 6 0)) `Unknown;
+        test_query s (bv_eq s y (bv_of_int s 4 15)) `False;
+        test_query s (bv_eq s z (bv_of_int s 6 63)) `False;
     end;
 
     test_query "bv_shift_left/bv_shift_right/bv_signed_shift_right" begin fun test_query _assert_bool ->

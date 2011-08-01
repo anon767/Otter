@@ -13,6 +13,8 @@
 #include <stack>
 #include <map>
 #include <string>
+#include "../sat/utils/System.h"
+#include <iomanip>
 
 class RunTimes
 {
@@ -37,7 +39,8 @@ public:
       PureLiterals,
       UseITEContext,
       AIGSimplifyCore,
-      IntervalPropagation
+      IntervalPropagation,
+      AlwaysTrue
     };
 
   static std::string CategoryNames[];
@@ -65,11 +68,25 @@ public:
   void stop(Category c);
   void print();
   
+  std::string getDifference()
+  {
+    std::stringstream s;
+    long val = getCurrentTime();
+    s << (val -  lastTime) << "ms" ;
+    lastTime = val;
+    s << ":" << std::setiosflags(std::ios::fixed) << std::setprecision(0) << Minisat::memUsed() << "M";
+    return s.str();
+  }
+
+  void resetDifference()
+  {
+    getDifference();
+  }
+
   void difference()
   {
-	  long val = getCurrentTime();
-	  std::cout << (val -  lastTime) << "ms" << std::endl;
-	  lastTime = val;
+	  std::cout << getDifference()<< std::endl << std::endl;
+
   }
 
   RunTimes()

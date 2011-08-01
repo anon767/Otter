@@ -314,8 +314,17 @@ namespace BEEV
               && CONSTANTBV::BitVector_is_empty(tmp1))
             {
               // Expecting a division by zero. Just return one.
-              OutputNode = _bm->CreateOneConst(outputwidth);
-              CONSTANTBV::BitVector_Destroy(remainder);
+        	  if (k==SBVREM)
+        		  OutputNode = children[0];
+        	  else
+        		  {
+        	              if (CONSTANTBV::BitVector_bit_test(tmp0, inputwidth-1))
+        	                OutputNode = _bm->CreateMaxConst(inputwidth);
+        	              else
+        	                OutputNode = _bm->CreateOneConst(inputwidth);
+        		  }
+
+        	  CONSTANTBV::BitVector_Destroy(remainder);
               CONSTANTBV::BitVector_Destroy(quotient);
             }
           else
@@ -347,18 +356,23 @@ namespace BEEV
       case SBVMOD:
         {
           assert(2==number_of_children);
-          /* Definition taken from the SMTLIB website
-             (bvsmod s t) abbreviates
-             (let (?msb_s (extract[|m-1|:|m-1|] s))
-             (let (?msb_t (extract[|m-1|:|m-1|] t))
-             (ite (and (= ?msb_s bit0) (= ?msb_t bit0))
-             (bvurem s t)
-             (ite (and (= ?msb_s bit1) (= ?msb_t bit0))
-             (bvadd (bvneg (bvurem (bvneg s) t)) t)
-             (ite (and (= ?msb_s bit0) (= ?msb_t bit1))
-             (bvadd (bvurem s (bvneg t)) t)
-             (bvneg (bvurem (bvneg s) (bvneg t)))))))
-          */
+/*
+          (bvsmod s t) abbreviates
+              (let ((?msb_s ((_ extract |m-1| |m-1|) s))
+                    (?msb_t ((_ extract |m-1| |m-1|) t)))
+                (let ((abs_s (ite (= ?msb_s #b0) s (bvneg s)))
+                      (abs_t (ite (= ?msb_t #b0) t (bvneg t))))
+                  (let ((u (bvurem abs_s abs_t)))
+                    (ite (= u (_ bv0 m))
+                         u
+                    (ite (and (= ?msb_s #b0) (= ?msb_t #b0))
+                         u
+                    (ite (and (= ?msb_s #b1) (= ?msb_t #b0))
+                         (bvadd (bvneg u) t)
+                    (ite (and (= ?msb_s #b0) (= ?msb_t #b1))
+                         (bvadd u t)
+                         (bvneg u))))))))
+*/
 
           assert(input_children[0].GetValueWidth() == input_children[1].GetValueWidth());
 
@@ -373,8 +387,8 @@ namespace BEEV
           if (_bm->UserFlags.division_by_zero_returns_one_flag
               && CONSTANTBV::BitVector_is_empty(tmp1))
             {
-              // Expecting a division by zero. Just return one.
-              OutputNode = _bm->CreateOneConst(outputwidth);
+              // Return the top for a division be zero.
+              OutputNode = children[0];
               CONSTANTBV::BitVector_Destroy(remainder);
             }
           else
@@ -397,20 +411,25 @@ namespace BEEV
                   CONSTANTBV::BitVector_Negate(tmp0b, tmp0);
 
                   CONSTANTBV::ErrCode e = CONSTANTBV::BitVector_Div_Pos(quotient, tmp0b, tmp1, remainder);
-
                   assert(e == CONSTANTBV::ErrCode_Ok);
 
                   CBV remb = CONSTANTBV::BitVector_Create(inputwidth, true);
                   CONSTANTBV::BitVector_Negate(remb, remainder);
 
-                  bool carry = false;
-                  CBV res = CONSTANTBV::BitVector_Create(inputwidth, true);
-                  CONSTANTBV::BitVector_add(res, remb, tmp1, &carry);
+                  if (CONSTANTBV::BitVector_is_empty(remb))
+                  {
+					OutputNode = _bm->CreateZeroConst(outputwidth);
+                  }
+                  else
+                  {
+                	CBV res = CONSTANTBV::BitVector_Create(inputwidth, true);
+                	bool carry = false;
+                	CONSTANTBV::BitVector_add(res, remb, tmp1, &carry);
+					OutputNode = _bm->CreateBVConst(res, outputwidth);
+                  }
 
-                  OutputNode = _bm->CreateBVConst(res, outputwidth);
-
-                  CONSTANTBV::BitVector_Destroy(tmp0b);
                   CONSTANTBV::BitVector_Destroy(remb);
+                  CONSTANTBV::BitVector_Destroy(tmp0b);
                   CONSTANTBV::BitVector_Destroy(remainder);
                 }
               else if (!isNegativeS && isNegativeT)
@@ -423,11 +442,17 @@ namespace BEEV
 
                   assert(e == CONSTANTBV::ErrCode_Ok);
 
-                  bool carry = false;
-                  CBV res = CONSTANTBV::BitVector_Create(inputwidth, true);
-                  CONSTANTBV::BitVector_add(res, remainder, tmp1, &carry);
-
-                  OutputNode = _bm->CreateBVConst(res, outputwidth);
+                  if (CONSTANTBV::BitVector_is_empty(remainder))
+                  {
+					OutputNode = _bm->CreateZeroConst(outputwidth);
+				  }
+					else
+				  {
+					CBV res = CONSTANTBV::BitVector_Create(inputwidth, true);
+	                bool carry = false;
+					CONSTANTBV::BitVector_add(res, remainder, tmp1, &carry);
+					OutputNode = _bm->CreateBVConst(res, outputwidth);
+				  }
 
                   CONSTANTBV::BitVector_Destroy(tmp1b);
                   CONSTANTBV::BitVector_Destroy(remainder);
@@ -472,9 +497,9 @@ namespace BEEV
               && CONSTANTBV::BitVector_is_empty(tmp1))
             {
               // a = bq + r, where b!=0 implies r < b. q is quotient, r remainder. i.e. a/b = q.
-              // It doesn't matter what q is when b=0, but r needs to be 0.
+              // It doesn't matter what q is when b=0, but r needs to be a.
               if (k == BVMOD)
-                OutputNode = _bm->CreateZeroConst(outputwidth);
+                OutputNode = children[0];
               else
                 OutputNode = _bm->CreateOneConst(outputwidth);
                 // Expecting a division by zero. Just return one.

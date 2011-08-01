@@ -165,6 +165,11 @@ extern "C" {
         BEEV::ToSAT *to_sat = new BEEV::ToSAT(bm);
         BEEV::AbsRefine_CounterExample *counter_example = new BEEV::AbsRefine_CounterExample(bm, simplifier, array_transformer);
 
+        /* required by the simplifying BitBlaster (as of SVN r1296) */
+        /* FIXME: STP's constructor should take a node factory as a parameter */
+        SimplifyingNodeFactory *simp = new SimplifyingNodeFactory(*(bm->hashingNodeFactory), *bm);
+        bm->defaultNodeFactory = simp;
+
         bm->UserFlags.construct_counterexample_flag = true;
         bm->UserFlags.check_counterexample_flag = true;
         return new BEEV::STP(bm, simplifier, bvsolver, array_transformer, to_sat, counter_example);

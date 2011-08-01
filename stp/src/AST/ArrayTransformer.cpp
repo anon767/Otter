@@ -46,13 +46,63 @@ namespace BEEV
     delete TransformMap;
     TransformMap = NULL;
 
-    runTimes->stop(RunTimes::Transforming);
+    if (bm->UserFlags.stats_flag)
+      printArrayStats();
 
-    return result;
+
+    // This establishes equalities between every indexes, and a fresh variable.
+    if (bm->UserFlags.arrayread_refinement_flag)
+    {
+		ASTNodeMap replaced;
+
+		ASTVec equalsNodes;
+		for (ArrayTransformer::ArrType::iterator
+			   iset = arrayToIndexToRead.begin(),
+			   iset_end = arrayToIndexToRead.end();
+			 iset != iset_end; iset++)
+		  {
+				const ASTNode& ArrName = iset->first;
+				map<ASTNode, ArrayTransformer::ArrayRead>& mapper = iset->second;
+
+				for (map<ASTNode, ArrayTransformer::ArrayRead>::iterator it =mapper.begin() ; it != mapper.end();it++)
+				{
+					const ASTNode& the_index = it->first;
+
+					if (the_index.isConstant() || the_index.GetKind() == SYMBOL)
+					{
+						it->second.index_symbol = the_index;
+					}
+					else if (replaced.find(the_index) != replaced.end()) // Already associated with a variable.
+					{
+						it->second.index_symbol = replaced.find(the_index)->second;
+					}
+					else
+					{
+						ASTNode newV = bm->CreateFreshVariable(0,the_index.GetValueWidth(), "STP__IndexVariables");
+						equalsNodes.push_back(nf->CreateNode(EQ, the_index, newV));
+						replaced.insert(make_pair(the_index,newV));
+						it->second.index_symbol = newV;
+					}
+					assert(it->second.index_symbol.GetValueWidth() == the_index.GetValueWidth());
+				}
+		  }
+
+		runTimes->stop(RunTimes::Transforming);
+
+		if (equalsNodes.size() > 0)
+			return nf->CreateNode(AND, result, equalsNodes);
+		else
+			return result;
+    }
+    else
+    {
+    	runTimes->stop(RunTimes::Transforming);
+    	return result;
+    }
   }
 
   //Translates signed BVDIV,BVMOD and BVREM into unsigned variety
-  ASTNode ArrayTransformer::TranslateSignedDivModRem(const ASTNode& in)
+  ASTNode ArrayTransformer::TranslateSignedDivModRem(const ASTNode& in,  NodeFactory* nf, STPMgr *bm)
   {
     assert(in.GetChildren().size() ==2);
 
@@ -99,28 +149,30 @@ namespace BEEV
                          cond_dividend, 
                          nf->CreateTerm(BVUMINUS, len, modnode),
                          modnode);
-
-        //put everything together, simplify, and return
-        if (bm->UserFlags.optimize_flag)
-            return simp->SimplifyTerm_TopLevel(n);
-        else
         	return n;
       }
 
     // This is the modulus of dividing rounding to -infinity.
-    // Except if the signs are different, and it perfectly divides
-    // the modulus is the divisor (not zero).
     else if (SBVMOD == in.GetKind())
       {
-        // (let (?msb_s (extract[|m-1|:|m-1|] s))
-        // (let (?msb_t (extract[|m-1|:|m-1|] t))
-        // (ite (and (= ?msb_s bit0) (= ?msb_t bit0))
-        //      (bvurem s t)
-        // (ite (and (= ?msb_s bit1) (= ?msb_t bit0))
-        //      (bvadd (bvneg (bvurem (bvneg s) t)) t)
-        // (ite (and (= ?msb_s bit0) (= ?msb_t bit1))
-        //      (bvadd (bvurem s (bvneg t)) t)
-        //      (bvneg (bvurem (bvneg s) (bvneg t)))))))
+
+    	/*
+			(bvsmod s t) abbreviates
+				  (let ((?msb_s ((_ extract |m-1| |m-1|) s))
+						(?msb_t ((_ extract |m-1| |m-1|) t)))
+					(let ((abs_s (ite (= ?msb_s #b0) s (bvneg s)))
+						  (abs_t (ite (= ?msb_t #b0) t (bvneg t))))
+					  (let ((u (bvurem abs_s abs_t)))
+						(ite (= u (_ bv0 m))
+							 u
+						(ite (and (= ?msb_s #b0) (= ?msb_t #b0))
+							 u
+						(ite (and (= ?msb_s #b1) (= ?msb_t #b0))
+							 (bvadd (bvneg u) t)
+						(ite (and (= ?msb_s #b0) (= ?msb_t #b1))
+							 (bvadd u t)
+							 (bvneg u))))))))
+    	 */
 
         //Take absolute value.
         ASTNode pos_dividend = 
@@ -145,18 +197,17 @@ namespace BEEV
                          nf->CreateTerm(BVUMINUS, len, urem_node),
                          urem_node);
 
-        // if It's XOR <0 then add t (not its absolute value).
+        // if It's XOR <0, and it doesn't perfectly divide, then add t (not its absolute value).
         ASTNode xor_node = 
           nf->CreateNode(XOR, cond_dividend, cond_divisor);
+        ASTNode neZ = nf->CreateNode(NOT, nf->CreateNode(EQ, rev_node, bm->CreateZeroConst(divisor.GetValueWidth())));
+        ASTNode cond = nf->CreateNode(AND,xor_node ,neZ);
         ASTNode n = 
           nf->CreateTerm(ITE, len,
-                         xor_node, 
+        		  cond,
                          nf->CreateTerm(BVPLUS, len, rev_node, divisor),
                          rev_node);
 
-        if (bm->UserFlags.optimize_flag)
-            return simp->SimplifyTerm_TopLevel(n);
-        else
         	return n;
       }
     else if (SBVDIV == in.GetKind())
@@ -200,15 +251,12 @@ namespace BEEV
                          nf->CreateTerm(BVUMINUS, len, divnode),
                          divnode);
 
-        if (bm->UserFlags.optimize_flag)
-            return simp->SimplifyTerm_TopLevel(n);
-        else
         	return n;
       }
 
     FatalError("TranslateSignedDivModRem:"\
                "input must be signed DIV/MOD/REM", in);
-    return ASTUndefined;
+    return bm->ASTUndefined;
 
   }//end of TranslateSignedDivModRem()
 
@@ -337,13 +385,6 @@ namespace BEEV
           result = nf->CreateNode(k, vec);
           break;
         }
-      case FOR:
-        {
-          //Insert in a global list of FOR constructs. Return TRUE now
-          //GlobalList_Of_FiniteLoops.push_back(simpleForm);
-          return ASTTrue;
-          break;
-        }
       case PARAMBOOL:
         {
           //If the parameteric boolean variable is of the form
@@ -456,49 +497,18 @@ namespace BEEV
           else
         	  result = term;
 
-          const Kind k = result.GetKind();
-
-          if (BVDIV == k 
-              || BVMOD == k 
-              || SBVDIV == k 
-              || SBVREM == k 
-              || SBVMOD == k)
-            {
-
-              // I had this as a reference, but that was wrong. Because
-              // "result" gets over-written in the next block, result[1], may
-              // get a reference count of zero, so be garbage collected.
-              const ASTNode bottom = result[1];
-
               if (SBVDIV == result.GetKind() 
                   || SBVREM == result.GetKind() 
                   || SBVMOD == result.GetKind())
                 {
-                  result = TranslateSignedDivModRem(result);
-                }
-
-              if (bm->UserFlags.division_by_zero_returns_one_flag)
-                {
-                  // This is a difficult rule to introduce in other
-                  // places because it's recursive. i.e.  result is
-                  // embedded unchanged inside the result.
-
-                  unsigned inputValueWidth = result.GetValueWidth();
-                  ASTNode zero = bm->CreateZeroConst(inputValueWidth);
-                  ASTNode one = bm->CreateOneConst(inputValueWidth);
-                  result = 
-                    nf->CreateTerm(ITE, inputValueWidth,
-                                   nf->CreateNode(EQ, zero, bottom),
-                                   one, result);
-
-                  //return result;
-                  if (bm->UserFlags.optimize_flag)
-                      return simp->SimplifyTerm_TopLevel(result);
+                  ASTNode r = TranslateSignedDivModRem(result,nf,bm);
+                  if (r != result && bm->UserFlags.optimize_flag)
+                    {
+                      result = simp->SimplifyTerm_TopLevel(r);
+                    }
                   else
-                  	return result;
-
+                    result = r;
                 }
-            }
         }
         break;
       }
@@ -535,8 +545,7 @@ namespace BEEV
     const unsigned int width = term.GetValueWidth();
 
     if (READ != term.GetKind())
-      FatalError("TransformArray: input term is of wrong kind: ",
-                 ASTUndefined);
+      return term;
 
     ASTNodeMap::const_iterator iter;
     if ((iter = TransformMap->find(term)) != TransformMap->end())
@@ -606,6 +615,12 @@ namespace BEEV
                   if (ASTFalse == cond)
                     continue;
 
+                  if (ASTTrue == cond)
+                    {
+                      result = it2->second.ite;
+                      break;
+                    }
+
                   result =
                     simp->CreateSimplifiedTermITE(cond, it2->second.ite, result);
                 }
@@ -662,7 +677,9 @@ namespace BEEV
 					nf->CreateTerm(READ, width, arrName[0], readIndex);
 				  assert(BVTypeCheck(readTerm));
 
-				  ASTNode readPushedIn = TransformArrayRead(readTerm);
+				  // The simplifying node factory may have produced
+				  // something that's not a READ.
+				  ASTNode readPushedIn = TransformTerm(readTerm);
 				  assert(BVTypeCheck(readPushedIn));
 
 				  result =

@@ -55,6 +55,86 @@ const bool debug_bitblaster = false;
 
 const bool conjoin_to_top = true;
 
+
+// Look through the maps to see what the bitblaster has discovered (if anything) is constant.
+template <class BBNode, class BBNodeManagerT>
+void BitBlaster<BBNode,BBNodeManagerT>::getConsts(const ASTNode& form, ASTNodeMap& fromTo)
+{
+  assert(form.GetType() == BOOLEAN_TYPE);
+
+  BBNodeSet support;
+  BBForm(form, support);
+
+  assert(support.size() ==0);
+
+  {
+      typename map<ASTNode, BBNode>::iterator it;
+      for (it = BBFormMemo.begin(); it != BBFormMemo.end(); it++)
+        {
+          const ASTNode& n = it->first;
+          const BBNode& x = it->second;
+          if (n.isConstant())
+            continue;
+
+          if (x != BBTrue && x != BBFalse)
+            continue;
+
+          assert (n.GetType() == BOOLEAN_TYPE);
+
+          ASTNode result;
+          if (x == BBTrue)
+            result = n.GetSTPMgr()->ASTTrue;
+          else
+            result = n.GetSTPMgr()->ASTFalse;
+
+          if (n.GetKind() != SYMBOL)
+            fromTo.insert(make_pair(n, result));
+          else
+            simp->UpdateSubstitutionMap(n, result);
+        }
+    }
+
+  typename BBNodeVecMap::iterator it;
+  for (it = BBTermMemo.begin(); it != BBTermMemo.end(); it++)
+        {
+          const ASTNode& n = it->first;
+          assert (n.GetType() == BITVECTOR_TYPE);
+
+          if (n.isConstant())
+            continue;
+
+          vector<BBNode>& x = it->second;
+          assert(x.size() == n.GetValueWidth());
+
+          bool constNode= true;
+          for (int i = 0; i < (int) x.size(); i++)
+            {
+              if (x[i] != BBTrue && x[i] != BBFalse)
+                {
+                  constNode = false;
+                break;
+                }
+            }
+          if (!constNode)
+            continue;
+
+          CBV val = CONSTANTBV::BitVector_Create(n.GetValueWidth(), true);
+          for (int i = 0; i < (int) x.size(); i++)
+            {
+              if (x[i] == BBTrue)
+                CONSTANTBV::BitVector_Bit_On(val, i);
+            }
+
+          ASTNode r = n.GetSTPMgr()->CreateBVConst(val, n.GetValueWidth());
+          if (n.GetKind() == SYMBOL)
+            simp->UpdateSubstitutionMap(n, r);
+          else
+            fromTo.insert(make_pair(n, r));
+
+
+        }
+}
+
 template <class BBNode, class BBNodeManagerT>
 void BitBlaster<BBNode,BBNodeManagerT>::commonCheck(const ASTNode& n) {
         cerr << "Non constant is constant:";
@@ -541,19 +621,39 @@ const BBNodeVec BitBlaster<BBNode,BBNodeManagerT>::BBTerm(const ASTNode& _term, 
 		break;
 	}
 	case BVPLUS: {
-		assert(term.Degree() >=1);
-		// Add children pairwise and accumulate in BBsum
+          assert(term.Degree() >=1);
+                  if (true)
+	            {
+                        // Add children pairwise and accumulate in BBsum
 
-		ASTVec::const_iterator it = term.begin();
-		BBNodeVec tmp_res = BBTerm(*it, support);
-		for (++it; it < kids_end; it++) {
-			const BBNodeVec& tmp = BBTerm(*it, support);
-			assert(tmp.size() == num_bits);
-			BBPlus2(tmp_res, tmp, nf->getFalse());
-		}
+                        ASTVec::const_iterator it = term.begin();
+                        BBNodeVec tmp_res = BBTerm(*it, support);
+                        for (++it; it < kids_end; it++) {
+                                const BBNodeVec& tmp = BBTerm(*it, support);
+                                assert(tmp.size() == num_bits);
+                                BBPlus2(tmp_res, tmp, nf->getFalse());
+                        }
 
-		result = tmp_res;
-		break;
+                        result = tmp_res;
+	            }
+	          else
+	            {
+	              // Add all the children up using an addition network.
+	              vector<BBNodeVec> results;
+	              for (int i=0; i < term.Degree();i++)
+	                results.push_back(BBTerm(term[i], support));
+
+	              const int bitWidth = term[0].GetValueWidth();
+	              std::vector<stack<BBNode> > products(bitWidth);
+	              for (int i=0; i < bitWidth;i++)
+	                {
+	                  for (int j=0; j < results.size();j++)
+	                    products[i].push(results[j][i]);
+	                }
+
+	              result = buildAdditionNetworkResult(products.data(),support,bitWidth);
+	            }
+	         break;
 	}
 	case BVUMINUS: {
 		const BBNodeVec& bbkid = BBTerm(term[0], support);
@@ -593,7 +693,22 @@ const BBNodeVec BitBlaster<BBNode,BBNodeManagerT>::BBTerm(const ASTNode& _term, 
 		BBNodeVec r(num_bits);
 		BBDivMod(dvdd, dvsr, q, r, num_bits, support);
 		if (k == BVDIV)
-			result = q;
+		{
+			if (uf->division_by_zero_returns_one_flag)
+			{
+				BBNodeVec zero(term.GetValueWidth(), BBFalse);
+
+				BBNode eq = BBEQ(zero, dvsr);
+				BBNodeVec one(term.GetValueWidth(), BBFalse);
+				one[0] = BBTrue;
+
+ 			   result = BBITE(eq, one, q);
+			}
+			else
+			{
+				result = q;
+			}
+		}
 		else
 			result = r;
 		break;
@@ -1006,7 +1121,7 @@ void convert(const BBNodeVec& v, BBNodeManagerT*nf, mult_type* result)
 
 // Multiply "multiplier" by y[start ... bitWidth].
 template <class BBNode, class BBNodeManagerT>
-void pushP(stack<BBNode> *products, const int start, const BBNodeVec& y, const BBNode& multiplier, BBNodeManagerT*nf)
+void pushP(vector<BBNode> *products, const int start, const BBNodeVec& y, const BBNode& multiplier, BBNodeManagerT*nf)
 {
 	const int bitWidth = y.size();
 
@@ -1015,7 +1130,7 @@ void pushP(stack<BBNode> *products, const int start, const BBNodeVec& y, const B
 	{
 		BBNode n = nf->CreateNode(AND, y[c], multiplier);
 		if (n!= nf->getFalse())
-		  products[i].push(n);
+		  products[i].push_back(n);
 		c++;
 	}
 }
@@ -1058,7 +1173,7 @@ BBNodeVec BitBlaster<BBNode,BBNodeManagerT>::buildAdditionNetworkResult(stack<BB
 // partial products.
 template <class BBNode, class BBNodeManagerT>
 void BitBlaster<BBNode,BBNodeManagerT>::buildAdditionNetworkResult(stack<BBNode>* products, set<BBNode>& support,
-		const int bitWidth, const int i, const int minTrue = 0, const int maxTrue = ((unsigned)~0) >> 1 )
+		const int bitWidth, const int i, const int minTrue, const int maxTrue )
 {
       while (products[i].size() >= 2) {
               BBNode c;
@@ -1210,8 +1325,11 @@ BBNodeVec BitBlaster<BBNode,BBNodeManagerT>::multWithBounds(const ASTNode&n, sta
                                 cerr << "S";
                         // sorting network.
 
-                        int width = std::min(ms.sumH[i]+1, (signed)products[i].size());
-                        mult_SortingNetwork(toConjoinToTop, bitWidth,  width,  products, i,  ms.sumL[i], ms.sumH[i]);
+                        //int width = std::min(ms.sumH[i]+1, (signed)products[i].size());
+                        vector<BBNode> output;
+                        vector<BBNode> prior;
+                        mult_SortingNetwork(toConjoinToTop,  products[i], output ,prior,  ms.sumL[i], ms.sumH[i]);
+                        prior = output;
 
                 }
                 else // addition network.
@@ -1279,27 +1397,34 @@ void BitBlaster<BBNode,BBNodeManagerT>::mult_Booth(const BBNodeVec& x_i, const B
 		 cerr << yN << endl;
 	 }
 
+	 // We store them into here before sorting them.
+	 vector<BBNode> t_products[bitWidth];
+
 	 for (int i =0; i < bitWidth;i++)
 	 {
 		 if (x[i] != BBTrue && x[i] != BBFalse)
 		 {
-			 pushP(products,i,y,x[i],nf);
+			 pushP(t_products,i,y,x[i],nf);
 		 }
 
 		 // A bit can not be true or false, as well as one of these two.
 		 if (xt[i] == MINUS_ONE_MT)
 		 {
-			 pushP(products,i,notY,BBTrue,nf);
-			 products[i].push(BBTrue);
+			 pushP(t_products,i,notY,BBTrue,nf);
+			 t_products[i].push_back(BBTrue);
 		 }
 
 		 else if (xt[i] == ONE_MT)
 		 {
-			 pushP(products,i,y,BBTrue,nf);
+			 pushP(t_products,i,y,BBTrue,nf);
 		 }
 
-		 if (products[i].size() == 0)
-		   products[i].push(BBFalse);
+		 if (t_products[i].size() == 0)
+		   t_products[i].push_back(BBFalse);
+
+		 sort(t_products[i].begin(), t_products[i].end());
+		 for (int j=0; j < t_products[i].size();j++)
+		     products[i].push(t_products[i][j]);
 	 }
   }
 
@@ -1363,73 +1488,78 @@ BBNodeVec BitBlaster<BBNode,BBNodeManagerT>::mult_normal(const BBNodeVec& x,
 	return prod;
 }
 
+   // assumes the prior column is sorted.
   template<class BBNode, class BBNodeManagerT>
     void
     BitBlaster<BBNode, BBNodeManagerT>::mult_SortingNetwork(
-        BBNodeSet& support, const int bitWidth, const int width, stack<BBNode> * products, int i
-        , const int minTrue = 0, const int maxTrue = ((unsigned)~0) >> 1 )
+        BBNodeSet& support, stack<BBNode>& current, vector<BBNode>& currentSorted, vector<BBNode>& priorSorted,
+        const int minTrue, const int maxTrue )
     {
-      assert(i<bitWidth);
-      const int height = products[i].size();
-      vector<BBNode> sorted(width, nf->getFalse());
 
+      // Add the carry from the prior column. i.e. each second sorted formula.
+      for (int k = 1; k < priorSorted.size(); k += 2)
+        {
+          current.push(priorSorted[k]);
+        }
+
+      const int height = current.size();
+
+      // Set the current sorted to all false.
+      currentSorted.clear();
+      {
+        vector<BBNode> temp(height, nf->getFalse());
+        currentSorted = temp;
+      }
+
+      // n^2 sorting network.
       for (int l = 0; l < height; l++)
       {
-              vector<BBNode> oldSorted(sorted);
-              BBNode c = products[i].top();
-              products[i].pop();
-              sorted[0] = nf->CreateNode(OR, oldSorted[0], c);
+              vector<BBNode> oldSorted(currentSorted);
+              BBNode c = current.top();
+              current.pop();
+              currentSorted[0] = nf->CreateNode(OR, oldSorted[0], c);
 
-              for (int j = 1; j <= std::min(l,width-1); j++)
+              for (int j = 1; j <= l; j++)
               {
-                      sorted[j] = nf->CreateNode(OR, nf->CreateNode(AND,
+                  currentSorted[j] = nf->CreateNode(OR, nf->CreateNode(AND,
                                       oldSorted[j - 1], c), oldSorted[j]);
               }
       }
 
-      for (int k = 0; k < width; k++)
-        assert(!sorted[k].IsNull());
+      assert(current.size() == 0);
 
-      assert(products[i].size() == 0);
+      for (int k = 0; k < height; k++)
+        assert(!currentSorted[k].IsNull());
 
       if (conjoin_to_top)
         {
           for (int j = 0; j < minTrue; j++)
             {
-              support.insert(sorted[j]);
-              sorted[j] = BBTrue;
+              support.insert(currentSorted[j]);
+              currentSorted[j] = BBTrue;
             }
 
-          for (int j = width - 1; j >= maxTrue; j--)
+          for (int j = height - 1; j >= maxTrue; j--)
             {
-              support.insert(nf->CreateNode(NOT, sorted[j]));
-              sorted[j] = BBFalse;
-            }
-        }
-
-      // Add to next up columns.
-      if (i + 1 != bitWidth)
-        {
-          for (int k = 1; k < width; k += 2)
-            {
-              products[i + 1].push(sorted[k]);
+              support.insert(nf->CreateNode(NOT, currentSorted[j]));
+              currentSorted[j] = BBFalse;
             }
         }
 
       BBNode resultNode = nf->getFalse();
 
       // Constrain to equal the result
-      for (int k = 1; k < width; k += 2)
+      for (int k = 1; k < height; k += 2)
         {
-          BBNode part = nf->CreateNode(AND, nf->CreateNode(NOT, sorted[k]), sorted[k - 1]);
+          BBNode part = nf->CreateNode(AND, nf->CreateNode(NOT, currentSorted[k]), currentSorted[k - 1]);
           resultNode = nf->CreateNode(OR, resultNode, part);
         }
 
       // constraint the all '1's case.
-      if (width % 2 == 1)
-        resultNode = nf->CreateNode(OR, resultNode, sorted.at(width - 1));
+      if (height % 2 == 1)
+        resultNode = nf->CreateNode(OR, resultNode, currentSorted.at(height - 1));
 
-      products[i].push(resultNode);
+      current.push(resultNode);
     }
 
 
@@ -1489,7 +1619,7 @@ BBNodeVec BitBlaster<BBNode,BBNodeManagerT>::BBMult(const BBNodeVec& _x, const B
   	  string mv = uf->get("multiplication_variant","3");
 
       const int bitWidth = x.size();
-      stack<BBNode> products[bitWidth];
+      std::vector<stack<BBNode> > products(bitWidth);
 
       if (mv == "1") {
               //cerr << "v1";
@@ -1497,40 +1627,41 @@ BBNodeVec BitBlaster<BBNode,BBNodeManagerT>::BBMult(const BBNodeVec& _x, const B
       }
       else   if (mv == "2") {
               //cout << "v2";
-              mult_allPairs(x, y, support,products);
-              return buildAdditionNetworkResult(products,support, bitWidth);
+              mult_allPairs(x, y, support,products.data());
+              return buildAdditionNetworkResult(products.data(),support, bitWidth);
       }
 
       else   if (mv == "3") {
               //cout << "v3" << endl;
-              mult_Booth(_x, _y, support,n[0],n[1],products);
-              return buildAdditionNetworkResult(products,support,bitWidth);
+              mult_Booth(_x, _y, support,n[0],n[1],products.data());
+              return buildAdditionNetworkResult(products.data(),support,bitWidth);
       }
       else   if (mv == "4")
       {
-        //cout << "v4";
-        mult_Booth(_x, _y, support,n[0],n[1],products);
+        //cerr << "v4";
+        mult_Booth(_x, _y, support,n[0],n[1],products.data());
+        vector<BBNode> prior;
+
         for (int i = 0; i < bitWidth; i++)
           {
-            if (products[i].size() < 6)
-              {
-                  mult_SortingNetwork(support,n.GetValueWidth(),n.GetValueWidth(),products,i);
-                  assert(products[i].size() == 1);
-              }
+              vector<BBNode> output;
+              mult_SortingNetwork(support,  products[i], output ,prior);
+              prior = output;
+              assert(products[i].size() == 1);
           }
-        return buildAdditionNetworkResult(products,support, bitWidth);
+        return buildAdditionNetworkResult(products.data(),support, bitWidth);
       }
       else   if (mv == "5")
         {
         //cout << "v5";
           if (!statsFound(n))
             {
-              mult_Booth(_x, _y, support, n[0], n[1], products);
-              return buildAdditionNetworkResult(products, support, bitWidth);
+              mult_Booth(_x, _y, support, n[0], n[1], products.data());
+              return buildAdditionNetworkResult(products.data(), support, bitWidth);
             }
 
-          mult_allPairs(x, y, support, products);
-          return multWithBounds(n, products, support);
+          mult_allPairs(x, y, support, products.data());
+          return multWithBounds(n, products.data(), support);
         }
       else
     	  FatalError("sda44f");
@@ -1930,15 +2061,15 @@ BBNode BitBlaster<BBNode,BBNodeManagerT>::BBEQ(const BBNodeVec& left, const BBNo
 		return nf->CreateNode(IFF, *lit, *rit);
 }
 
-// This creates all the specialisations of the class that are ever needed.
-template class BitBlaster<ASTNode, BBNodeManagerASTNode>;
-template class BitBlaster<BBNodeAIG, BBNodeManagerAIG>;
-
 std::ostream& operator<<(std::ostream& output, const BBNodeAIG& h)
 {
   FatalError("This isn't implemented  yet sorry;");
   return output;
 }
+
+// This creates all the specialisations of the class that are ever needed.
+template class BitBlaster<ASTNode, BBNodeManagerASTNode>;
+template class BitBlaster<BBNodeAIG, BBNodeManagerAIG>;
 
 #undef BBNodeVec
 #undef BBNodeVecMap

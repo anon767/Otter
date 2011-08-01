@@ -97,7 +97,7 @@ namespace BEEV
   }
 
   //chooses a variable in the lhs and returns the chosen variable
-  ASTNode BVSolver::ChooseMonom(const ASTNode& eq, ASTNode& modifiedlhs)
+  ASTNode BVSolver::ChooseMonom(const ASTNode& eq, ASTNode& modifiedlhs, ASTNodeSet& checked)
   {
 	  assert(EQ == eq.GetKind());
 	  assert(BVPLUS == eq[0].GetKind() || BVPLUS== eq[1].GetKind());
@@ -130,6 +130,7 @@ namespace BEEV
         	SYMBOL == monom.GetKind()
             && !chosen_symbol
        		&& !DoNotSolveThis(monom)
+       		&& checked.find(monom)==checked.end()
             && !vars.VarSeenInTerm(monom,rhs)
             )
             ||
@@ -138,6 +139,7 @@ namespace BEEV
              && SYMBOL == monom[0].GetKind()
              && !chosen_symbol
              && !DoNotSolveThis(monom[0])
+             && checked.find(monom[0])==checked.end()
              && !vars.VarSeenInTerm(monom[0],rhs)
             )
            )
@@ -161,6 +163,7 @@ namespace BEEV
 			{
 				outmonom = monom; //nb. monom not var.
 				chosen_symbol = true;
+				checked.insert(var);
 			}
 			else
 				o.push_back(monom);
@@ -189,6 +192,7 @@ namespace BEEV
                 && _simp->BVConstIsOdd(monom[0]) 
                 && !chosen_symbol
                 && !DoNotSolveThis(var)
+                && checked.find(var)==checked.end()
                 && ((SYMBOL == var.GetKind() 
                      && !vars.VarSeenInTerm(var,rhs)
                     )
@@ -204,6 +208,7 @@ namespace BEEV
                 //monom[0] is odd.
                 outmonom = monom;
                 chosen_symbol = true;
+                checked.insert(var);
               }
             else if (
                 !chosen_symbol
@@ -212,11 +217,13 @@ namespace BEEV
                 && BVCONST == monom[1].GetKind()
                 && zero == monom[2]
                 && !DoNotSolveThis(monom[0])
+                && checked.find(monom[0])==checked.end()
                 && !vars.VarSeenInTerm(monom[0],rhs)
             )
               {
               outmonom = monom;
               chosen_symbol = true;
+              checked.insert(monom[0]);
               }
             else if (
                        !chosen_symbol
@@ -226,11 +233,13 @@ namespace BEEV
                        && BVCONST == monom[0][1].GetKind()
                        && zero == monom[0][2]
                        && !DoNotSolveThis(monom[0][0])
+                       && checked.find(monom[0][0])==checked.end()
                        && !vars.VarSeenInTerm(monom[0][0],rhs)
                    )
                      {
                      outmonom = monom;
                      chosen_symbol = true;
+                     checked.insert(monom[0][0]);
                      }
             else
 
@@ -258,6 +267,159 @@ namespace BEEV
     // (EXTRACT SYMBOL BV_CONST ZERO)
     return outmonom;
   } //end of choosemonom()
+
+  // Manipulate the lhs and rhs to get just a variable on the lhs (if possible). Then add to the
+  // substitution map.
+  ASTNode BVSolver::substitute(const ASTNode& eq, const ASTNode& lhs, const ASTNode& rhs, const bool single)
+  {
+
+  ASTNode output;
+
+  switch (lhs.GetKind())
+    {
+    case SYMBOL:
+      {
+          DoNotSolve_TheseVars.insert(lhs);
+
+        //input is of the form x = rhs first make sure that the lhs
+        //symbol does not occur on the rhs or that it has not been
+        //solved for
+        if (!single && vars.VarSeenInTerm(lhs, rhs))
+          {
+            //found the lhs in the rhs. Abort!
+            return eq;
+          }
+
+        if (!_simp->UpdateSolverMap(lhs, rhs))
+          {
+            return eq;
+          }
+
+        output = ASTTrue;
+        break;
+      }
+
+    case BVEXTRACT:
+      {
+        const ASTNode zero = _bm->CreateZeroConst(32);
+
+        if (!(SYMBOL == lhs[0].GetKind()
+              && BVCONST == lhs[1].GetKind()
+              && zero == lhs[2]
+              && !vars.VarSeenInTerm(lhs[0], rhs)
+              && !DoNotSolveThis(lhs[0])))
+          {
+            return eq;
+          }
+
+        if (vars.VarSeenInTerm(lhs[0], rhs))
+          {
+            DoNotSolve_TheseVars.insert(lhs[0]);
+            return eq;
+          }
+
+        DoNotSolve_TheseVars.insert(lhs[0]);
+        if (!_simp->UpdateSolverMap(lhs, rhs))
+          {
+            return eq;
+          }
+
+        if (lhs[0].GetValueWidth() != lhs.GetValueWidth())
+        {
+        //if the extract of x[i:0] = t is entered into the solvermap,
+        //then also add another entry for x = x1@t
+        ASTNode var = lhs[0];
+        ASTNode newvar =
+          _bm->CreateFreshVariable(0, var.GetValueWidth() - lhs.GetValueWidth(), "v_solver");
+        newvar =
+          _bm->CreateTerm(BVCONCAT, var.GetValueWidth(), newvar, rhs);
+                        assert(BVTypeCheck(newvar));
+        _simp->UpdateSolverMap(var, newvar);
+        }
+        else
+                _simp->UpdateSolverMap(lhs[0], rhs);
+        output = ASTTrue;
+        break;
+      }
+    case BVMULT:
+      {
+        //the input is of the form a*x = t. If 'a' is odd, then compute
+        //its multiplicative inverse a^-1, multiply 't' with it, and
+        //update the solver map
+        if (BVCONST != lhs[0].GetKind())
+          {
+            return eq;
+          }
+
+        if (!(SYMBOL == lhs[1].GetKind()
+              || (BVEXTRACT == lhs[1].GetKind()
+                  && SYMBOL == lhs[1][0].GetKind())))
+          {
+            return eq;
+          }
+
+        bool ChosenVar_Is_Extract =
+          (BVEXTRACT == lhs[1].GetKind());
+
+        //if coeff is even, then we know that all the coeffs in the eqn
+        //are even. Simply return the eqn
+        if (!_simp->BVConstIsOdd(lhs[0]))
+          {
+            return eq;
+          }
+
+        ASTNode a = _simp->MultiplicativeInverse(lhs[0]);
+        ASTNode chosenvar =
+                        ChosenVar_Is_Extract ? lhs[1][0] : lhs[1];
+        ASTNode chosenvar_value =
+                        simplifyNode(_bm->CreateTerm(BVMULT,
+                                              rhs.GetValueWidth(),
+                                              a, rhs));
+
+        //if chosenvar is seen in chosenvar_value then abort
+        if (vars.VarSeenInTerm(chosenvar, chosenvar_value))
+          {
+            //abort solving
+            DoNotSolve_TheseVars.insert(lhs);
+            return eq;
+          }
+
+        // It fails if it's a full-bitwidth extract. These are rare, and won't be
+        // present after simplification. So ignore them for now.
+        if (ChosenVar_Is_Extract && lhs[0].GetValueWidth() == lhs.GetValueWidth())
+                return eq;
+
+        //found a variable to solve
+        DoNotSolve_TheseVars.insert(chosenvar);
+        chosenvar = lhs[1];
+        if (!_simp->UpdateSolverMap(chosenvar, chosenvar_value))
+          {
+            return eq;
+          }
+
+        if (ChosenVar_Is_Extract)
+          {
+            const ASTNode& var = lhs[1][0];
+
+                                ASTNode newvar =
+                                        _bm->CreateFreshVariable(0, var.GetValueWidth() - lhs[1].GetValueWidth(), "v_solver");
+                                newvar =
+                                      _bm->CreateTerm(BVCONCAT,
+                                                                      var.GetValueWidth(),
+                                                                      newvar, chosenvar_value);
+                                assert(BVTypeCheck(newvar));
+                                _simp->UpdateSolverMap(var, newvar);
+
+          }
+        output = ASTTrue;
+        break;
+      }
+    default:
+      output = eq;
+      break;
+    }
+  return output;
+  }
 
   //solver function which solves for variables with odd coefficient
   ASTNode BVSolver::BVSolve_Odd(const ASTNode& input)
@@ -298,265 +460,54 @@ namespace BEEV
 
     if (BVPLUS == lhs.GetKind())
       {
-        ASTNode chosen_monom = ASTUndefined;
-        ASTNode leftover_lhs;
 
-        //choose monom makes sure that it gets only those vars that
-        //occur exactly once in lhs and rhs put together
-        chosen_monom = ChooseMonom(eq, leftover_lhs);
-        if (chosen_monom == ASTUndefined)
-          {
-            //no monomial was chosen
-            return eq;
-          }
+        ASTNodeSet checked;
+        do
+        {
+         ASTNode chosen_monom = ASTUndefined;
+          ASTNode leftover_lhs;
 
-        //if control is here then it means that a monom was chosen
-        //
-        //construct:  rhs - (lhs without the chosen monom)
-        unsigned int len = lhs.GetValueWidth();
-        leftover_lhs = 
-          simplifyNode(_bm->CreateTerm(BVUMINUS,
-                                                       len, leftover_lhs));
-        assert(BVTypeCheck(leftover_lhs));
-        rhs =
-        		simplifyNode(_bm->CreateTerm(BVPLUS, len, rhs, leftover_lhs));
-        assert(BVTypeCheck(rhs));
-        lhs = chosen_monom;
-        single = true;
+          //choose monom makes sure that it gets only those vars that
+          //occur exactly once in lhs and rhs put together
+          chosen_monom = ChooseMonom(eq, leftover_lhs,checked);
+          if (chosen_monom == ASTUndefined)
+            {
+              //no monomial was chosen
+              return eq;
+            }
+
+          //if control is here then it means that a monom was chosen
+          //
+          //construct:  rhs - (lhs without the chosen monom)
+          unsigned int len = lhs.GetValueWidth();
+          leftover_lhs = simplifyNode(_bm->CreateTerm(BVUMINUS,len, leftover_lhs));
+          assert(BVTypeCheck(leftover_lhs));
+          rhs = simplifyNode(_bm->CreateTerm(BVPLUS, len, rhs, leftover_lhs));
+          assert(BVTypeCheck(rhs));
+          lhs = chosen_monom;
+          single = true;
+          //This tries to substitute it.. But it might not work, in which case it will return eq.
+          output = substitute(eq, lhs, rhs,single);
+        }
+        while (output == eq);
+
       } //end of if(BVPLUS ...)
 
-    if (BVUMINUS == lhs.GetKind())
+    else if (BVUMINUS == lhs.GetKind())
       {
         //equation is of the form (-lhs0) = rhs
         ASTNode lhs0 = lhs[0];
-        rhs = simplifyNode(_bm->CreateTerm(BVUMINUS,
-                                                  rhs.GetValueWidth(), rhs));
+        rhs = simplifyNode(_bm->CreateTerm(BVUMINUS, rhs.GetValueWidth(), rhs));
         assert(BVTypeCheck(rhs));
         lhs = lhs0;
+        output = substitute(eq, lhs, rhs,single);
       }
-
-    switch (lhs.GetKind())
-      {
-      case SYMBOL:
-        {
-            DoNotSolve_TheseVars.insert(lhs);
-
-          //input is of the form x = rhs first make sure that the lhs
-          //symbol does not occur on the rhs or that it has not been
-          //solved for
-          if (!single && vars.VarSeenInTerm(lhs, rhs))
-            {
-              //found the lhs in the rhs. Abort!
-              return eq;
-            }
-
-          //rhs should not have arrayreads in it. it complicates matters
-          //during transformation
-          // if(CheckForArrayReads_TopLevel(rhs)) {
-          //            return eq;
-          //       }
-
-          if (!_simp->UpdateSolverMap(lhs, rhs))
-            {
-              return eq;
-            }
-
-          output = ASTTrue;
-          break;
-        }
-        //              case READ:
-        //              {
-        //                if(BVCONST != lhs[1].GetKind() 
-        //                   || READ != rhs.GetKind() || 
-        //                     BVCONST != rhs[1].GetKind() || lhs == rhs) 
-        //                {
-        //                  return eq;
-        //                }
-        //                else 
-        //                {
-        //                  DoNotSolve_TheseVars.insert(lhs);
-        //                  if (!_simp->UpdateSolverMap(lhs, rhs))
-        //                    {
-        //                      return eq;
-        //                    }
-
-        //                  output = ASTTrue;
-        //                  break;                  
-        //                }
-        //              }
-      case BVEXTRACT:
-        {
-          const ASTNode zero = _bm->CreateZeroConst(32);
-
-          if (!(SYMBOL == lhs[0].GetKind() 
-                && BVCONST == lhs[1].GetKind() 
-                && zero == lhs[2] 
-                && !vars.VarSeenInTerm(lhs[0], rhs)
-                && !DoNotSolveThis(lhs[0])))
-            {
-              return eq;
-            }
-
-          if (vars.VarSeenInTerm(lhs[0], rhs))
-            {
-              DoNotSolve_TheseVars.insert(lhs[0]);
-              return eq;
-            }
-
-          DoNotSolve_TheseVars.insert(lhs[0]);
-          if (!_simp->UpdateSolverMap(lhs, rhs))
-            {
-              return eq;
-            }
-
-          if (lhs[0].GetValueWidth() != lhs.GetValueWidth())
-          {
-          //if the extract of x[i:0] = t is entered into the solvermap,
-          //then also add another entry for x = x1@t
-          ASTNode var = lhs[0];
-          ASTNode newvar = 
-            _bm->CreateFreshVariable(0, var.GetValueWidth() - lhs.GetValueWidth(), "v_solver");
-          newvar = 
-            _bm->CreateTerm(BVCONCAT, var.GetValueWidth(), newvar, rhs);
-			  assert(BVTypeCheck(newvar));
-          _simp->UpdateSolverMap(var, newvar);
-          }
-          else
-        	  _simp->UpdateSolverMap(lhs[0], rhs);
-          output = ASTTrue;
-          break;
-        }
-      case BVMULT:
-        {
-          //the input is of the form a*x = t. If 'a' is odd, then compute
-          //its multiplicative inverse a^-1, multiply 't' with it, and
-          //update the solver map
-          if (BVCONST != lhs[0].GetKind())
-            {
-              return eq;
-            }
-
-          if (!(SYMBOL == lhs[1].GetKind()
-                || (BVEXTRACT == lhs[1].GetKind()
-                    && SYMBOL == lhs[1][0].GetKind())))
-            {
-              return eq;
-            }
-
-          bool ChosenVar_Is_Extract = 
-            (BVEXTRACT == lhs[1].GetKind());
-
-          //if coeff is even, then we know that all the coeffs in the eqn
-          //are even. Simply return the eqn
-          if (!_simp->BVConstIsOdd(lhs[0]))
-            {
-              return eq;
-            }
-
-          ASTNode a = _simp->MultiplicativeInverse(lhs[0]);
-          ASTNode chosenvar = 
-        		  ChosenVar_Is_Extract ? lhs[1][0] : lhs[1];
-          ASTNode chosenvar_value = 
-        		  simplifyNode(_bm->CreateTerm(BVMULT,
-                                                rhs.GetValueWidth(), 
-                                                a, rhs));
-
-          //if chosenvar is seen in chosenvar_value then abort
-          if (vars.VarSeenInTerm(chosenvar, chosenvar_value))
-            {
-              //abort solving
-              DoNotSolve_TheseVars.insert(lhs);
-              return eq;
-            }
-
-          // It fails if it's a full-bitwidth extract. These are rare, and won't be
-          // present after simplification. So ignore them for now.
-          if (ChosenVar_Is_Extract && lhs[0].GetValueWidth() == lhs.GetValueWidth())
-        	  return eq;
-
-          //found a variable to solve
-          DoNotSolve_TheseVars.insert(chosenvar);
-          chosenvar = lhs[1];
-          if (!_simp->UpdateSolverMap(chosenvar, chosenvar_value))
-            {
-              return eq;
-            }
-
-          if (ChosenVar_Is_Extract)
-            {
-              const ASTNode& var = lhs[1][0];
-
-				  ASTNode newvar =
-					  _bm->CreateFreshVariable(0, var.GetValueWidth() - lhs[1].GetValueWidth(), "v_solver");
-				  newvar =
-					_bm->CreateTerm(BVCONCAT,
-									var.GetValueWidth(),
-									newvar, chosenvar_value);
-				  assert(BVTypeCheck(newvar));
-				  _simp->UpdateSolverMap(var, newvar);
-
-            }
-          output = ASTTrue;
-          break;
-        }
-      default:
-        output = eq;
-        break;
-      }
+    else
+      output = substitute(eq, lhs, rhs,single);
 
     UpdateAlreadySolvedMap(input, output);
     return output;
   } //end of BVSolve_Odd()
-
-  bool containsExtract(const ASTNode& n, ASTNodeSet& visited) {
-  	if (visited.find(n) != visited.end())
-  		return false;
-
-  	if (BVEXTRACT == n.GetKind())
-  		return true;
-
-  	for (unsigned i = 0; i < n.Degree(); i++) {
-  		if (containsExtract(n[i], visited))
-  			return true;
-  	}
-  	visited.insert(n);
-  	return false;
-  }
-
-  // The order that monomials are chosen in from the system of equations is important.
-  // In particular if a symbol is chosen that is extracted over, and that symbol
-  // appears elsewhere in the system. Then those other positions will be replaced by
-  // an equation that contains a concatenation.
-  // For example, given:
-  // 5x[5:1] + 4y[5:1] = 6
-  // 3x + 2y = 5
-  //
-  // If the x that is extracted over is selected as the monomial, then the later eqn. will be
-  // rewritten as:
-  // 3(concat (1/5)(6-4y[5:1]) v) + 2y =5
-  // where v is a fresh one-bit variable.
-  // What's particularly bad about this is that the "y" appears now in two places in the eqn.
-  // Because it appears in two places it can't be simplified by this algorithm
-  // This sorting function is a partial solution. Ideally the "best" monomial should be
-  // chosen from the system of equations.
-  void specialSort(ASTVec& c) {
-  	// Place equations that don't contain extracts before those that do.
-  	deque<ASTNode> extracts;
-  	ASTNodeSet v;
-
-  	for (unsigned i = 0; i < c.size(); i++) {
-  		if (containsExtract(c[i], v))
-  			extracts.push_back(c[i]);
-  		else
-  			extracts.push_front(c[i]);
-  	}
-
-  	c.clear();
-  	deque<ASTNode>::iterator it = extracts.begin();
-  	while (it != extracts.end()) {
-  		c.push_back(*it++);
-  	}
-  }
 
   // Solve for XORs.
   // to do. Flatten the XOR.
@@ -730,9 +681,6 @@ namespace BEEV
     else
       c = input.GetChildren();
 
-    if (sort_extracts_last)
-    	specialSort(c);
-
     ASTVec eveneqns;
     bool any_solved = false;
     for (ASTVec::iterator it = c.begin(), itend = c.end(); it != itend; it++)
@@ -814,8 +762,11 @@ namespace BEEV
 
     // Imagine in the last conjunct A is replaced by B. But there could
     // be variable A's in the first conjunct. This gets rid of 'em.
-   	output = _simp->applySubstitutionMap(output);
-   	_simp->haveAppliedSubstitutionMap();
+    if (_simp->hasUnappliedSubstitutions())
+      {
+          output = _simp->applySubstitutionMap(output);
+          _simp->haveAppliedSubstitutionMap();
+      }
 
     UpdateAlreadySolvedMap(_input, output);
     _bm->GetRunTimes()->stop(RunTimes::BVSolver);

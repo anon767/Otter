@@ -24,6 +24,7 @@ class SubstitutionMap {
 	Simplifier *simp;
 	STPMgr* bm;
 	ASTNode ASTTrue, ASTFalse, ASTUndefined;
+	NodeFactory *nf;
 
 	// These are used to avoid substituting {x = f(y,z), z = f(x)}
 	typedef hash_map<ASTNode, Symbols*,ASTNode::ASTNodeHasher> DependsType;
@@ -39,7 +40,13 @@ class SubstitutionMap {
 	void loops_helper(const set<ASTNode>& varsToCheck, set<ASTNode>& visited);
 	bool loops(const ASTNode& n0, const ASTNode& n1);
 
+	int substitutionsLastApplied;
 public:
+
+	bool hasUnappliedSubstitutions()
+	{
+	  return (substitutionsLastApplied != SolverMap->size());
+	}
 
 	// When the substitutionMap has been applied globally, then,
 	// these are no longer needed.
@@ -49,11 +56,13 @@ public:
 		rhs.clear();
 		rhs_visited.clear();
 		rhsAlreadyAdded.clear();
+		substitutionsLastApplied = SolverMap->size();
 	}
 
 	VariablesInExpression vars;
 
-	SubstitutionMap(Simplifier *_simp, STPMgr* _bm) {
+	SubstitutionMap(Simplifier *_simp, STPMgr* _bm)
+	{
 		simp = _simp;
 		bm = _bm;
 
@@ -63,6 +72,8 @@ public:
 
 		SolverMap = new ASTNodeMap(INITIAL_TABLE_SIZE);
 		loopCount = 0;
+		substitutionsLastApplied =0;
+	        nf = new SimplifyingNodeFactory (*bm->hashingNodeFactory, *bm);
 	}
 
 	void clear()

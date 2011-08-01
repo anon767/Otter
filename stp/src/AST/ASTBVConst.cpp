@@ -11,6 +11,8 @@
 #include "../STPManager/STP.h"
 namespace BEEV
 {
+  const ASTVec ASTBVConst::astbv_empty_children;
+
   /****************************************************************
    * ASTBVConst Member Function definitions                       *
    ****************************************************************/

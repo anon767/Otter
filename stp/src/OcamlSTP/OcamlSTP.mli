@@ -114,7 +114,7 @@ external bv_signed_div : context -> ([`bv], [<`expr|`const|`var]) expr -> ([`bv]
 (** [bv_signed_rem stp left right] returns the bitvector of the signed remainder of [left / right] rounded towards zero (e.g., -10 rem 3 = -1; i.e. [left mod right]) in the STP context [stp]. {b Terminates ungracefully if [right] is 0.} @raise Invalid_arg is the widths of [left] and [right] differs. *)
 external bv_signed_rem : context -> ([`bv], [<`expr|`const|`var]) expr -> ([`bv], [<`expr|`const|`var]) expr -> ([`bv], [>`expr]) expr = "OcamlSTP_bv_signed_rem"
 
-(** [bv_signed_mod stp left right] returns the bitvector of the signed remainder of [left]/[right] rounded towards -infinity (e.g., -10 mod 3 = 2) in the STP context [stp]; unless it divides exactly and the signs differ, then it returns [right]. {b Terminates ungracefully if [right] is 0.} @raise Invalid_arg is the widths of [left] and [right] differs. *)
+(** [bv_signed_mod stp left right] returns the bitvector of the signed remainder of [left / right] rounded towards -infinity (e.g., -10 mod 3 = 2) in the STP context [stp]. {b Terminates ungracefully if [right] is 0.} @raise Invalid_arg is the widths of [left] and [right] differs. *)
 external bv_signed_mod : context -> ([`bv], [<`expr|`const|`var]) expr -> ([`bv], [<`expr|`const|`var]) expr -> ([`bv], [>`expr]) expr = "OcamlSTP_bv_signed_mod"
 
 
