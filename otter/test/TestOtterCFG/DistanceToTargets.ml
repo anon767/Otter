@@ -172,10 +172,6 @@ let testsuite_fast = "Fast" >::: [
         }"
         3;
 
-]
-
-let testsuite_bugs = "Bugs" >::: [
-
     test_ottercfg
         ~label:"Nested function call"
         "void f(void) {
@@ -190,11 +186,10 @@ let testsuite_bugs = "Bugs" >::: [
             g();
             return __otter_distance_from_instr_mark(1);
         }"
-        3;
+        4;
 
 ]
 
 let testsuite = "Distance-to-targets" >::: [
     testsuite_fast;
-    testsuite_bugs;
 ]
