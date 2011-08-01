@@ -71,11 +71,11 @@ class BitBlaster {
 	// Multiply.
 	vector<BBNode> BBMult(const vector<BBNode>& x, const vector<BBNode>& y,
 			set<BBNode>& support, const ASTNode& n);
-	void mult_allPairs(const vector<BBNode>& x, const vector<BBNode>& y, set<BBNode>& support, stack<BBNode> * products);
-	void mult_Booth(const vector<BBNode>& x_i, const vector<BBNode>& y_i, set<BBNode>& support, const BEEV::ASTNode& xN, const BEEV::ASTNode& yN, stack<BBNode> * products);
+	void mult_allPairs(const vector<BBNode>& x, const vector<BBNode>& y, set<BBNode>& support, vector<stack<BBNode> >& products);
+	void mult_Booth(const vector<BBNode>& x_i, const vector<BBNode>& y_i, set<BBNode>& support, const BEEV::ASTNode& xN, const BEEV::ASTNode& yN, vector<stack<BBNode> >& products);
 	vector<BBNode> mult_normal(const vector<BBNode>& x,	const vector<BBNode>& y, set<BBNode>& support);
 
-        vector<BBNode> multWithBounds(const ASTNode&n, stack<BBNode>* products, set<BBNode>& toConjoinToTop);
+        vector<BBNode> multWithBounds(const ASTNode&n, vector<stack<BBNode> >& products, set<BBNode>& toConjoinToTop);
         bool
         statsFound(const ASTNode& n);
 
@@ -85,8 +85,8 @@ class BitBlaster {
             set<BBNode>& support, stack<BBNode>& currentColumn, vector<BBNode>& currentSorted, vector<BBNode>& priorSorted,
                 const int minTrue = 0, const int maxTrue = ((unsigned)~0) >> 1 );
 
-	void buildAdditionNetworkResult(stack<BBNode>* products, set<BBNode>& support, const int bitWidth, const int index, const int minTrue = 0, const int maxTrue = ((unsigned)~0) >> 1 );
-	vector<BBNode> buildAdditionNetworkResult(stack<BBNode>* products, set<BBNode>& support, int bitWidth);
+	void buildAdditionNetworkResult(vector<stack<BBNode> >& products, set<BBNode>& support, const int bitWidth, const int index, const int minTrue = 0, const int maxTrue = ((unsigned)~0) >> 1 );
+	vector<BBNode> buildAdditionNetworkResult(vector<stack<BBNode> >& products, set<BBNode>& support, int bitWidth);
 
 	vector<BBNode> BBAndBit(const vector<BBNode>& y, BBNode b);
 
