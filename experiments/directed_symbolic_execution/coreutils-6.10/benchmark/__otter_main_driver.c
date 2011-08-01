@@ -38,6 +38,11 @@ void __otter_main_setup_fs() {
     __otter_fs_root = root;
     (*root).permissions = 0x01ED;
 
+#ifdef __OTTER_SETUP_PWD
+    // Setup working directory as root
+    __otter_fs_pwd = root;
+#endif
+
 #ifdef __OTTER_SETUP_FILE_SYSTEM
   #ifndef __OTTER_MAX_FILE_SIZE
     #define __OTTER_MAX_FILE_SIZE  8
