@@ -23,26 +23,29 @@ def pretty_int(f):
     return "%d" % f if f > 0 else ''
 
 csv_reader = csv.reader(sys.stdin, delimiter=',', quotechar='"')
-csv_reader.next()  # skip the first row
 
 table = defaultdict(dict)
 
 for row in csv_reader:
     program = row[0]
     strategy = row[1]
+    if program == "Test" and strategy == "Strategy": continue  # Skip the header rows
     table[program][strategy] = median_siqr_outliers(row[2:])
 
-program_list = [
-         #'ProSDSE'  ,
-         #'ProCCBSE' ,
-         #'ProMix'   ,
-         "mkdir",
-         "mkfifo",
-         "mknod",
-         "paste",
-         "ptx",
-         "seq",
-        ]
+program_info_list = [
+        { "name" : 'ProSDSE'  , "timelimit" : 600.0  , "count total" : False },
+        { "name" : 'ProCCBSE' , "timelimit" : 600.0  , "count total" : False },
+        { "name" : 'ProMix'   , "timelimit" : 600.0  , "count total" : False },
+        { "name" : "mkdir"    , "timelimit" : 1800.0 , "count total" : True },
+        { "name" : "mkfifo"   , "timelimit" : 1800.0 , "count total" : True },
+        { "name" : "mknod"    , "timelimit" : 1800.0 , "count total" : True },
+        { "name" : "paste"    , "timelimit" : 1800.0 , "count total" : True },
+        { "name" : "seq"      , "timelimit" : 1800.0 , "count total" : True },
+        { "name" : "ptx"      , "timelimit" : 1800.0 , "count total" : True },
+        { "name" : "ptx2"     , "timelimit" : 1800.0 , "count total" : True },
+        { "name" : "tac"      , "timelimit" : 7200.0 , "count total" : True },
+        { "name" : "pr"       , "timelimit" : 7200.0 , "count total" : True },
+    ]
 
 directed_strategy_list = [
          'InterSDSE',
@@ -68,7 +71,8 @@ undirected_strategy_list = [
 total = defaultdict(float)
 
 for strategy_list in [directed_strategy_list, klee_strategy_list, undirected_strategy_list]:
-    for program in program_list:
+    for program_info in program_info_list:
+        program = program_info["name"]
         output = [ program ]
         for strategy in strategy_list:
             try:
@@ -80,7 +84,8 @@ for strategy_list in [directed_strategy_list, klee_strategy_list, undirected_str
                     macro = '\\mso{%s}{%s}{%s}' % (median, pretty_float(stats['siqr']), pretty_int(len(stats['outliers'])))
                 output.append(macro)
                 median = stats['median']
-                total[strategy] += median if median < float('inf') else 1800.0
+                if program_info["count total"]:
+                    total[strategy] += median if median < float('inf') else program_info["timelimit"]
             except KeyError:
                 # Data missing
                 output.append("")
