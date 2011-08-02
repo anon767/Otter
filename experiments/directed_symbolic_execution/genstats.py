@@ -43,6 +43,7 @@ program_info_list = [
         { "name" : "seq"      , "timelimit" : 1800.0 , "count total" : True },
         { "name" : "ptx"      , "timelimit" : 1800.0 , "count total" : True },
         { "name" : "ptx2"     , "timelimit" : 1800.0 , "count total" : True },
+        { "name" : "md5sum"   , "timelimit" : 1800.0 , "count total" : True },
         { "name" : "tac"      , "timelimit" : 7200.0 , "count total" : True },
         { "name" : "pr"       , "timelimit" : 7200.0 , "count total" : True },
     ]
