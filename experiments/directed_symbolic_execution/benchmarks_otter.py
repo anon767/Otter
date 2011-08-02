@@ -21,14 +21,19 @@ benchmarks = {
             },
         'command' : '"@trunk@/newlib-1.19.0/otter/otter-with-libc" "@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/__otter_main_driver.c" --mainfn=__otter_main_driver -lm --timeout=1800 --bypassed-functions=main --init-malloc=zero --init-local=zero '
         },
-    'coreutils-customized' : {
+    'coreutils-ptx2' : {
         'programs' : {
-            'ptx2' : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/ptx_comb.c"  -DMAX_ARGC=4 -DMAX_ARG_LENGTHS=1,10,2,2 --line-targets=@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/../src/ptx.c:1510 --unsound-pointer-arithmetic',
+            'ptx2' : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/ptx_comb.c"  -DMAX_ARGC=3 -DMAX_ARG_LENGTHS=1,2,2 --line-targets=@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/../src/ptx.c:1510 --unsound-pointer-arithmetic -D__OTTER_FIXED_ARGC -D__OTTER_MAX_FILE_SIZE=1',
+            },
+        'command' : '"@trunk@/newlib-1.19.0/otter/otter-with-libc" "@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/__otter_main_driver.c" --mainfn=__otter_main_driver -lm --timeout=1800 --bypassed-functions=main --init-malloc=zero --init-local=zero -D__OTTER_SETUP_FILE_SYSTEM -D__OTTER_NO_STDIO'
+        },
+    'coreutils-pr' : {
+        'programs' : {
             'pr'   : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/pr_comb.c" -DMAX_ARGC=3 -DMAX_ARG_LENGTHS=1,2,1 --line-targets=@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/../src/pr.c:2674 -D__OTTER_FIXED_ARGC --unsound-pointer-arithmetic -D__OTTER_MAX_FILE_SIZE=2 -D__OTTER_SETUP_PWD',
             },
         'command' : '"@trunk@/newlib-1.19.0/otter/otter-with-libc" "@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/__otter_main_driver.c" --mainfn=__otter_main_driver -lm --timeout=7200 --bypassed-functions=main --init-malloc=zero --init-local=zero -D__OTTER_SETUP_FILE_SYSTEM -D__OTTER_NO_STDIO'
         },
-    'coreutils-customized-symbolic-local' : {
+    'coreutils-tac' : {
         'programs' : {
             'tac'  : '"@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/build.cil/src/tac_comb.c" -DMAX_ARGC=4 -DMAX_ARG_LENGTHS=1,2,2,2 --line-targets=@trunk@/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/../lib/regexec.c:568',
             },
