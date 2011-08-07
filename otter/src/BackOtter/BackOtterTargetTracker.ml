@@ -7,45 +7,86 @@ open Cil
 
 let arg_line_numbers = ref []
 let arg_convert_non_target_reached_abandoned_to_truncated = ref false
+let arg_remove_line_targets_once_found = ref false
+let arg_fork_finish_at_targets = ref false
 
 module FileMap = Map.Make(CilData.CilFile)
+module InstructionSet = Set.Make(Instruction)
+
+(* An abstraction of CilLocation: only file names and line numbers are considered. *)
+module Location = struct
+    type t = { file: string; line: int }
+    let compare { file = f1; line = l1 } { file = f2; line = l2 } = match Pervasives.compare l1 l2 with 0 -> Pervasives.compare f1 f2 | i -> i
+    let of_cilloc { Cil.file = f; Cil.line = l } = { file = f; line = l }
+    let of_instruction instruction = of_cilloc (Instruction.location instruction)
+    let printer ff loc = Format.fprintf ff "%s:%d" loc.file loc.line
+end
+
+(* Mapping a location to a set of instructions located in that location *)
+module LocationMap = struct
+    module M = Map.Make(Location)
+    include M
+    let add_to_set loc instr map =
+        let iset = try find loc map with Not_found -> InstructionSet.empty in
+        let iset = InstructionSet.add instr iset in
+        M.add loc iset map
+end
+
+(* A global map *)
 let file_to_line_targets = ref FileMap.empty
 
-let get_line_targets file =
+let get_line_targets_loc_map file =
     try
         FileMap.find file (!file_to_line_targets)
     with Not_found ->
         let line_targets =
             List.fold_left begin fun targets (filename, linenumber as line) ->
                 try
-                    Instruction.by_line file line
+                    (Instruction.by_line file line) @ targets
                 with Not_found ->
-                    let output_mode = Output.get_mode () in
-                    Output.set_mode Output.MSG_REG;
-                    Output.printf "Warning: line target %s:%d not found.@." filename linenumber;
-                    Output.set_mode output_mode;
+                    Output.must_printf "Warning: line target %s:%d not found.@." filename linenumber;
                     []
             end [] (!arg_line_numbers)
         in
-        file_to_line_targets := FileMap.add file line_targets (!file_to_line_targets);
-        line_targets
+        let loc_map = List.fold_left (
+            fun loc_map line_target -> 
+                let loc = Location.of_instruction line_target in
+                Output.must_printf "Add target at %a@\n" Location.printer loc;
+                LocationMap.add_to_set loc line_target loc_map
+            ) LocationMap.empty line_targets in
+        file_to_line_targets := FileMap.add file loc_map (!file_to_line_targets);
+        loc_map
+
+(* Flatten the map to a list of instructions *)
+let get_line_targets file =
+    let loc_map = get_line_targets_loc_map file in
+    LocationMap.fold (fun _ iset line_targets -> InstructionSet.fold (fun i line_targets -> i :: line_targets) iset line_targets) loc_map []
 
 let add_line_target file instruction =
-    let line_targets = instruction :: (get_line_targets file) in 
-    file_to_line_targets := FileMap.add file line_targets (!file_to_line_targets)
+    let loc_map = LocationMap.add_to_set (Location.of_instruction instruction) instruction (get_line_targets_loc_map file) in 
+    file_to_line_targets := FileMap.add file loc_map (!file_to_line_targets)
 
+let remove_line_target_loc file loc =
+    let loc_map = get_line_targets_loc_map file in
+    let loc_map = LocationMap.remove loc loc_map in
+    Output.must_printf "Remove target at %a@\n" Location.printer loc;
+    file_to_line_targets := FileMap.add file loc_map (!file_to_line_targets)
 
 let process_completed entry_fn (reason, job) =
-    let locs = (Job.get_loc job) :: (List.map InstructionInfo.Entry.to_loc job#caller_list) in
-    let line_targets = get_line_targets job#file in (* Note: __FAILURE()'s first line is added into line_targets in BackOtterMain *)
-
-    (* Convert Instruction.t to (location.file, location.line) *)
-    let loc_to_file_line loc = (loc.file, loc.line) in
-    let locs = List.map loc_to_file_line locs in
-    let line_targets = List.map (fun i -> loc_to_file_line (Instruction.location i)) line_targets in
+    (* Note: __FAILURE()'s first line is added into line_targets in BackOtterMain *)
+    let locs = List.map Location.of_cilloc ((Job.get_loc job) :: (List.map InstructionInfo.Entry.to_loc job#caller_list)) in
+    let line_targets_loc_map = get_line_targets_loc_map job#file in 
 
     (* The job reaches some target if its current location, or any call site along the call stack, reaches the target. *)
-    let rec is_target = function [] -> false | loc :: locs -> if List.mem loc line_targets then true else is_target locs in
+    let rec is_target = function 
+        | [] -> false 
+        | loc :: locs -> 
+            if LocationMap.mem loc line_targets_loc_map then begin
+                (* Remove line_targets associated with this loc *)
+                if (!arg_remove_line_targets_once_found) then remove_line_target_loc job#file loc;
+                true
+            end else is_target locs 
+    in
 
     (* Track reached targets, and convert executions that report repeated abandoned paths to Truncated *)
     let reason =
@@ -97,8 +138,20 @@ let process_completed entry_fn (reason, job) =
     (job : _ #Info.t)#finish reason
 
 
+(* Detect if a target is reached, and if arg_fork_finish_at_targets is set,
+ * fork a completed job unconditionally. *)
+let interceptor job interceptor = 
+    if (!arg_fork_finish_at_targets) then
+        let line_targets_loc_map = get_line_targets_loc_map job#file in 
+        let loc = Location.of_cilloc (Job.get_loc job) in
+        let job = if LocationMap.mem loc line_targets_loc_map then (job : _ #Info.t)#fork_finish (Job.Abandoned (`Failure "Target Reached")) else job in
+        interceptor job
+    else
+        interceptor job
+
 (** {1 Command-line options} *)
 
+(* TODO: combine this with add_line_target *)
 let add_line_to_line_targets =
     (* [spaces]<filename>:<line number>[spaces] *)
     let re = Str.regexp "^[ \t]*\\(\\(.*\\):\\([0-9]*\\)\\)?[ \t]*$" in
@@ -142,5 +195,11 @@ let options = [
     ("--convert-non-target-reached-abandoned-to-truncated",
         Arg.Set arg_convert_non_target_reached_abandoned_to_truncated,
         " Convert non TargetReached Abandoned's to Truncated's (default: no)");
+    ("--remove-line-targets-once-found",
+        Arg.Set arg_remove_line_targets_once_found,
+        " Remove line targets once found, so that they no longer are targets in the future");
+    ("--fork-finish-at-targets",
+        Arg.Set arg_fork_finish_at_targets,
+        " Always fork a finished path at target.");
 ]
 
