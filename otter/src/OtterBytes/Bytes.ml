@@ -119,7 +119,6 @@ module T : sig
     val make_Bytes_Conditional : bytes conditional -> bytes
 
     val block__make : string -> bytes -> memory_block_type -> memory_block
-    val disable_hash_consing : unit -> unit
 
     module type HashedType = sig
         type t
@@ -333,15 +332,13 @@ end = struct
     (**
      *  byte
      *)
-    let hash_consing_byte_create_impl =
+    let hash_consing_byte_create =
         let module Memo = Memo.Make (struct
             type t = byte
             let equal = Internal.byte_equal
             let hash = Internal.do_hash Internal.byte_hash
         end) in
-        ref (Memo.make_hashcons "Bytes.make_byte")
-
-    let hash_consing_byte_create byte = !hash_consing_byte_create_impl byte
+        Memo.make_hashcons "Bytes.make_byte"
 
     let make_Byte_Concrete c = hash_consing_byte_create (Byte_Concrete c)
 
@@ -355,15 +352,13 @@ end = struct
     (**
      *  guard
      *)
-    let hash_consing_guard_create_impl =
+    let hash_consing_guard_create =
         let module Memo = Memo.Make (struct
             type t = guard
             let equal = Internal.guard_equal
             let hash = Internal.do_hash Internal.guard_hash
         end) in
-        ref (Memo.make_hashcons "Bytes.make_guard")
-
-    let hash_consing_guard_create guard = !hash_consing_guard_create_impl guard
+        Memo.make_hashcons "Bytes.make_guard"
 
     let guard__true = Guard_True
 
@@ -386,15 +381,13 @@ end = struct
     (**
      *  bytes
      *)
-    let hash_consing_bytes_create_impl =
+    let hash_consing_bytes_create =
         let module Memo = Memo.Make (struct
             type t = bytes
             let equal = Internal.bytes_equal
             let hash = Internal.do_hash Internal.bytes_hash
         end) in
-        ref (Memo.make_hashcons "Bytes.make_bytes")
-
-    let hash_consing_bytes_create bytes = !hash_consing_bytes_create_impl bytes
+        Memo.make_hashcons "Bytes.make_bytes"
 
     let make_Bytes_Constant const =
         Profiler.global#call "Bytes.make_Bytes_Constant" begin fun () ->
@@ -464,15 +457,6 @@ end = struct
                 memory_block_id = Counter.next block_counter;
                 memory_block_addr = Counter.next ~v:segment_size block_addr_counter;
             }
-
-
-    (**
-     * Turn off hash consing
-     *)
-    let disable_hash_consing () =
-        hash_consing_byte_create_impl := (fun x -> x);
-        hash_consing_guard_create_impl := (fun x -> x);
-        hash_consing_bytes_create_impl := (fun x -> x)
 
 
     (**
@@ -980,15 +964,4 @@ let conditional__bytes = function
 
 let conditional__lval_block l =
     Unconditional l
-
-
-(**
- *  Command-line options
- *)
-let options = [
-    (* TODO: turn this into a hidden environment variable option; it's rarely useful to turn of hashconsing *)
-    ("--no-hash-consing",
-        Arg.Unit disable_hash_consing,
-        " Do not use hash consing in creating bytes\n");
-]
 

@@ -48,7 +48,6 @@ let options =
     BytesSTP.options @
     SymbolicPointers.options @
     TrackingFunctions.options @
-    Bytes.options @
     Output.options @
     InitBytes.options @
     CilUtilities.CilPtranal.options @
