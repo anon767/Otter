@@ -192,45 +192,52 @@ let state__get_deferred_from_block job block =
         MemoryBlockMap.find block job#state.block_to_bytes
 
 
-let state__deref ?pre job (lvals, size) =
+let state__deref job (lvals, size) =
+    (* prune the lval as well as the values at the lvals to avoid loading from obsolete locations or loading obsolete
+     * values which may be inconsistent with the path condition, which may lead to spurious warnings *)
     let deref job pre (block, offset) =
         let job, bytes = state__get_bytes_from_block job block in
-        let job, bytes = bytes__read ~test:(timed_query_stp "query_stp/state__deref") ~pre job bytes offset size in
+        let job, bytes = bytes__read ~test:(timed_query_stp "query_stp/state__deref/2") ~pre job bytes offset size in
         (job, conditional__bytes bytes)
     in
-    let job, c = conditional__fold_map ?pre deref job lvals in
+    let job, c =
+        conditional__fold_map
+            ~test:(timed_query_stp "query_stp/state__deref/1")
+            deref job lvals
+    in
     (job, make_Bytes_Conditional c)
 
 
 let state__assign job (lvals, size) bytes = Profiler.global#call "MemOp.state__assign" begin fun () -> 
-    let rec state__assign job (lvals, size) bytes =
-    	let assign job pre (block, offset) =
-    		(* TODO: provide some way to report partial error *)
-    
-    		(* C99 6.7.3.5: If an attempt is made to modify an object defined with a const-qualified type through use
-    		 * of an lvalue with non-const-qualified type, the behavior is undefined. If an attempt is made to refer
-    		 * to an object defined with a volatile-qualified type through use of an lvalue with non-volatile-qualified
-    		 * type, the behavior is undefined. *)
-    		if block.memory_block_type = Block_type_Const then FormatPlus.failwith "Write to a const: %s" block.memory_block_name;
-    
-    		let job, oldbytes = Deferred.force job (MemoryBlockMap.find block job#state.block_to_bytes) in
-    
-    		(* TODO: pruning the conditional bytes here leads to repeated work if it is subsequently read via state__deref;
-    		 * however, not pruning leads to O(k^(2^n)) leaves in the conditional bytes for n consecutive assignments. *)
-    		let job, newbytes = bytes__write ~test:(timed_query_stp "query_stp/state__assign") ~pre job oldbytes offset size bytes in
-    
-    		(* Morris' axiom of assignment *)
-    		let newbytes = match pre with
-    			| Guard_True -> newbytes
-    			| _          -> make_Bytes_Conditional ( IfThenElse (pre, conditional__bytes newbytes, conditional__bytes oldbytes) )
-    		in
-    		Output.set_mode Output.MSG_ASSIGN;
-    		Output.printf "@[Assign@ @[%a@]@ to @[%a@], @[%a@]@]@." BytesPrinter.bytes bytes BytesPrinter.memory_block block BytesPrinter.bytes offset;
-    		state__add_block job block newbytes
-    	in
-    	conditional__fold assign job lvals
+    (* prune the lval as well as the values at the lvals to avoid loading from obsolete locations or loading obsolete
+     * values which may be inconsistent with the path condition, which may lead to spurious warnings *)
+    let assign job pre (block, offset) =
+        (* TODO: provide some way to report partial error *)
+
+        (* C99 6.7.3.5: If an attempt is made to modify an object defined with a const-qualified type through use
+         * of an lvalue with non-const-qualified type, the behavior is undefined. If an attempt is made to refer
+         * to an object defined with a volatile-qualified type through use of an lvalue with non-volatile-qualified
+         * type, the behavior is undefined. *)
+        if block.memory_block_type = Block_type_Const then FormatPlus.failwith "Write to a const: %s" block.memory_block_name;
+
+        let job, oldbytes = Deferred.force job (MemoryBlockMap.find block job#state.block_to_bytes) in
+
+        (* TODO: pruning the conditional bytes here leads to repeated work if it is subsequently read via state__deref;
+         * however, not pruning leads to O(k^(2^n)) leaves in the conditional bytes for n consecutive assignments. *)
+        let job, newbytes = bytes__write ~test:(timed_query_stp "query_stp/state__assign/2") ~pre job oldbytes offset size bytes in
+
+        (* Morris' axiom of assignment *)
+        let newbytes = match pre with
+            | Guard_True -> newbytes
+            | _          -> make_Bytes_Conditional ( IfThenElse (pre, conditional__bytes newbytes, conditional__bytes oldbytes) )
+        in
+        Output.set_mode Output.MSG_ASSIGN;
+        Output.printf "@[Assign@ @[%a@]@ to @[%a@], @[%a@]@]@." BytesPrinter.bytes bytes BytesPrinter.memory_block block BytesPrinter.bytes offset;
+        state__add_block job block newbytes
     in
-    state__assign job (lvals, size) bytes
+    conditional__fold
+        ~test:(timed_query_stp "query_stp/state__assign/1")
+        assign job lvals
 end
 
 
