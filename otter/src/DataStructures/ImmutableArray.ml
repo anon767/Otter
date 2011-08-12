@@ -4,6 +4,8 @@ module IndexMap = Map.Make (struct
 	let compare (a : int) (b : int) = Pervasives.compare a b
 end)
 
+exception Out_of_bounds
+
 
 type 'a t =
 	{
@@ -18,59 +20,36 @@ let length array = array.length
 
 
 let get array i =
-	try
-		IndexMap.find (array.offset+i) array.map
-	with Not_found ->
-		match array.default with
-			| None -> failwith "Array element not initialized" (* error occurs when someone declares an array of size 0, and read from it *)
-			| Some(elm) -> elm
+    if i < 0 || i >= array.length then raise Out_of_bounds;
+    try
+        IndexMap.find (array.offset + i) array.map
+    with Not_found ->
+        match array.default with
+            | None -> failwith "Array element not initialized" (* error occurs when someone declares an array of size 0, and read from it *)
+            | Some x -> x
 
 
-let set array i elm =
-	let ii = i + array.offset in
-	let length =
-		 (* TODO: should disallow silent expansion? *)
-		if ii >= array.offset + array.length then
-			ii + 1
-		else
-			array.length
-	in
-	let map = IndexMap.add ii elm array.map in
-	{ array with length; map }
+let set array i x =
+    if i < 0 || i >= array.length then raise Out_of_bounds;
+    { array with map = IndexMap.add (i + array.offset) x array.map }
 
 
 let sub array offset length =
-	{ array with length; offset = array.offset + offset }
-
-	
-let empty =
-	{
-		length = 0;
-		offset = 0;
-		map = IndexMap.empty;
-		default = None;
-	}
+    if offset < 0 then invalid_arg "negative offset";
+    if length <= 0 then invalid_arg "negative or zero length";
+    if length > array.length || offset > array.length - length then raise Out_of_bounds;
+    { array with length; offset = array.offset + offset }
 
 
-let make n initval =
-	{ empty with
-		length = n;
-		default = Some(initval);
-	}
+let make length x =
+    if length <= 0 then invalid_arg "negative or zero length";
+    { length; offset = 0; map = IndexMap.empty; default = Some x }
 
 
-let of_list (lst: 'a list) : 'a t =
-	if lst=[] then empty 
-	else
-	let default = List.hd lst in
-	let rec impl lst n =
-		match lst with
-			| [] -> make 0 default
-			| head:: tail ->
-				let array = impl tail (n + 1) in
-					set array n head
-	in
-	impl lst 0 
+let of_list xs =
+    if xs = [] then invalid_arg "empty list";
+    let length, map = List.fold_left (fun (i, map) x -> (i + 1, IndexMap.add i x map)) (0, IndexMap.empty) xs in
+    { length; offset = 0; map; default = Some (List.hd xs) }
 
 
 let equal eq xs ys =
