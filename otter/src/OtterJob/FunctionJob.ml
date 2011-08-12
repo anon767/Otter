@@ -114,10 +114,15 @@ let rec init_bytes_with_pointers
                 end exps in
                 let offset, size = Cil.bitsOffset typ field_offset in
                 let size = size / 8 in
-                let offset = Bytes.int_to_bytes (offset / 8) in
-                let job, field_bytes = init_bytes_with_pointers_inner job (Cil.typeOffset typ field_offset) points_to field_exps in
-                let (), bytes = BytesUtility.bytes__write () bytes offset size field_bytes in
-                (job, bytes)
+                if size = 0 then
+                     (* TODO: structs are allowed to have zero/variable-length arrays as the last element (C99 6.7.2.1.2);
+                      * so we may want to create targets of symbolic length *)
+                    (job, bytes)
+                else
+                    let offset = Bytes.int_to_bytes (offset / 8) in
+                    let job, field_bytes = init_bytes_with_pointers_inner job (Cil.typeOffset typ field_offset) points_to field_exps in
+                    let (), bytes = BytesUtility.bytes__write () bytes offset size field_bytes in
+                    (job, bytes)
             end (job, bytes) compinfo
 
         | Cil.TArray (el_typ, len_opt, _) ->
