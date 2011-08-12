@@ -30,7 +30,7 @@ module InternalAllSymbols = struct
 
     let rec all_symbols_in_bytearray bytearray =
         wrap_all_symbols_in_bytearray begin
-            ImmutableArray.fold_left
+            ByteArray.fold_left
                 begin fun symbols byte -> match byte with
                     | Byte_Undefined | Byte_Concrete _ -> symbols
                     | Byte_Symbolic s -> SymbolSet.add s symbols
@@ -266,10 +266,10 @@ and bytes_to_stp_array vc bytes =
             OcamlSTP.array_var vc ("bytes_symbol_" ^ string_of_int symbol.symbol_id) (Cil.bitsSizeOf Cil.voidPtrType) 8
             
         | Bytes_ByteArray bytearray as bytes ->
-            let array = lookup_stp_array vc bytes bytearray.ImmutableArray.length in
+            let array = lookup_stp_array vc bytes (ByteArray.length bytearray) in
             let index_width = OcamlSTP.array_index_width vc array in
             (* TODO: ditch symbolic byte and make bytearray named, symbolic and sparse by default *)
-            ImmutableArray.foldi begin fun array index byte ->
+            ByteArray.foldi begin fun array index byte ->
                 OcamlSTP.array_write vc array (OcamlSTP.bv_of_int vc index_width index) (byte_to_stp_bv vc byte)
             end array bytearray
 
@@ -432,7 +432,7 @@ and bytes_to_stp_bv vc bytes =
 
         | Bytes_ByteArray bytearray ->
             (* TODO: ditch this case by enforcing that values are never encoded as bytearrays *)
-            let bv_opt = ImmutableArray.fold_left begin fun bv_opt byte ->
+            let bv_opt = ByteArray.fold_left begin fun bv_opt byte ->
                 let bv8 = byte_to_stp_bv vc byte in
                 match bv_opt with
                     | Some bv -> Some (OcamlSTP.bv_concat vc bv8 bv) (* read big-endian values as little-endian from array *)
@@ -544,7 +544,7 @@ and bytes_to_stp_bool vc bytes =
             conditional_to_stp vc bytes_to_stp_bool conditional
 
         | Bytes_ByteArray bytearray when isConcrete_bytearray bytearray ->
-            if ImmutableArray.for_all (function Byte_Concrete '\000' -> true | _ -> false) bytearray then
+            if ByteArray.for_all (function Byte_Concrete '\000' -> true | _ -> false) bytearray then
                 OcamlSTP.bool_false vc
             else
                 OcamlSTP.bool_true vc

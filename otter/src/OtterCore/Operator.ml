@@ -40,7 +40,7 @@ let neg operands =
              original byte was '\000'. Once we hit a non-null byte, we stop
              carrying. *)
         let carry = ref 1 in
-        ImmutableArray.map (fun byte -> match byte with
+        ByteArray.map (fun byte -> match byte with
             | Byte_Concrete (c) ->
                 let c' = Char.chr ( (!carry + (lnot (Char.code c))) land 255) in
                     if c <> '\000' then carry := 0;
@@ -53,7 +53,7 @@ let neg operands =
 
 let bnot operands =
     let op_conc arr typ = 
-        ImmutableArray.map (fun byte -> match byte with
+        ByteArray.map (fun byte -> match byte with
             | Byte_Concrete (c) ->
                 let c' = Char.chr ( (lnot (Char.code c)) land 255)  in
                     make_Byte_Concrete(c')
@@ -62,12 +62,12 @@ let bnot operands =
     in
     unop op_conc OP_BNOT operands 
 
-let zero_bytearray = ImmutableArray.of_list [byte__zero;byte__zero;byte__zero;byte__zero]
-let one_bytearray = ImmutableArray.of_list [byte__make '\001';byte__zero;byte__zero;byte__zero]
+let zero_bytearray = ByteArray.of_list [byte__zero;byte__zero;byte__zero;byte__zero]
+let one_bytearray = ByteArray.of_list [byte__make '\001';byte__zero;byte__zero;byte__zero]
 
 let lnot operands = (* should return int (32-bit) *)
     let op_conc arr typ = 
-        if ImmutableArray.fold_left (fun a byte -> match byte with
+        if ByteArray.fold_left (fun a byte -> match byte with
             | Byte_Concrete (c) -> a || (Char.code c <>0)
             | _ -> failwith "lnot: unreachable"
         ) false arr 

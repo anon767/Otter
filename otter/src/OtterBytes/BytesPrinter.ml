@@ -90,7 +90,7 @@ and bytearray ff arr =
 		else if c > 2 then fprintf ff "\\{%d}@," c;
 	in
 	fprintf ff "@[Bytearray(";
-	let last = ImmutableArray.fold_left begin fun b' b -> match b' with
+	let last = ByteArray.fold_left begin fun b' b -> match b' with
 		| Some (b', n) when match b with Byte_Bytes _ -> false | _ -> b = b' ->
 			Some (b', n + 1)
 		| Some (b', n) ->
@@ -107,10 +107,10 @@ and bytearray ff arr =
 			fprintf ff ")@]"
 
 
-(** Print a {!type:Bytes.byte ImmutableArray.t} as if it were a null-terminated C-style string. {!Bytes.Byte_Bytes}
+(** Print a {!type:Bytes.bytearray} as if it were a null-terminated C-style string. {!Bytes.Byte_Bytes}
 	are not supported and will be printed as "\?".
 		@param ff is the formatter to which to print
-		@param arr is the {!type:Bytes.byte ImmutableArray.t} to print
+		@param arr is the {!type:Bytes.bytearray} to print
 *)
 and bytestring ff arr =
 	let byte = function
@@ -120,8 +120,8 @@ and bytestring ff arr =
 			byte ff b
 	in
 	let rec bytestring n =
-		if n < ImmutableArray.length arr then
-			match ImmutableArray.get arr n with
+		if n < ByteArray.length arr then
+			match ByteArray.get arr n with
 				| Byte_Concrete '\000' ->
 					()
 				| s ->

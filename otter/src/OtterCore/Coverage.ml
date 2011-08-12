@@ -344,25 +344,24 @@ let printPath job =
             (* Get the value of a symbolic make_ByteArray *)
             let getVal = function
                 | Bytes_ByteArray bytArr ->
-                      let byteOptArray =
-                          ImmutableArray.map
-                              (function
-                                   | Byte_Symbolic s ->
-                                         (try
-                                              let valueForS = List.assoc s valuesForSymbols in
-                                              (* Now s is bound *)
-                                              unboundSymbols := BytesSTP.SymbolSet.remove s !unboundSymbols;
-                                              Some (make_Byte_Concrete valueForS)
-                                          with Not_found -> None)
-                                   | _ -> failwith "Impossible: tracked symbolic value must be fully symbolic")
-                              bytArr
-                      in
-                      if ImmutableArray.exists (* Check if any byte is constrained *)
-                          (function Some _ -> true | _ -> false)
-                          byteOptArray
+                      if ByteArray.exists (* Check if any byte is constrained *)
+                          (function Byte_Symbolic s -> List.mem_assoc s valuesForSymbols | _ -> failwith "Impossible: tracked symbolic value must be fully symbolic")
+                          bytArr
                       then (
                           (* Fill in unconstrained bytes with 0, and return a Some with that bytearray. *)
-                          Some (ImmutableArray.map (function Some b -> b | None -> byte__zero) byteOptArray)
+                          Some begin ByteArray.map begin function
+                             | Byte_Symbolic s ->
+                                begin try
+                                   let valueForS = List.assoc s valuesForSymbols in
+                                   (* Now s is bound *)
+                                   unboundSymbols := BytesSTP.SymbolSet.remove s !unboundSymbols;
+                                   make_Byte_Concrete valueForS
+                                with Not_found ->
+                                   byte__zero
+                                end
+                             | _ ->
+                                failwith "Impossible: tracked symbolic value must be fully symbolic"
+                          end bytArr end
                       ) else (
                           (* Return None for a totally unconstrained value *)
                           None

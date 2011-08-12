@@ -207,10 +207,10 @@ rval_cast typ rv rvtyp =
                     | Bytes_ByteArray bytearray when isConcrete_bytearray bytearray ->
                         let bytearray =
                             if new_len < old_len then
-                                ImmutableArray.sub bytearray 0 new_len (* simply truncate *)
+                                ByteArray.sub bytearray 0 new_len (* simply truncate *)
                             else
                                 let leftmost_is_one =
-                                    match ImmutableArray.get bytearray (ImmutableArray.length bytearray - 1) with
+                                    match ByteArray.get bytearray (ByteArray.length bytearray - 1) with
                                         | Byte_Concrete (c) -> Char.code c >= 0x80
                                         | _ -> failwith "unreachable (bytearray is concrete)"
                                 in
@@ -221,11 +221,11 @@ rval_cast typ rv rvtyp =
                                 in
                                 (* little-endian extension *)
                                 let rec copy n new_bytearray = if n < old_len then
-                                    copy (n + 1) (ImmutableArray.set new_bytearray n (ImmutableArray.get bytearray n))
+                                    copy (n + 1) (ByteArray.set new_bytearray n (ByteArray.get bytearray n))
                                 else
                                     new_bytearray
                                 in
-                                copy 0 (ImmutableArray.make new_len ext_byte)
+                                copy 0 (ByteArray.make new_len ext_byte)
                         in
                         make_Bytes_ByteArray bytearray
 

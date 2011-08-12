@@ -38,7 +38,7 @@ let returnsBoolean = function
     | _ -> false
 
 
-module T : sig
+module rec T : sig
     type symbol = private
         {
             symbol_id: int;
@@ -50,7 +50,7 @@ module T : sig
         | Byte_Symbolic of symbol
         | Byte_Bytes of bytes * int
 
-    and bytearray = byte ImmutableArray.t
+    and bytearray = ByteArray.t
 
     and guard = private
         | Guard_True
@@ -149,7 +149,7 @@ end = struct
         | Byte_Symbolic of symbol
         | Byte_Bytes of bytes * int (* condense a bytes into a byte, that can be put into an array *)
 
-    and bytearray = byte ImmutableArray.t
+    and bytearray = ByteArray.t
 
     and guard =
         | Guard_True
@@ -209,7 +209,7 @@ end = struct
             | Byte_Bytes (b1, off1), Byte_Bytes (b2, off2) -> off1 = off2 && bytes_equal b1 b2
             | _, _ -> false
 
-        and bytearray_equal bytearray1 bytearray2 = bytearray1 == bytearray2 || ImmutableArray.equal byte_equal bytearray1 bytearray2
+        and bytearray_equal bytearray1 bytearray2 = ByteArray.equal bytearray1 bytearray2
 
         and guard_equal guard1 guard2 = guard1 == guard2 || match guard1, guard2 with
             | Guard_Not g1, Guard_Not g2 -> guard_equal g1 g2
@@ -287,7 +287,7 @@ end = struct
             | Byte_Undefined | Byte_Concrete _ | Byte_Symbolic _ as b -> add_hash b
             | Byte_Bytes (bytes, offset) -> add_hash (`Bytes, offset); bytes_hash bytes
 
-        and bytearray_hash bytearray = add_hash (ImmutableArray.hash (do_hash byte_hash) bytearray)
+        and bytearray_hash bytearray = add_hash (ByteArray.hash bytearray)
 
         and guard_hash = function
             | Guard_True -> add_hash `True
@@ -481,11 +481,7 @@ end = struct
         let hash = Internal.do_hash Internal.byte_hash
     end
 
-    module ByteArrayType = struct
-        type t = bytearray
-        let equal = Internal.bytearray_equal (* not hash-cons'ed *)
-        let hash = Internal.do_hash Internal.bytearray_hash
-    end
+    module ByteArrayType = ByteArray
 
     module GuardType = struct
         type t = guard
@@ -517,6 +513,12 @@ end = struct
         let hash = Internal.do_hash Internal.block_hash
     end
 end
+and ByteArray : ImmutableArray.S with type elt = ByteArrayElement.t =
+    ImmutableArray.Make (ByteArrayElement)
+    (* can't use T.ByteType.t directly due to "module rec" compiler restriction: recursive dependency cycles must go
+     * through a "safe" module that contains only function values *)
+and ByteArrayElement : ImmutableArray.ElementType with type t = T.ByteType.t =
+    T.ByteType
 
 include T
 
@@ -555,7 +557,7 @@ let int64_to_bytes n64 ikind : bytes =
                 (make_Byte_Concrete (Char.chr ((Int64.to_int n) land 255)) :: acc)
                 (succ count)
     in
-    make_Bytes_ByteArray(ImmutableArray.of_list (List.rev (helper n64 [] 0))) (* Reverse because we are little-endian *)
+    make_Bytes_ByteArray(ByteArray.of_list (List.rev (helper n64 [] 0))) (* Reverse because we are little-endian *)
 
 
 let string_map f s =
@@ -568,14 +570,14 @@ let string_map f s =
 
 (** Convert CString to make_Bytes_ByteArray.  *)
 let string_to_bytes (s : string) : bytes =
-    make_Bytes_ByteArray (ImmutableArray.of_list (string_map (fun ch -> make_Byte_Concrete ch) (s^"\000")))
+    make_Bytes_ByteArray (ByteArray.of_list (string_map (fun ch -> make_Byte_Concrete ch) (s^"\000")))
 
 
 (** Convert real numbers to make_Bytes *)
 (* TODO: actually represent the numbers *)
 let float_to_bytes f fkind =
     let length = bitsSizeOf (TFloat (fkind, [])) / 8 in
-    make_Bytes_ByteArray (ImmutableArray.make length (make_Byte_Concrete '\000'))
+    make_Bytes_ByteArray (ByteArray.make length (make_Byte_Concrete '\000'))
 
 (** Convert constant to make_Bytes_ByteArray *)
 let rec constant_to_bytes constant : bytes =
@@ -605,11 +607,11 @@ let rec bytes_to_int64 bytes isSigned : int64 =
                     else
                         bytearray_to_int64_helper
                             (index - 1)
-                            (match (ImmutableArray.get bytearray index) with
+                            (match (ByteArray.get bytearray index) with
                             |    Byte_Concrete(c) -> Int64.logor (Int64.shift_left acc 8) (Int64.of_int (Char.code c))
                             |    _ -> failwith "bytes_to_int64: bytearray not concrete")
                 in
-                bytearray_to_int64_helper ((ImmutableArray.length bytearray) - 1) 0L
+                bytearray_to_int64_helper ((ByteArray.length bytearray) - 1) 0L
         | _ -> failwith "bytes_to_int64: not concrete int"
 
 
@@ -658,7 +660,7 @@ let rec bytes_to_constant bytes typ : Cil.constant =
 (** True if bytearray is concrete *)
 (* Shouldn't a make_Byte_Bytes with concrete values be considered concrete, too? *)
 let isConcrete_bytearray (bytearray : bytearray) =
-    ImmutableArray.for_all (function Byte_Concrete _ -> true | _ -> false) bytearray
+    ByteArray.for_all (function Byte_Concrete _ -> true | _ -> false) bytearray
 
 
 (** True if bytes is concrete *)
@@ -714,7 +716,7 @@ and conditional__reduce : 'a . ('a -> 'a) -> 'a conditional -> 'a conditional = 
 and bytes__reduce bytes =
     InternalReduce.bytes_wrap begin function
         | Bytes_Constant c -> constant_to_bytes c
-        | Bytes_ByteArray array -> make_Bytes_ByteArray (ImmutableArray.map (byte__reduce) array)
+        | Bytes_ByteArray array -> make_Bytes_ByteArray (ByteArray.map (byte__reduce) array)
         | Bytes_Address (block, offset) -> make_Bytes_Address (block, bytes__reduce offset)
         | Bytes_Op (op, operands) -> make_Bytes_Op (op, List.map (fun (bytes, typ) -> (bytes__reduce bytes, typ)) operands)
         | Bytes_Sign_Extend (value, width) -> make_Bytes_Sign_Extend (bytes__reduce value, width)
@@ -742,7 +744,7 @@ let rec bytes__length bytes =
     match bytes with
         | Bytes_Constant (constant) -> (Cil.bitsSizeOf (Cil.typeOf (Const(constant))))/8
         | Bytes_Symbolic _ -> 0 (* TODO: bytes__length should be deprecated *)
-        | Bytes_ByteArray (bytearray) -> ImmutableArray.length bytearray
+        | Bytes_ByteArray (bytearray) -> ByteArray.length bytearray
         | Bytes_Address (_,_)-> bitsSizeOf voidPtrType / 8
         | Bytes_Op ((OP_LT | OP_GT | OP_LE | OP_GE | OP_EQ | OP_NE | OP_LAND | OP_LOR | OP_LNOT), _) ->
             (* result has type int per C99 6.5.8 Relational operators, 6.5.9 Equality operators, 6.5.13 Logical AND
@@ -775,8 +777,8 @@ let byte__111 = byte__make ('\255')
  *)
 let bytes__zero = make_Bytes_Constant(Cil.CInt64(0L,IInt,None))
 let bytes__one = make_Bytes_Constant(Cil.CInt64(1L,IInt,None))
-let bytes__of_list (lst: byte list) =    make_Bytes_ByteArray (ImmutableArray.of_list lst)
-let bytes__make_default n byte = make_Bytes_ByteArray(ImmutableArray.make n byte)
+let bytes__of_list (lst: byte list) =    make_Bytes_ByteArray (ByteArray.of_list lst)
+let bytes__make_default n byte = make_Bytes_ByteArray(ByteArray.make n byte)
 let bytes__make n = bytes__make_default n byte__zero
 
 
@@ -790,7 +792,7 @@ let bytes__symbolic n =
 let rec bytes__get_byte bytes i : byte =
     match bytes with
         | Bytes_Constant (constant) ->  bytes__get_byte (constant_to_bytes constant) i
-        | Bytes_ByteArray (bytearray) -> ImmutableArray.get bytearray i
+        | Bytes_ByteArray (bytearray) -> ByteArray.get bytearray i
         | _ -> make_Byte_Bytes(bytes,i)
 
 

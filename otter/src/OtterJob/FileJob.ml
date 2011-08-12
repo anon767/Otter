@@ -97,7 +97,7 @@ let init_cmdline_argvs job argstr =
 					(snd (BytesUtility.bytes__write () bytes (Bytes.int_to_bytes (ptrsSoFar * charPtrSize)) charPtrSize h_bytes))
 	in
 	let argv_ptrs_bytes =
-		impl argstr 0 0 (Bytes.make_Bytes_ByteArray (ImmutableArray.make (num_args * charPtrSize) Bytes.byte__zero)) in
+		impl argstr 0 0 (Bytes.make_Bytes_ByteArray (Bytes.ByteArray.make (num_args * charPtrSize) Bytes.byte__zero)) in
 
 	(* Map the pointers block to its bytes *)
 	let job = MemOp.state__add_block job argv_ptrs_block argv_ptrs_bytes in

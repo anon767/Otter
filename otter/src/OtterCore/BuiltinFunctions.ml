@@ -550,7 +550,7 @@ let otter_print_state job retopt exps =
 				let rec p ff b =
 					match b with
 						| Bytes_Constant const ->  p ff (constant_to_bytes const)
-						| Bytes_ByteArray ba -> BytesPrinter.bytes ff (make_Bytes_ByteArray(ImmutableArray.sub ba off size))
+						| Bytes_ByteArray ba -> BytesPrinter.bytes ff (make_Bytes_ByteArray(ByteArray.sub ba off size))
 						| Bytes_Address (block, boff) ->
 							if off = 0 && size = (bitsSizeOf voidPtrType / 8) then begin
 								bosmap := BOSMap.add (block,boff,size) None (!bosmap);

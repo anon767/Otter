@@ -10,14 +10,14 @@ let rec bytes__read ?test ?pre acc bytes off len =
         match bytes, off with
             | Bytes_ByteArray array, Bytes_Constant (CInt64 (i64, k, _)) ->
                 let i = Int64.to_int i64 in
-                (acc, make_Bytes_ByteArray (ImmutableArray.sub array i len))
+                (acc, make_Bytes_ByteArray (ByteArray.sub array i len))
 
             | Bytes_Constant constant, Bytes_Constant (CInt64 (i64, k, _)) ->
                 let converted_bytes = constant_to_bytes constant in
                 begin match converted_bytes with
                     | Bytes_ByteArray array ->
                         let i = Int64.to_int i64 in
-                        (acc, make_Bytes_ByteArray (ImmutableArray.sub array i len))
+                        (acc, make_Bytes_ByteArray (ByteArray.sub array i len))
                     | _ ->
                         (acc, worst_case)
                 end
@@ -47,14 +47,14 @@ let rec bytes__read ?test ?pre acc bytes off len =
     (* try to inflate any Bytes_ByteArray of Byte_Bytes *)
     match ret_bytes with
         | Bytes_ByteArray bytearray ->
-            begin match ImmutableArray.get bytearray 0 with
+            begin match ByteArray.get bytearray 0 with
                 | Byte_Bytes (condensed_bytes, 0) ->
                     (* Make sure length agrees, and that bytes 1 through len-1 match up. *)
                     let rec check_byte n =
                         if n >= len then
                             true
                         else
-                            match ImmutableArray.get bytearray n with
+                            match ByteArray.get bytearray n with
                                 | Byte_Bytes (b, i) when i = n && b == condensed_bytes -> check_byte (succ n)
                                 | _ -> false
                     in
@@ -91,12 +91,12 @@ let bytes__write ?test ?pre acc bytes off len newbytes =
                         else
                             let array2 = impl (j - 1) array in
                             (*
-                            let oldbyte = ImmutableArray.get array2 (i + j) in
+                            let oldbyte = ByteArray.get array2 (i + j) in
                             match oldbyte with
                                 | Byte_Symbolic s when s.symbol_writable=false -> warning (); array2
                                 | _ ->
                             *)
-                            ImmutableArray.set array2 (i + j) (ImmutableArray.get newarray j)
+                            ByteArray.set array2 (i + j) (ByteArray.get newarray j)
                     in
                     (acc, make_Bytes_ByteArray (impl (len - 1) oldarray))
 
@@ -108,9 +108,9 @@ let bytes__write ?test ?pre acc bytes off len newbytes =
                         if i >= len then
                             arr
                         else
-                            impl (ImmutableArray.set arr i (make_Byte_Bytes (newbytes, i))) (i + 1)
+                            impl (ByteArray.set arr i (make_Byte_Bytes (newbytes, i))) (i + 1)
                     in
-                    do_write ?pre acc bytes off len (make_Bytes_ByteArray (impl (ImmutableArray.make len byte__zero) 0))
+                    do_write ?pre acc bytes off len (make_Bytes_ByteArray (impl (ByteArray.make len byte__zero) 0))
 
                 | Bytes_ByteArray oldarray, _, _ when isConcrete_bytes off ->
                     let n_off = bytes_to_constant off Cil.intType in
@@ -176,7 +176,7 @@ let expand_read_to_conditional2 bytes symIndex len step_size =
                 )
     in
     let block_size = match bytes with
-        | Bytes_ByteArray a -> ImmutableArray.length a
+        | Bytes_ByteArray a -> ByteArray.length a
         | _ -> 
             let length = Bytes.bytes__length bytes in
             if length = step_size then length (* This handles the case of length-1 arrays. *)
