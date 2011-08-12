@@ -2,6 +2,9 @@
 #pragma expect_return()
 #pragma no_other_results
 
+typedef unsigned long size_t;
+void * memmove(void * dest, void * src, size_t len);
+
 int main() {
   int a[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
   memmove(&a[4], &a[1], 5*sizeof(int)); // Overwrite 4,5,6,7,8 with 1,2,3,4,5
