@@ -99,6 +99,7 @@ module rec T : sig
     val make_Byte_Bytes : bytes * int -> byte
 
     val byte__undefined : byte
+    val byte__zero : byte
 
     val guard__true : guard
     val guard__not : guard -> guard
@@ -348,6 +349,8 @@ end = struct
 
     let byte__undefined = Byte_Undefined
 
+    let byte__zero = make_Byte_Concrete '\000'
+
 
     (**
      *  guard
@@ -517,8 +520,10 @@ and ByteArray : ImmutableArray.S with type elt = ByteArrayElement.t =
     ImmutableArray.Make (ByteArrayElement)
     (* can't use T.ByteType.t directly due to "module rec" compiler restriction: recursive dependency cycles must go
      * through a "safe" module that contains only function values *)
-and ByteArrayElement : ImmutableArray.ElementType with type t = T.ByteType.t =
-    T.ByteType
+and ByteArrayElement : ImmutableArray.ElementType with type t = T.ByteType.t = struct
+    include T.ByteType
+    let default = lazy T.byte__zero
+end
 
 include T
 
@@ -768,7 +773,6 @@ let rec bytes__length bytes =
  *    byte
  *)
 let byte__make c = make_Byte_Concrete c
-let byte__zero = byte__make ('\000')
 let byte__111 = byte__make ('\255')
 
 
