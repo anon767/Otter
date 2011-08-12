@@ -207,7 +207,6 @@ end = struct
     module Internal = struct
         (* structural equality helpers for symbols/byte/guards/conditionals/bytes:
          *  - the constant in Bytes_Constant is preserved;
-         *  - the types of Bytes_Op operands are preserved.
          *)
         let rec symbol_equal symbol1 symbol2 = symbol1 = symbol2
 
@@ -270,7 +269,6 @@ end = struct
 
         (* structural hash helpers for symbols/byte/guards/conditionals/bytes:
          *  - the constant in Bytes_Constant is considered;
-         *  - the types of Bytes_Op operands are considered.
          *)
         exception Limit
         let limit = 20
