@@ -245,10 +245,17 @@ let libc_memmove job retopt exps =
             begin try
                 let job, length = Expression.rval job length_exp in
                 let length = bytes_to_int_auto length in
-                let job, dest, dest_lvals = access_exp_with_length job dest_exp length in
-                let job, _, src_lvals = access_exp_with_length job src_exp length in
-                let job, src_bytes = MemOp.state__deref job (src_lvals, length) in
-                let job = MemOp.state__assign job (dest_lvals, length) src_bytes in
+                let job, dest =
+                    (* avoid zero-length reads/writes, since they are effectively no-ops *)
+                    if length = 0 then
+                        Expression.rval job dest_exp
+                    else
+                        let job, dest, dest_lvals = access_exp_with_length job dest_exp length in
+                        let job, _, src_lvals = access_exp_with_length job src_exp length in
+                        let job, src_bytes = MemOp.state__deref job (src_lvals, length) in
+                        let job = MemOp.state__assign job (dest_lvals, length) src_bytes in
+                        (job, dest)
+                in
                 let job = set_return_value job retopt dest in
                 end_function_call job
             with Failure _ ->
