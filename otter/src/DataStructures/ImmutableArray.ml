@@ -72,6 +72,7 @@ module Make (Elt : ElementType) : S with type elt = Elt.t = struct
     let sub array offset length =
         if offset < 0 then invalid_arg "negative offset";
         if length <= 0 then invalid_arg "negative or zero length";
+        if length > array.length || offset > array.length - length then raise Out_of_bounds;
         let rec sub i map hash =
             (* copy into a new map, so this is optimized for small slices; the alternative would be to store an offset
              * as part of the type to optimize sub for big slices, but that in turn is ill-optimized for the equal function *)
