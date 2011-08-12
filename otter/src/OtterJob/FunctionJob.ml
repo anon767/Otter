@@ -112,10 +112,10 @@ let rec init_bytes_with_pointers
                     | Cil.Lval lval -> Cil.Lval (Cil.addOffsetLval field_offset lval)
                     | _ -> failwith "are there any other Cil.exp that can have type Cil.TComp?"
                 end exps in
-                let job, field_bytes = init_bytes_with_pointers_inner job (Cil.typeOffset typ field_offset) points_to field_exps in
                 let offset, size = Cil.bitsOffset typ field_offset in
-                let offset = Bytes.int_to_bytes (offset / 8) in
                 let size = size / 8 in
+                let offset = Bytes.int_to_bytes (offset / 8) in
+                let job, field_bytes = init_bytes_with_pointers_inner job (Cil.typeOffset typ field_offset) points_to field_exps in
                 let (), bytes = BytesUtility.bytes__write () bytes offset size field_bytes in
                 (job, bytes)
             end (job, bytes) compinfo
@@ -130,10 +130,10 @@ let rec init_bytes_with_pointers
                     | Cil.Lval lval -> Cil.Lval (Cil.addOffsetLval el_offset lval)
                     | _ -> failwith "are there any other Cil.exp that can have type Cil.TArray?"
                 end exps in
-                let job, el_bytes = init_bytes_with_pointers_inner job el_typ points_to el_exps in
                 let offset, size = Cil.bitsOffset typ el_offset in
-                let offset = Bytes.int_to_bytes (offset / 8) in
                 let size = size / 8 in
+                let offset = Bytes.int_to_bytes (offset / 8) in
+                let job, el_bytes = init_bytes_with_pointers_inner job el_typ points_to el_exps in
                 let (), bytes = BytesUtility.bytes__write () bytes offset size el_bytes in
                 (job, bytes)
             end (job, bytes) len_opt in
@@ -152,10 +152,10 @@ let rec init_bytes_with_pointers
                     | Cil.Lval lval -> Cil.Lval (Cil.addOffsetLval field_offset lval)
                     | _ -> failwith "are there any other Cil.exp that can have type Cil.TComp?"
                 end exps in
-                let job, field_bytes = init_bytes_with_pointers_inner job (Cil.typeOffset typ field_offset) points_to field_exps in
                 let offset, size = Cil.bitsOffset typ field_offset in
-                let offset = Bytes.int_to_bytes (offset / 8) in
                 let size = size / 8 in
+                let offset = Bytes.int_to_bytes (offset / 8) in
+                let job, field_bytes = init_bytes_with_pointers_inner job (Cil.typeOffset typ field_offset) points_to field_exps in
                 let (), field_bytes = BytesUtility.bytes__write () bytes offset size field_bytes in (* pad to the union size *)
                 (job, (Bytes.conditional__bytes field_bytes)::field_bytes_list)
             end (job, []) compinfo in
