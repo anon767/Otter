@@ -9,13 +9,20 @@ type operator =
     | OP_SUB
     | OP_MULT
     | OP_DIV
+    | OP_SDIV
     | OP_MOD
+    | OP_SMOD
     | OP_LSL
     | OP_LSR
+    | OP_ASR
     | OP_LT
     | OP_GT
     | OP_LE
     | OP_GE
+    | OP_SLT
+    | OP_SGT
+    | OP_SLE
+    | OP_SGE
     | OP_EQ
     | OP_NE
     | OP_BAND
@@ -68,7 +75,7 @@ module rec T : sig
         | Bytes_Symbolic of symbol
         | Bytes_ByteArray of bytearray
         | Bytes_Address of memory_block * bytes
-        | Bytes_Op of operator * (bytes * Cil.typ) list
+        | Bytes_Op of operator * bytes list
         | Bytes_Sign_Extend of bytes * int
         | Bytes_Zero_Extend of bytes * int
         | Bytes_Read of bytes * bytes * int
@@ -111,7 +118,7 @@ module rec T : sig
     val make_Bytes_Symbolic : unit -> bytes
     val make_Bytes_ByteArray : bytearray -> bytes
     val make_Bytes_Address : memory_block * bytes -> bytes
-    val make_Bytes_Op : operator * (bytes * Cil.typ) list -> bytes
+    val make_Bytes_Op : operator * bytes list -> bytes
     val make_Bytes_Sign_Extend : bytes * int -> bytes
     val make_Bytes_Zero_Extend : bytes * int -> bytes
     val make_Bytes_Read : bytes * bytes * int -> bytes
@@ -169,7 +176,7 @@ end = struct
         | Bytes_Symbolic of symbol                      (* arbitrary-length symbolic bytes *)
         | Bytes_ByteArray of bytearray                  (* content *)
         | Bytes_Address of memory_block * bytes         (* block, offset *)
-        | Bytes_Op of operator * (bytes * Cil.typ) list
+        | Bytes_Op of operator * bytes list
         | Bytes_Sign_Extend of bytes * int
         | Bytes_Zero_Extend of bytes * int
         | Bytes_Read of bytes * bytes * int             (* less preferrable type *)
@@ -237,7 +244,7 @@ end = struct
             | Bytes_Address(b1, off1),Bytes_Address(b2, off2) ->
                 block_equal b1 b2 && bytes_equal off1 off2
             | Bytes_Op (op1, operands1), Bytes_Op (op2, operands2) ->
-                op1 = op2 && List.for_all2 (fun (b1, t1) (b2, t2) -> bytes_equal b1 b2 && CilData.CilType.equal t1 t2) operands1 operands2
+                op1 = op2 && List.for_all2 bytes_equal operands1 operands2
             | Bytes_Sign_Extend (value1, width1), Bytes_Sign_Extend (value2, width2) ->
                 width1 = width2 && bytes_equal value1 value2
             | Bytes_Zero_Extend (b1, s1), Bytes_Zero_Extend (b2, s2) ->
@@ -307,7 +314,7 @@ end = struct
             | Bytes_Symbolic s -> add_hash `Symbolic; symbol_hash s
             | Bytes_ByteArray a -> add_hash `ByteArray; bytearray_hash a
             | Bytes_Address (a, o) -> add_hash `Address; block_hash a; bytes_hash o
-            | Bytes_Op (op, operands) -> add_hash (`Op, op); List.iter (fun (o, t) -> add_hash (CilData.CilType.hash t); bytes_hash o) operands
+            | Bytes_Op (op, operands) -> add_hash (`Op, op); List.iter bytes_hash operands
             | Bytes_Sign_Extend (value, width) -> add_hash (`Sign_Extend, width); bytes_hash value
             | Bytes_Zero_Extend (value, width) -> add_hash (`Zero_Extend, width); bytes_hash value
             | Bytes_Read (bytes, offset, size) -> add_hash (`Read, size); bytes_hash bytes; bytes_hash offset
@@ -723,7 +730,7 @@ and bytes__reduce bytes =
         | Bytes_Constant c -> constant_to_bytes c
         | Bytes_ByteArray array -> make_Bytes_ByteArray (ByteArray.map (byte__reduce) array)
         | Bytes_Address (block, offset) -> make_Bytes_Address (block, bytes__reduce offset)
-        | Bytes_Op (op, operands) -> make_Bytes_Op (op, List.map (fun (bytes, typ) -> (bytes__reduce bytes, typ)) operands)
+        | Bytes_Op (op, operands) -> make_Bytes_Op (op, List.map bytes__reduce operands)
         | Bytes_Sign_Extend (value, width) -> make_Bytes_Sign_Extend (bytes__reduce value, width)
         | Bytes_Zero_Extend (value, width) -> make_Bytes_Zero_Extend (bytes__reduce value, width)
         | Bytes_Read (bytes, offset, size) -> make_Bytes_Read (bytes__reduce bytes, bytes__reduce offset, size)
@@ -755,7 +762,7 @@ let rec bytes__length bytes =
             (* result has type int per C99 6.5.8 Relational operators, 6.5.9 Equality operators, 6.5.13 Logical AND
              * operator, 6.5.14 Logical OR operator, 6.5.3.3 Unary arithmetic operators *)
             bitsSizeOf intType / 8
-        | Bytes_Op (op,(bytes2,typ)::tail) -> bytes__length bytes2
+        | Bytes_Op (op,bytes2::tail) -> bytes__length bytes2
         | Bytes_Op (op,[]) -> 0 (* reachable from diff_bytes *)
         | Bytes_Sign_Extend (_, width) | Bytes_Zero_Extend (_, width) | Bytes_Read (_ ,_ ,width) -> width
         | Bytes_Write(bytes2,_,_,_) -> bytes__length bytes2
@@ -818,13 +825,13 @@ let asBoolean bytes =
         placeholder, because LNOT doesn't actually care about its
         argument's type. Actually, this means that we don't really need
         the intType at all; we could be use voidType in both places. *)
-    else make_Bytes_Op(OP_LNOT,[(make_Bytes_Op(OP_LNOT,[(bytes,Cil.voidType)]),Cil.intType)])
+    else make_Bytes_Op (OP_LNOT, [ make_Bytes_Op (OP_LNOT, [ bytes ]) ])
 
 (** Remove a NOT from a bytes, if doing so leaves it boolean. Otherwise, add a
     NOT. *)
 let logicalNot = function
-    | Bytes_Op(OP_LNOT,[bytes,_]) when isBoolean bytes -> bytes
-    | bytes -> make_Bytes_Op(OP_LNOT,[(bytes, Cil.intType)])
+    | Bytes_Op (OP_LNOT, [ bytes ]) when isBoolean bytes -> bytes
+    | bytes -> make_Bytes_Op (OP_LNOT, [ bytes ])
 
 
 (**

@@ -195,12 +195,38 @@ module Make (Errors : Errors) = struct
 
             | Cil.AUnOp (unop, exp) ->
                 let result, bytes = parse_exp result exp in
-                (result, Operator.of_unop unop [ (bytes, Cil.intType) ])
+                let op = match unop with
+                    | Cil.Neg -> Operator.neg
+                    | Cil.BNot -> Operator.bnot
+                    | Cil.LNot -> Operator.lnot
+                in
+                (result, op [ bytes ])
 
-            | Cil.ABinOp (binop, exp1, exp2) ->
+            | Cil.ABinOp (binop, exp1, exp2) as exp' ->
                 let result, bytes1 = parse_exp result exp1 in
                 let result, bytes2 = parse_exp result exp2 in
-                (result, Operator.of_binop binop [ (bytes1, Cil.intType); (bytes2, Cil.intType) ])
+                let op = match binop with
+                    | Cil.Shiftrt -> Operator.signed_shiftrt
+                    | Cil.Lt -> Operator.signed_lt
+                    | Cil.Gt -> Operator.signed_gt
+                    | Cil.Le -> Operator.signed_le
+                    | Cil.Ge -> Operator.signed_ge
+                    | Cil.Div -> Operator.signed_div
+                    | Cil.Mod -> Operator.signed_rem
+                    | Cil.PlusA -> Operator.plus
+                    | Cil.MinusA -> Operator.minus
+                    | Cil.Mult -> Operator.mult
+                    | Cil.Shiftlt -> Operator.shiftlt
+                    | Cil.Eq -> Operator.eq
+                    | Cil.Ne -> Operator.ne
+                    | Cil.BAnd -> Operator.band
+                    | Cil.BXor -> Operator.bxor
+                    | Cil.BOr -> Operator.bor
+                    | Cil.LAnd -> Operator.logand
+                    | Cil.LOr -> Operator.logor
+                    | _ -> assert_loc_failure loc "In assertion %a: unsupported operation %a." Printcil.attrparam exp Printcil.attrparam exp'
+                in
+                (result, op [ bytes1; bytes2 ] Cil.intType)
 
             | exp' ->
                 assert_loc_failure loc "In assertion %a: unsupported operation %a." Printcil.attrparam exp Printcil.attrparam exp'

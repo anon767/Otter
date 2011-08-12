@@ -38,13 +38,20 @@ let operator ff op =
 		| OP_SUB -> "BVSUB"
 		| OP_MULT -> "BVMULT"
 		| OP_DIV -> "BVDIV"
+		| OP_SDIV -> "SBVDIV"
 		| OP_MOD -> "BVMOD"
+		| OP_SMOD -> "SBVMOD"
 		| OP_LSL -> "<<"
-		| OP_LSR -> ">>"
+		| OP_LSR -> ">>>"
+		| OP_ASR -> ">>"
 		| OP_LT -> "BVLT"
 		| OP_GT -> "BVGT"
 		| OP_LE -> "BVLE"
 		| OP_GE -> "BVGE"
+		| OP_SLT -> "SBVLT"
+		| OP_SGT -> "SBVGT"
+		| OP_SLE -> "SBVLE"
+		| OP_SGE -> "SBVGE"
 		| OP_EQ -> "=="
 		| OP_NE -> "NE"
 		| OP_BAND -> "&"
@@ -197,7 +204,7 @@ and bytes_named bytes_to_names ff =
 			conditional bytes ff c
 
 		| Bytes_Op (op, operands) ->
-			fprintf ff "%a(@[<hov>%a@]@,)" operator op (pp_print_list (fun ff (x, _) -> bytes ff x) ",@ ") operands
+			fprintf ff "%a(@[<hov>%a@]@,)" operator op (pp_print_list bytes ",@ ") operands
 
 		| Bytes_Sign_Extend (value, width) ->
 			fprintf ff "Sign_Extend(@[<hov>%a@],@ %d@,)" bytes value width
@@ -240,7 +247,7 @@ let rec bytes_tree ff = function
 	(* unary op:
 	 * OP OPERAND
 	 *)
-	| Bytes_Op(op, [ not_op, _ ]) ->
+	| Bytes_Op(op, [ not_op ]) ->
 		let op_tree ff x = match not_op with
 			| Bytes_Op(op', _) when op = op' -> bytes_tree ff x
 			| _ -> fprintf ff "@[<hov>%a@]" bytes_tree x
@@ -252,7 +259,7 @@ let rec bytes_tree ff = function
 	 * OP
 	 *   RIGHT_OPERAND
 	 *)
-	| Bytes_Op(op, [ left_op, _; right_op, _ ]) ->
+	| Bytes_Op(op, [ left_op; right_op ]) ->
 		let op_tree ff x = match x with
 			| Bytes_Op(op', _) when op = op' -> fprintf ff "@[<hov>%a@]" bytes_tree x
 			| _ -> fprintf ff "  @[<hov>%a@]" bytes_tree x

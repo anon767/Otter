@@ -295,14 +295,14 @@ let init_pointer
                     let offset_constraints_set = OffsetSet.fold begin fun offset offset_constraints_set ->
                         let offset_bits, _ = Cil.bitsOffset typ offset in
                         let constraint_bytes = Bytes.make_Bytes_Op (Bytes.OP_EQ,
-                            [ (offset_bytes, !Cil.upointType); (Bytes.int_to_offset_bytes (offset_bits / 8), !Cil.upointType) ])
+                            [ offset_bytes; Bytes.int_to_offset_bytes (offset_bits / 8) ])
                         in
                         BytesSet.add constraint_bytes offset_constraints_set
                     end offsets BytesSet.empty in
 
                     (* append the constraints to the path condition *)
                     let offset_constraints = ListPlus.foldm begin fun x y ->
-                        Bytes.make_Bytes_Op (Bytes.OP_LOR, [ (x, Cil.intType); (y, Cil.intType) ])
+                        Bytes.make_Bytes_Op (Bytes.OP_LOR, [ x; y ])
                     end (BytesSet.elements offset_constraints_set) in
                     let job = MemOp.state__add_path_condition job offset_constraints false in
 

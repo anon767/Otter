@@ -168,8 +168,8 @@ let expand_read_to_conditional2 bytes symIndex len step_size =
                 (* Output read_at_index for index < i <= last_index *)
                 IfThenElse (
                     guard__bytes (make_Bytes_Op (OP_LAND, [
-                        (make_Bytes_Op (OP_GT, [(symIndex, !Cil.upointType); ((int_to_bytes index), !Cil.upointType)]), !Cil.upointType);
-                        (make_Bytes_Op (OP_LE, [(symIndex, !Cil.upointType); ((int_to_bytes last_index), !Cil.upointType)]), !Cil.upointType)]
+                        make_Bytes_Op (OP_GT, [ symIndex; int_to_bytes index ]);
+                        make_Bytes_Op (OP_LE, [ symIndex; int_to_bytes last_index ]) ]
                     )),
                     conditional__bytes last_bytes,
                     expand (index - 1) index read_at_index
@@ -196,10 +196,7 @@ let rec expand_read_to_conditional (bytes : bytes) (symIndex : bytes) (len : int
         | Bytes_Write (a, x, l, v) ->
             (* TODO: this seems to be incorrect: shouldn't the length be checked too? *)
             IfThenElse (
-                guard__bytes (make_Bytes_Op (
-                    OP_EQ,
-                    [(symIndex, Cil.intType); (x, Cil.intType)]
-                )),
+                guard__bytes (make_Bytes_Op (OP_EQ, [ symIndex; x ])),
                 (Unconditional v),
                 (expand_read_to_conditional a symIndex len)
             )
@@ -240,7 +237,7 @@ let rec expand_read_to_conditional (bytes : bytes) (symIndex : bytes) (len : int
                  offset can only take on values that are multiples of
                  ptr_size, so we don't need to check every single offset. *)
               match symIndex with
-                | Bytes_Op (OP_PLUS, [(x, _); (Bytes_Op (OP_MULT, [(Bytes_Constant (CInt64 (n, _, _)), _); (symbolic_index, _)]), _)])
+                | Bytes_Op (OP_PLUS, [ x; Bytes_Op (OP_MULT, [ Bytes_Constant (CInt64 (n, _, _)); symbolic_index ]) ])
                         when bytes__equal x bytes__zero ->
                       expand_read_to_conditional2 bytes symbolic_index len (Cil.i64_to_int n)
                 | _ ->

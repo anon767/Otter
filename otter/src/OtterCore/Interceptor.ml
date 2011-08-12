@@ -71,7 +71,7 @@ let function_pointer_interceptor job interceptor =
                 | [ varinfo ] ->
                     let job =
                         if has_errors then
-                            let funptr_condition = Operator.eq [ (bytes, typ); (Bytes.make_Bytes_FunPtr varinfo, typ) ] in
+                            let funptr_condition = Operator.eq [ bytes; Bytes.make_Bytes_FunPtr varinfo ] typ in
                             MemOp.state__add_path_condition job funptr_condition true
                         else
                             job
@@ -81,7 +81,7 @@ let function_pointer_interceptor job interceptor =
                     Output.printf "@[Function pointer can take multiple values; fork job %d to@." job#node_id;
                     let job, varinfo = (job : _ #Info.t)#fork varinfos in
                     Output.printf "(job %d, function %s)@." job#node_id varinfo.Cil.vname;
-                    let funptr_condition = Operator.eq [ (bytes, typ); (Bytes.make_Bytes_FunPtr varinfo, typ) ] in
+                    let funptr_condition = Operator.eq [ bytes; Bytes.make_Bytes_FunPtr varinfo ] typ in
                     let job = MemOp.state__add_path_condition job funptr_condition true in
                     let job = job#with_instrList (new_instrList varinfo) in
                     job

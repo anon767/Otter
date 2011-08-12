@@ -220,7 +220,7 @@ let libc_free job retopt exps =
     [bytes] can point to.
 *)
 let access_bytes_with_length ?(exp=Cil.Const (Cil.CStr "exp unavailable")) job bytes length =
-    let job, lvals = Expression.deref job bytes Cil.voidPtrType in
+    let job, lvals = Expression.deref job bytes in
     if not !Executeargs.arg_bounds_checking then
         (job, lvals)
     else
@@ -780,7 +780,7 @@ let libc_longjmp job retopt exps =
 let otter_get_allocated_size job retopt exps =
     let exp = get_lone_arg exps in
     let job, bytes = Expression.rval job exp in
-    let job, lvals = Expression.deref job bytes (Cil.typeOf exp) in
+    let job, lvals = Expression.deref job bytes in
     let size = make_Bytes_Conditional (conditional__map
         (fun (x, y) -> Unconditional x.memory_block_size)
         lvals)

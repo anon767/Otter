@@ -84,18 +84,17 @@ let fail_if_not job condition error =
     @return [job], augmented (if necessary) with the assumption that the check passed.
 *)
 let check_bounds job lvals size exp =
-    let size = (int_to_offset_bytes size, !Cil.upointType) in
+    let size = int_to_offset_bytes size in
 
     let bounds_check = conditional__map begin fun (block, offset) ->
-        let block_size = (block.memory_block_size, !Cil.upointType) in
-        let offset = (offset, !Cil.upointType) in
+        let block_size = block.memory_block_size in
 
         (* overflow check: size <= block_size *)
-        let overflow = Operator.le [size; block_size] in
+        let overflow = Operator.le [ size; block_size ] !Cil.typeOfSizeOf in
         (* upper bounds check: {offset <= block_size - size} (avoid offset + size which can overflow) *)
-        let upper = Operator.le [offset; (Operator.minus [block_size; size], !Cil.upointType)] in
+        let upper = Operator.le [ offset; Operator.minus [ block_size; size ] !Cil.typeOfSizeOf ] !Cil.typeOfSizeOf in
 
-        Unconditional (Operator.bytes__land overflow upper)
+        Unconditional (Operator.logand [ overflow; upper ] Cil.intType)
     end lvals in
 
     (* perform the check *)
@@ -104,7 +103,7 @@ let check_bounds job lvals size exp =
 
 let add_offset offset lvals =
     conditional__map begin fun (block, offset2) ->
-        conditional__lval_block (block, Operator.plus [(offset, !Cil.upointType); (offset2, !Cil.upointType)])
+        conditional__lval_block (block, Operator.plus [ offset; offset2 ] !Cil.ptrdiffType)
     end lvals
 
 
@@ -252,9 +251,8 @@ lval ?(justGetAddr=false) job (lhost, offset_exp as cil_lval) =
             let job, lvals = MemOp.state__varinfo_to_lval_block job varinfo in
             (job, lvals)
         | Mem(exp) ->
-            let typ = Cil.typeOf exp in
             let job, rv = rval job exp in
-            let job, lvals = deref job rv typ in
+            let job, lvals = deref job rv in
             (job, lvals)
     in
     match cil_lval with
@@ -277,7 +275,7 @@ lval ?(justGetAddr=false) job (lhost, offset_exp as cil_lval) =
 
 and
 
-deref job bytes typ =
+deref job bytes =
     match bytes with
         | Bytes_Constant (c) ->
             FormatPlus.failwith "Dereference something not an address:@ constant @[%a@]" BytesPrinter.bytes bytes
@@ -295,7 +293,7 @@ deref job bytes typ =
             let rec find_match pc = match pc with
                 | [] ->
                     FormatPlus.failwith "Dereference something not an address (bytearray)@ @[%a@]@." BytesPrinter.bytes bytes
-                | (Bytes_Op(OP_EQ,[(bytes1,_); (bytes2,_)]))::pc' ->
+                | Bytes_Op (OP_EQ, [ bytes1; bytes2 ])::pc' ->
                     begin
                         let bytes_tentative =
                             if bytes__equal bytes1 bytes then bytes2
@@ -303,11 +301,11 @@ deref job bytes typ =
                             else bytes__zero
                         in
                             match bytes_tentative with
-                            | Bytes_Address(_,_) -> deref job bytes_tentative typ
+                            | Bytes_Address(_,_) -> deref job bytes_tentative
                             | _ -> find_match pc'
                     end
-                | (Bytes_Op(OP_LAND,btlist))::pc' ->
-                    find_match (List.rev_append (List.fold_left (fun a (b,_) -> b::a) [] btlist) pc')
+                | Bytes_Op (OP_LAND, btlist)::pc' ->
+                    find_match (List.rev_append btlist pc')
                 | _::pc' -> find_match pc'
             in
             find_match (PathCondition.clauses job#state.path_condition)
@@ -337,13 +335,13 @@ deref job bytes typ =
                             try
                                 (* TODO: what to do if a job#fork happen? doesn't happen currently, but could
                                  * potentially be a performance problem *)
-                                let job, lval = deref job c typ in
+                                let job, lval = deref job c in
                                 ((guard, job, removed), Some lval)
                             with Failure msg ->
                                 (* TODO: handle also errors from job#finish/fork_finish; switch to using the Errors module *)
                                 (* Report this failure, guard against it and remove this leaf. *)
                                 let job = (job : _ #Info.t)#fork_finish (Job.Abandoned (`Failure msg)) in
-                                let failing_bytes = Operator.eq [ (bytes, typ); (c, typ) ] in
+                                let failing_bytes = Operator.eq [ bytes; c ] !Cil.upointType in
                                 let guard = guard__and_not guard (Bytes.guard__bytes failing_bytes) in
                                 let removed = c::removed in
                                 ((guard, job, removed), None)
@@ -366,7 +364,7 @@ deref job bytes typ =
             FormatPlus.failwith "Dereference something not an address:@ operation @[%a@]" BytesPrinter.bytes bytes
 
         | Bytes_Read(bytes,off,len) ->
-            deref job (make_Bytes_Conditional (expand_read_to_conditional bytes off len)) typ
+            deref job (make_Bytes_Conditional (expand_read_to_conditional bytes off len))
 
         | Bytes_Write(bytes,off,len,newbytes) ->
             failwith "Dereference of Bytes_Write not implemented"
@@ -398,13 +396,13 @@ flatten_offset job lhost_typ offset =
                             in
                             let base_typ = match Cil.unrollType lhost_typ with TArray(typ2, _, _) -> typ2 | _ -> failwith "Must be array" in
                             let base_size = (Cil.bitsSizeOf base_typ) / 8 in (* must be known *)
-                            let index = Operator.mult [(int_to_offset_bytes base_size,!Cil.upointType);(rv,!Cil.upointType)] in
+                            let index = Operator.mult [ int_to_offset_bytes base_size; rv ] !Cil.ptrdiffType in
                             (job, index, base_typ, offset2)
                     | _ -> failwith "Unreachable"
                 end
             in
                 let job, index2, base_typ2 = flatten_offset job base_typ offset2 in
-                let index3 = Operator.plus [(index,!Cil.upointType);(index2,!Cil.upointType)] in
+                let index3 = Operator.plus [ index; index2 ] !Cil.ptrdiffType in
                 (job, index3, base_typ2)
 
 and
@@ -419,13 +417,18 @@ and
 
 rval_unop job unop exp =
     let job, rv = rval job exp in
-    let typ = Cil.typeOf exp in
-    let bytes = (Operator.of_unop unop) [(rv,typ)] in
+    let op = match unop with
+        | Neg -> Operator.neg
+        | BNot -> Operator.bnot
+        | LNot -> Operator.lnot
+    in
+    let bytes = op [ rv ] in
     (job, bytes)
 
 and
 
 rval_binop job binop exp1 exp2 exp =
+    let optyp = Cil.typeOf exp1 in
     let job, rv1 = rval job exp1 in
     match binop with
       | LAnd | LOr -> begin (* Short-circuit, if possible *)
@@ -441,23 +444,64 @@ rval_binop job binop exp1 exp2 exp =
                             let result = if binop == LAnd then bytes__zero else bytes__one in
                             (job, result)
                       | Some (job, rv2), _ -> (* exp2 does not fail. Construct the 'and' or 'or' value. *)
-                            let bytes = (Operator.of_binop binop) [ (rv1, typeOf exp1); (rv2, typeOf exp2) ] in
+                            let op = match binop with
+                               | LAnd -> Operator.logand
+                               | LOr -> Operator.logor
+                               | _ -> assert false
+                            in
+                            let bytes = op [ rv1; rv2 ] optyp in
                             (job, bytes)
         end
-      | Div | Mod when Cil.isIntegralType (Cil.typeOf exp) ->
-            (* check for division-by-zero for integer types (not an error for floating-point, which isn't supported yet anyway) *)
+      | Shiftrt | Lt | Gt | Le | Ge | Div | Mod ->
             let job, rv2 = rval job exp2 in
-            let job = fail_if_not job rv2 (`DivisionByZero exp) in (* Fail if rv2 is zero *)
-            let bytes = (Operator.of_binop binop) [ (rv1, typeOf exp1); (rv2, typeOf exp2) ] in
+            (* check for division-by-zero for integer types (not an error for floating-point, which isn't supported yet anyway) *)
+            let job = if (binop = Div || binop = Mod) && Cil.isIntegralType optyp then fail_if_not job rv2 (`DivisionByZero exp) else job in
+            let signed = match Cil.unrollType optyp with
+                | Cil.TInt (ikind, _) -> Cil.isSigned ikind
+                | Cil.TFloat _ -> true (* TODO: actually do something reasonable *)
+                | Cil.TPtr _ -> false
+                | _ -> assert false (* there should be no other comparable type *)
+            in
+            let op = match binop with
+                (* C99 6.5.7.5 leaves right-shift undefined, but according to Wikipedia, most compilers use arithmetic shift for signed types *)
+                | Shiftrt -> if signed then Operator.signed_shiftrt else Operator.shiftrt
+                | Lt -> if signed then Operator.signed_lt else Operator.lt
+                | Gt -> if signed then Operator.signed_gt else Operator.gt
+                | Le -> if signed then Operator.signed_le else Operator.le
+                | Ge -> if signed then Operator.signed_ge else Operator.ge
+                | Div -> if signed then Operator.signed_div else Operator.div
+                | Mod -> if signed then Operator.signed_rem else Operator.rem
+                | _ -> assert false
+            in
+            let bytes = op [ rv1; rv2 ] optyp in
             (job, bytes)
       | PlusPI | IndexPI | MinusPI ->
             let job, rv2 = rval job exp2 in
+            (* C99 6.5.6 does not require the offset to be converted, but OtterBytes does require it to be of the same width as pointers *)
             let rv2 = rval_cast !Cil.upointType rv2 (typeOf exp2) in
-            let bytes = (Operator.of_binop binop) [ (rv1, typeOf exp1); (rv2, !Cil.upointType) ] in
+            let op = match binop with
+               | PlusPI | IndexPI -> Operator.plusPI
+               | MinusPI -> Operator.minusPI
+               | _ -> assert false
+            in
+            let bytes = op [ rv1; rv2 ] optyp in
             (job, bytes)
       | _ ->
             let job, rv2 = rval job exp2 in
-            let bytes = (Operator.of_binop binop) [ (rv1, typeOf exp1); (rv2, typeOf exp2) ] in
+            let op = match binop with
+                | PlusA -> Operator.plus
+                | MinusA -> Operator.minus
+                | Mult -> Operator.mult
+                | Shiftlt -> Operator.shiftlt
+                | Eq -> Operator.eq
+                | Ne -> Operator.ne
+                | BAnd -> Operator.band
+                | BXor -> Operator.bxor
+                | BOr -> Operator.bor
+                | MinusPP -> Operator.minusPP
+                | _ -> assert false
+            in
+            let bytes = op [ rv1; rv2 ] optyp in
             (job, bytes)
 
 and

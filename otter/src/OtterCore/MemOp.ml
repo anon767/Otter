@@ -391,6 +391,10 @@ let rec eval pc bytes =
 		| OP_GT -> gt
 		| OP_LE -> le
 		| OP_GE -> ge
+		| OP_SLT -> signed_lt
+		| OP_SGT -> signed_gt
+		| OP_SLE -> signed_le
+		| OP_SGE -> signed_ge
 		| OP_EQ -> eq
 		| OP_NE -> ne
 		| _ -> failwith "operation_of: operation is not comparison"
@@ -409,11 +413,11 @@ let rec eval pc bytes =
       | Bytes_Address _
       | Bytes_FunPtr _ -> Ternary.True
 
-      | Bytes_Op(OP_LNOT,[(b1,_)]) -> Ternary.not (eval pc b1)
+      | Bytes_Op (OP_LNOT, [ b1 ]) -> Ternary.not (eval pc b1)
 
       (* Comparison of two pointers *)
-      | Bytes_Op((OP_LT|OP_GT|OP_LE|OP_GE|OP_EQ|OP_NE as op),
-                 [(Bytes_Address(block1,offset1),_); (Bytes_Address(block2,offset2),_)]) ->
+      | Bytes_Op ((OP_LT|OP_GT|OP_LE|OP_GE|OP_SLT|OP_SGT|OP_SLE|OP_SGE|OP_EQ|OP_NE as op),
+                 [ Bytes_Address (block1, offset1); Bytes_Address (block2, offset2) ]) ->
             if block1!=block2 then
                 (if op==OP_EQ then Ternary.False
                  else if op==OP_NE then Ternary.True
@@ -421,24 +425,24 @@ let rec eval pc bytes =
                  (* TODO: FormatPlus.warn "Inequality comparison between two unrelated pointers: %a" BytesPrinter.bytes bytes *)
                 )
             else
-                eval pc ((operation_of op) [(offset1,Cil.intType);(offset2,Cil.intType)])
+                eval pc ((operation_of op) [ offset1; offset2 ] !Cil.upointType)
 
       (* Operation on two function pointers. Only equality and disequality are allowed. *)
-      | Bytes_Op(op, [(Bytes_FunPtr f1,_); (Bytes_FunPtr f2,_)]) ->
-            (match op with
+      | Bytes_Op (op, [ Bytes_FunPtr f1; Bytes_FunPtr f2 ]) ->
+            begin match op with
                 | OP_EQ -> Ternary.of_bool (CilData.CilVar.equal f1 f2)
                 | OP_NE -> Ternary.of_bool (not (CilData.CilVar.equal f1 f2))
                 | _ -> FormatPlus.failwith "Invalid operation on function pointers: %a" BytesPrinter.bytes bytes
-            )
+            end
 
       (* Operation on (normal) pointer and function pointer. This is an error *)
-      | Bytes_Op(_, [(Bytes_FunPtr _,_); (Bytes_Address _,_)])
-      | Bytes_Op(_, [(Bytes_Address _,_); (Bytes_FunPtr _,_)]) ->
+      | Bytes_Op (_, [ Bytes_FunPtr _; Bytes_Address _ ])
+      | Bytes_Op (_, [ Bytes_Address _; Bytes_FunPtr _ ]) ->
             FormatPlus.failwith "Operation involving normal pointer and function pointer: %a" BytesPrinter.bytes bytes
 
       (* Comparison of pointer and something. *)
-      | Bytes_Op(op, [((Bytes_Address _ | Bytes_FunPtr _),_); (bytes2,_)])
-      | Bytes_Op(op, [(bytes2,_); ((Bytes_Address _ | Bytes_FunPtr _),_)]) ->
+      | Bytes_Op (op, [ (Bytes_Address _ | Bytes_FunPtr _); bytes2 ])
+      | Bytes_Op (op, [ bytes2; (Bytes_Address _ | Bytes_FunPtr _) ]) ->
             if not (isConcrete_bytes bytes2)
             then nontrivial () (* Just ask STP in this case *)
             else (
@@ -451,13 +455,13 @@ let rec eval pc bytes =
                 else FormatPlus.failwith "Invalid operation: (ptr op x) where x is a nonzero integer: %a" BytesPrinter.bytes bytes
             )
 
-      | Bytes_Op(OP_LAND, [(bytes1, _); (bytes2, _)]) ->
+      | Bytes_Op (OP_LAND, [ bytes1; bytes2 ]) ->
             begin match eval pc bytes1 with
               | Ternary.False -> Ternary.False
               | Ternary.True -> eval pc bytes2
               | Ternary.Unknown -> if eval (PathCondition.add bytes1 true pc) bytes2 = Ternary.False then Ternary.False else Ternary.Unknown
             end
-      | Bytes_Op(OP_LOR, [(bytes1, _); (bytes2, _)]) ->
+      | Bytes_Op (OP_LOR, [ bytes1 ; bytes2 ]) ->
             begin match eval pc bytes1 with
               | Ternary.True -> Ternary.True
               | Ternary.False -> eval pc bytes2

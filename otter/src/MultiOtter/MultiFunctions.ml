@@ -133,7 +133,7 @@ let otter_set_parent_pid job retopt exps =
 
 let otter_io_block_common job pointers =
     let find_blocks job ptr_bytes =
-        let job, lvals = Expression.deref job ptr_bytes Cil.voidPtrType in
+        let job, lvals = Expression.deref job ptr_bytes in
         let blocks = conditional__fold
             (fun acc guard (block, _) ->
                  (* TODO: Failing in this case might be overkill. Printing a warning might be good enough *)
