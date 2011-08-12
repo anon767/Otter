@@ -63623,7 +63623,7 @@ void __otter_multi_time_wait(unsigned int ticks )
 }
 }
 #line 16 "syscalls/otter/otter_scheduler_stub.c"
-void __otter_multi_io_block(void *  , ...) 
+void __otter_multi_io_block(void * x , ...) 
 { 
 
   {
@@ -68478,7 +68478,6 @@ int redisvFormatCommand(char **target , char const   *format , va_list ap )
   size_t _l ;
   va_list _cpy ;
   char *__cil_tmp___0 ;
-  void __cil_tmp___1 ;
   size_t __cil_tmp___2 ;
   int __cil_tmp___3 ;
   void *__cil_tmp___4 ;
@@ -68652,7 +68651,7 @@ int redisvFormatCommand(char **target , char const   *format , va_list ap )
         }
       }
 #line 696
-      __cil_tmp___1 = __builtin_va_arg(ap, void );
+      __builtin_va_arg(ap, void *);
       }
 #line 699
       c ++;
