@@ -72,7 +72,7 @@ libc/__otter/config.h : $(CIL_SRCDIR)/config.h
 doc : api dot
 
 api : $(foreach foo, \
-		DataStructures CilUtilities OcamlUtilities OtterCFG OtterESD OtterCore OtterExtensions \
+		DataStructures CilUtilities OcamlUtilities OtterBytes OtterCFG OtterESD OtterCore OtterExtensions \
 		OtterJob OtterQueue OtterReporter OtterDriver Otter MultiOtter BackOtter DebugOtter TestUtil, \
 		ocamlbuild//$(foo).docdir)
 
