@@ -39,7 +39,11 @@ module Make (Elt : ElementType) : S with type elt = Elt.t = struct
     type elt = Elt.t
 
 
-    type t = { length : int; map : Elt.t IndexMap.t } (* invariant: map must never contain Elt.default *)
+    type t = {
+        length : int;
+        map : Elt.t IndexMap.t; (* map must never contain Elt.default *)
+        hash : int; (* hash is kept up-to-date with a commutative, invertible hash (addition/negation) of length and elements in map *)
+    }
 
 
     let length array = array.length
@@ -55,54 +59,73 @@ module Make (Elt : ElementType) : S with type elt = Elt.t = struct
 
     let set array i x =
         if i < 0 || i >= array.length then raise Out_of_bounds;
-        let map =
+        let map, hash =
+            let hash = array.hash - try Hashtbl.hash (i, Elt.hash (IndexMap.find i array.map)) with Not_found -> 0 in
             if Elt.equal x (Lazy.force Elt.default) then
-                IndexMap.remove i array.map
+                (IndexMap.remove i array.map, hash)
             else
-                IndexMap.add i x array.map
+                (IndexMap.add i x array.map, hash + Hashtbl.hash (i, Elt.hash x))
         in
-        { array with map }
+        { array with map; hash }
 
 
     let sub array offset length =
         if offset < 0 then invalid_arg "negative offset";
         if length <= 0 then invalid_arg "negative or zero length";
-        let rec sub i map =
+        let rec sub i map hash =
             (* copy into a new map, so this is optimized for small slices; the alternative would be to store an offset
              * as part of the type to optimize sub for big slices, but that in turn is ill-optimized for the equal function *)
             if i < length then
-                sub (i + 1) (try IndexMap.add i (IndexMap.find (i + offset) array.map) map with Not_found -> map)
+                let map, hash =
+                    try
+                        let x = IndexMap.find (i + offset) array.map in
+                        let map = IndexMap.add i x map in
+                        let hash = hash + Hashtbl.hash (i, Elt.hash x) in
+                        (map, hash)
+                    with Not_found ->
+                        (map, hash)
+                in
+                sub (i + 1) map hash
             else
-                map
+                (map, hash)
         in
-        { length; map = sub 0 IndexMap.empty }
+        let map, hash = sub 0 IndexMap.empty 0 in
+        { length; map; hash = length + hash }
 
 
     let make length x =
-        let map =
+        let map, hash =
             if Elt.equal x (Lazy.force Elt.default) then
-                IndexMap.empty
+                (IndexMap.empty, 0)
             else
-                let rec make i map = if i < length then make (i + 1) (IndexMap.add i x map) else map in
-                make 0 IndexMap.empty
+                let h = Elt.hash x in
+                let rec make i map hash =
+                    if i < length then
+                        make (i + 1) (IndexMap.add i x map) (hash + Hashtbl.hash (i, h))
+                    else
+                        (map, hash)
+                in
+                make 0 IndexMap.empty 0
         in
-        { length; map }
+        { length; map; hash }
 
 
     let of_list xs =
         let default = Lazy.force Elt.default in
-        let length, map = List.fold_left begin fun (i, map) x ->
-            (i + 1, if Elt.equal x default then map else IndexMap.add i x map)
-        end (0, IndexMap.empty) xs in
-        { length; map }
+        let length, map, hash = List.fold_left begin fun (i, map, hash) x ->
+            if Elt.equal x default then
+                (i + 1, map, hash)
+            else
+                (i + 1, IndexMap.add i x map, hash + Hashtbl.hash (i, Elt.hash x))
+        end (0, IndexMap.empty, 0) xs in
+        { length; map; hash = length + hash }
 
 
     let equal xs ys =
-        xs == ys || xs.length = ys.length && (xs.map == ys.map || IndexMap.equal Elt.equal xs.map ys.map)
+        xs == ys || xs.length = ys.length && xs.hash = ys.hash && (xs.map == ys.map || IndexMap.equal Elt.equal xs.map ys.map)
 
 
-    let hash xs =
-        IndexMap.fold (fun i x h -> Hashtbl.hash (i, Elt.hash x, h)) xs.map xs.length
+    let hash xs = xs.hash
 
 
     (* TODO: remove everything below, as uses of the below cannot take advantage of the sparsity of ImmutableArrays *)
