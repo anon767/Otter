@@ -125,14 +125,14 @@ let state__add_global job varinfo =
     (job, block)
 
 
-let state__varinfo_to_lval_block ?pre job varinfo = Profiler.global#call "MemOp.state__varinfo_to_lval_block" begin fun () ->
+let state__varinfo_to_lval_block job varinfo = Profiler.global#call "MemOp.state__varinfo_to_lval_block" begin fun () ->
 	(* lookup varinfo in locals, formals and globals, prune and update the store, and return the result *)
 	if varinfo.Cil.vglob then
 		let global = job#state.global in
 		if VarinfoMap.mem varinfo global then
 			let deferred = frame__varinfo_to_lval_block global varinfo in
 			let job, lval = Deferred.force job deferred in
-			let job, lval = conditional__prune ~test:(timed_query_stp "query_stp/state__varinfo_to_lval_block/globals") ?pre job lval in
+			let job, lval = conditional__prune ~test:(timed_query_stp "query_stp/state__varinfo_to_lval_block/globals") job lval in
 			let global = VarinfoMap.add varinfo (Deferred.Immediate lval) global in
 			(job#with_state { job#state with global=global }, lval)
 		else (* varinfo may be a function *)
@@ -142,7 +142,7 @@ let state__varinfo_to_lval_block ?pre job varinfo = Profiler.global#call "MemOp.
 		if VarinfoMap.mem varinfo local then
 			let deferred = frame__varinfo_to_lval_block local varinfo in
 			let job, lval = Deferred.force job deferred in
-			let job, lval = conditional__prune ~test:(timed_query_stp "query_stp/state__varinfo_to_lval_block/locals") ?pre job lval in
+			let job, lval = conditional__prune ~test:(timed_query_stp "query_stp/state__varinfo_to_lval_block/locals") job lval in
 			let local = VarinfoMap.add varinfo (Deferred.Immediate lval) local in
 			(job#with_state { job#state with locals=local::List.tl job#state.locals }, lval)
 		else
@@ -150,7 +150,7 @@ let state__varinfo_to_lval_block ?pre job varinfo = Profiler.global#call "MemOp.
 			if VarinfoMap.mem varinfo formal then
 				let deferred = frame__varinfo_to_lval_block formal varinfo in
 				let job, lval = Deferred.force job deferred in
-				let job, lval = conditional__prune ~test:(timed_query_stp "query_stp/state__varinfo_to_lval_block/formals") ?pre job lval in
+				let job, lval = conditional__prune ~test:(timed_query_stp "query_stp/state__varinfo_to_lval_block/formals") job lval in
 				let formal = VarinfoMap.add varinfo (Deferred.Immediate lval) formal in
 				(job#with_state { job#state with formals=formal::List.tl job#state.formals }, lval)
 			else (* varinfo may be a function *)
