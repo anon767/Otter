@@ -6,16 +6,14 @@ let timing_methods = [
 
 let default_timing_method = ref `TimeStpCalls
 
-let get_time_now =
+let get_time_now () =
     (* TODO: make this a function ref instead of pattern match *)
     match !default_timing_method with
-    | `TimeReal -> Unix.gettimeofday
+    | `TimeReal -> Unix.gettimeofday ()
     | `TimeStpCalls ->
-        fun () ->
             let count = DataStructures.NamedCounter.get "stpc_query" in
             float_of_int count
     | `TimeWeighted ->
-        fun () ->
             let stp_count = DataStructures.NamedCounter.get "stpc_query" in
             let step_count = DataStructures.NamedCounter.get "step" in
             float_of_int (50 * stp_count + step_count)
