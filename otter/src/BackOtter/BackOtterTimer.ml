@@ -5,6 +5,7 @@ let timing_methods = [
 ]
 
 let default_timing_method = ref `TimeStpCalls
+let arg_stp_call_weight = ref 50
 
 let get_time_now () =
     (* TODO: make this a function ref instead of pattern match *)
@@ -16,7 +17,7 @@ let get_time_now () =
     | `TimeWeighted ->
             let stp_count = DataStructures.NamedCounter.get "stpc_query" in
             let step_count = DataStructures.NamedCounter.get "step" in
-            float_of_int (50 * stp_count + step_count)
+            float_of_int ((!arg_stp_call_weight) * stp_count + step_count)
 
 class t = object (self)
     val t_entryfn = 0.0
@@ -49,5 +50,8 @@ let options = [
     "--backotter-timing-method",
         Arg.Symbol (fst (List.split timing_methods), fun name -> default_timing_method := List.assoc name timing_methods),
         " Set the default timing method (default: " ^ (fst (List.find (fun (_, x) -> x = !default_timing_method) timing_methods)) ^ ")";
+    "--backotter-timing-stp-weight",
+        Arg.Set_int arg_stp_call_weight,
+        Printf.sprintf "<weight> Set the weight of an STP call for weighted timing method (default:%d)" (!arg_stp_call_weight);
 ]
 
