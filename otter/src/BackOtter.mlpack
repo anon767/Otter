@@ -19,3 +19,4 @@ BackOtter/ClosestToTargetsStrategy
 BackOtter/ContentQueue
 BackOtter/FunctionQueue
 BackOtter/FunctionRanker
+BackOtter/RoundRobinClosestToTargetsStrategy

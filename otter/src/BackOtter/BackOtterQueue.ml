@@ -3,6 +3,8 @@ open OcamlUtilities
 (* Forward *)
 type queues = [
     | `BackOtterClosestToTargets
+    | `BackOtterRoundRobinClosestToTargets
+    | `BackOtterProbabilisticClosestToTargets
     | `BackOtterClosestToTargetsIntraprocedural
     | `BackOtterClosestToTargetsPathWeighted
     | `SDSERP
@@ -12,6 +14,8 @@ type queues = [
 
 let queues : (string * queues) list = [
     "backotter-closest-to-targets", `BackOtterClosestToTargets;
+    "backotter-round-robin-closest-to-targets", `BackOtterRoundRobinClosestToTargets;
+    "backotter-probabilistic-closest-to-targets", `BackOtterProbabilisticClosestToTargets;
     "backotter-closest-to-targets-intraprocedural", `BackOtterClosestToTargetsIntraprocedural;
     "backotter-closest-to-targets-path-weighted", `BackOtterClosestToTargetsPathWeighted;
     "SDSE-RP", `SDSERP;
@@ -21,6 +25,8 @@ let queues : (string * queues) list = [
 (* BackOtter's ClosestToTargetsStrategy is different from that in OtterQueue *)
 let rec get = function
     | `BackOtterClosestToTargets -> new OtterQueue.RankedQueue.t [ new ClosestToTargetsStrategy.t OtterQueue.ClosestToTargetsStrategy.inversely_proportional]
+    | `BackOtterRoundRobinClosestToTargets -> new OtterQueue.RankedQueue.t [ new RoundRobinClosestToTargetsStrategy.t OtterQueue.ClosestToTargetsStrategy.inversely_proportional]
+    | `BackOtterProbabilisticClosestToTargets -> new OtterQueue.RankedQueue.t [ new OtterQueue.WeightedRandomStrategy.t (new ClosestToTargetsStrategy.t OtterQueue.ClosestToTargetsStrategy.inversely_proportional) ]
     | `BackOtterClosestToTargetsIntraprocedural -> new OtterQueue.RankedQueue.t [ new ClosestToTargetsStrategy.t ~interprocedural:true OtterQueue.ClosestToTargetsStrategy.inversely_proportional]
     | `BackOtterClosestToTargetsPathWeighted -> new OtterQueue.RankedQueue.t [ new ClosestToTargetsStrategy.t OtterQueue.ClosestToTargetsStrategy.quantized; new OtterQueue.WeightedRandomStrategy.t (new OtterQueue.PathWeightedStrategy.t) ]
     | `SDSERP -> new OtterQueue.RoundRobinQueue.t [ get `RandomPath; get `BackOtterClosestToTargets]

@@ -63,14 +63,15 @@ let get_distances =
                             distance
                         end
     in
-    fun ?(interprocedural=true) ({ Instruction.file = file; _ } as source) context ->
-        get_distances interprocedural source context (BackOtterTargets.get_target_fundecs ()) (BackOtterTargetTracker.get_line_targets file)
+    fun ?(interprocedural=true) source context target_fundecs line_targets ->
+        get_distances interprocedural source context target_fundecs line_targets
 
 let weight ?interprocedural weight_fn job =
     Profiler.global#call "BackOtter.ClosestToTargetsStrategy.weight" begin fun () ->
         let source = Job.get_instruction job in
+        let file = source.Instruction.file in
         let context = Job.get_instruction_context job in
-        let distance = get_distances ?interprocedural source context in
+        let distance = get_distances ?interprocedural source context (BackOtterTargets.get_target_fundecs ()) (BackOtterTargetTracker.get_line_targets file) in
         Output.debug_printf "Job %d has distance to target = %d@\n" job#node_id distance;
         weight_fn distance
     end

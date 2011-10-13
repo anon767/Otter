@@ -45,7 +45,7 @@ let get_line_targets_loc_map file =
                     (Instruction.by_line file line) @ targets
                 with Not_found ->
                     Output.must_printf "Warning: line target %s:%d not found.@." filename linenumber;
-                    []
+                    targets
             end [] (!arg_line_numbers)
         in
         let loc_map = List.fold_left (
@@ -174,6 +174,23 @@ let add_line_to_line_targets =
         else
             FormatPlus.failwith "Error in parsing line %s" arg
 
+let add_gcov_line_to_line_targets =
+    let re = Str.regexp "^ *#####: *\\([0-9]*\\):.*$" in
+    let src = Str.regexp "^        -:    0:Source:\\(.*\\)$" in
+    let file = ref "" in
+    fun arg ->
+        begin if Str.string_match src arg 0 then
+            try
+                file := Str.matched_group 1 arg
+            with Not_found -> ()
+        end;
+        begin if Str.string_match re arg 0 then
+            try
+                let line = int_of_string (Str.matched_group 1 arg) in
+                arg_line_numbers := (!file, line)::(!arg_line_numbers)
+            with Not_found -> ()
+        end
+
 let options = [
     ("--line-targets",
         Arg.String begin fun str ->
@@ -192,6 +209,17 @@ let options = [
                 close_in inChan
         end,
         "<filename> File containing lines in the form file:linenum, one per line.\n");
+    ("--line-targets-from-gcov",
+        Arg.String begin fun filename ->
+            let inChan = open_in filename in
+            try
+                while true do
+                    add_gcov_line_to_line_targets (input_line inChan)
+                done
+            with End_of_file ->
+                close_in inChan
+        end,
+        "<filename> gcov output showing what lines are uncovered. These lines will be marked as targets.\n");
     ("--convert-non-target-reached-abandoned-to-truncated",
         Arg.Set arg_convert_non_target_reached_abandoned_to_truncated,
         " Convert non TargetReached Abandoned's to Truncated's (default: no)");
