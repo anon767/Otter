@@ -19,6 +19,9 @@ type queues = [
     | `SAGE
     | `ESD
     | `RoundRobin of (queues list)
+    (* Aliases of strategy names used in the DSE paper *)
+    | `IntraSDSE  (* Same as `ClosestToTargetsIntraprocedural *)
+    | `InterSDSE  (* Same as `ClosestToTargets *)
 ]
 
 let queues : (string * queues) list = [
@@ -40,6 +43,9 @@ let queues : (string * queues) list = [
     "SAGE", `SAGE;
     "ESD", `ESD;
     "generational*random,breadth-first", `RoundRobin [`Generational `Random ; `BreadthFirst ];
+    (* Aliases of strategy names used in the DSE paper *)
+    "IntraSDSE", `IntraSDSE;
+    "InterSDSE", `InterSDSE;
 ]
 
 let default_queue = ref `RandomPath
@@ -64,6 +70,9 @@ let rec get = function
     | `KLEE -> new BatchQueue.t (get (`RoundRobin [ `DistanceToUncoveredWeighted; `PathWeighted ]))
     | `SAGE -> new SageQueue.t
     | `ESD -> new RankedQueue.t [ new OtterESD.ProximityGuidedStrategy.t ClosestToTargetsStrategy.quantized ]
+    (* Aliases of strategy names used in the DSE paper *)
+    | `IntraSDSE -> get `ClosestToTargetsIntraprocedural
+    | `InterSDSE -> get `ClosestToTargets
 
 let get_default () = get !default_queue
 

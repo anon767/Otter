@@ -528,7 +528,7 @@ module Make (Errors : Errors) = struct
 
         (* Set up these BackOtter flags, if provided *)
         begin match flags.bidirectional_search_ratio with
-        | Some ratio -> BackOtter.BidirectionalQueue.default_bidirectional_search_ratio := ratio
+        | Some ratio -> BackOtter.BidirectionalQueue.arg_ratio := ratio
         | None -> ()
         end;
         begin match flags.forward_queue with

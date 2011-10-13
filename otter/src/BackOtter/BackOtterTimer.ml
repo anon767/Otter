@@ -41,8 +41,8 @@ class t = object (self)
                     {< last = Some (t_now, kind); 
                        t_otherfn = t_otherfn +. t_elapsed; >}
 
-    method time_entryfn = self#time `TKindEntry
-    method time_otherfn = self#time `TKindOther
+    method time_forward = self#time `TKindEntry
+    method time_backward = self#time `TKindOther
 end
 
 

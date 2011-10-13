@@ -43,7 +43,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
 
     (* A queue that prioritizes jobs *)
     let queue = 
-        if (!BidirectionalQueue.default_bidirectional_search_ratio) >= 1.0 then 
+        if (!BidirectionalQueue.arg_ratio) >= 1.0 then 
             (* Degenerates to pure forward Otter *)
             BackOtterQueue.get_default_fqueue ()
         else
@@ -138,7 +138,7 @@ let doit file =
         Output.printf "Forward strategy: %s@." (find_tag_name (!BackOtterQueue.default_fqueue) BackOtterQueue.queues);
         Output.printf "Backward function ranking: %s@." (find_tag_name (!FunctionRanker.default_function_rank) FunctionRanker.queues);
         Output.printf "Backward strategy: %s@." (find_tag_name (!BackOtterQueue.default_bqueue) BackOtterQueue.queues);
-        Output.printf "Ratio: %0.2f@." !BidirectionalQueue.default_bidirectional_search_ratio ;
+        Output.printf "Ratio: %0.2f@." !BidirectionalQueue.arg_ratio ;
 
         let queue, reporter = callchain_backward_se (new BackOtterReporter.t ()) file in
 

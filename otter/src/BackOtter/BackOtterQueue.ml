@@ -10,6 +10,11 @@ type queues = [
     | `SDSERP
     | `RandomPathPruneUnreachable
     | OtterQueue.Queue.queues
+    (* Aliases of strategy names used in the DSE paper *)
+    | `BackOtterIntraSDSE  (* Same as `BackOtterClosestToTargetsIntraprocedural *)
+    | `BackOtterInterSDSE  (* Same as `BackOtterClosestToTargets *)
+    | `BackOtterInterSDSE_rr  (* Same as `BackOtterRoundRobinClosestToTargets *)
+    | `BackOtterInterSDSE_pr  (* Same as `BackOtterProbabilisticClosestToTargets *)
 ]
 
 let queues : (string * queues) list = [
@@ -20,6 +25,11 @@ let queues : (string * queues) list = [
     "backotter-closest-to-targets-path-weighted", `BackOtterClosestToTargetsPathWeighted;
     "SDSE-RP", `SDSERP;
     "random-path-prune-unreachable", `RandomPathPruneUnreachable;
+    (* Aliases of strategy names used in the DSE paper *)
+    "backotter-IntraSDSE", `BackOtterIntraSDSE;
+    "backotter-InterSDSE", `BackOtterInterSDSE;
+    "backotter-InterSDSE-round-robin", `BackOtterInterSDSE_rr;
+    "backotter-InterSDSE-probabilistic", `BackOtterInterSDSE_pr;
 ] @ (OtterQueue.Queue.queues :> (string * queues) list)
 
 (* BackOtter's ClosestToTargetsStrategy is different from that in OtterQueue *)
@@ -31,6 +41,12 @@ let rec get = function
     | `BackOtterClosestToTargetsPathWeighted -> new OtterQueue.RankedQueue.t [ new ClosestToTargetsStrategy.t OtterQueue.ClosestToTargetsStrategy.quantized; new OtterQueue.WeightedRandomStrategy.t (new OtterQueue.PathWeightedStrategy.t) ]
     | `SDSERP -> new OtterQueue.RoundRobinQueue.t [ get `RandomPath; get `BackOtterClosestToTargets]
     | `RandomPathPruneUnreachable -> new OtterQueue.RandomPathQueue.t (fun job -> ClosestToTargetsStrategy.weight (fun d->d) job < max_int)
+    (* Aliases of strategy names used in the DSE paper *)
+    | `BackOtterIntraSDSE  -> get `BackOtterClosestToTargetsIntraprocedural
+    | `BackOtterInterSDSE  -> get `BackOtterClosestToTargets
+    | `BackOtterInterSDSE_rr  -> get `BackOtterRoundRobinClosestToTargets
+    | `BackOtterInterSDSE_pr  -> get `BackOtterProbabilisticClosestToTargets
+
     | #OtterQueue.Queue.queues as queue -> OtterQueue.Queue.get queue
 
 let default_fqueue = ref (`Generational `BreadthFirst)

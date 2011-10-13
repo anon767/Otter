@@ -18,14 +18,14 @@ class t :
           * BidirectionalQueue.t#put only verifies jobs over paths-to-targets when jobs correspond to beginning of function calls.
           * (Checking if the head of decision_path is not enough, because the function may begin with some straightline code that does not generate new decisions.)
           *)
-        method latest_function_call: Cil.varinfo option 
-        method clear_latest_function_call: 'self
+        method last_function_call: Cil.varinfo option 
+        method clear_last_function_call: 'self
 
         (** Enable/disable recording decisions *)
         method enable_record_decisions: bool
         method with_enable_record_decisions : bool -> 'self
 
-        (** This method updates bounding_paths and latest_function_call given the decision.
+        (** This method updates bounding_paths and last_function_call given the decision.
           * Used by BackOtterFileJob and BackOtterFunctionJob to override append_decision_path.
           *)
         method postprocess_append_decision_path : Decision.t -> 'self
@@ -48,9 +48,9 @@ class t :
         method bounding_paths = bounding_paths
         method with_bounding_paths bounding_paths = {< bounding_paths = bounding_paths >}
 
-        val mutable latest_function_call = None
-        method latest_function_call = latest_function_call
-        method clear_latest_function_call = {< latest_function_call = None >}
+        val mutable last_function_call = None
+        method last_function_call = last_function_call
+        method clear_last_function_call = {< last_function_call = None >}
 
         method postprocess_append_decision_path decision = 
             let bounding_paths = match bounding_paths with
@@ -63,19 +63,19 @@ class t :
                         else paths
                 ) [] paths)
             in
-            let latest_function_call = match decision with
+            let last_function_call = match decision with
                 | Decision.DecisionFuncall (_,_, varinfo) -> Some varinfo
                 | _ -> None
             in
             {< bounding_paths = bounding_paths; 
-               latest_function_call = latest_function_call >}
+               last_function_call = last_function_call >}
 
         method printer ff =
             let module F = OcamlUtilities.FormatPlus in
             let module C = CilUtilities.CilPrinter in
             Format.fprintf ff "BackOtterJobExtension@;";
             Format.fprintf ff "enable_record_decisions: %B@;" enable_record_decisions;
-            Format.fprintf ff "latest_function_call: @[<hov>%a@]@;" (F.option_printer C.varinfo) latest_function_call;
+            Format.fprintf ff "last_function_call: @[<hov>%a@]@;" (F.option_printer C.varinfo) last_function_call;
             Format.fprintf ff "bounding_paths: @[<hov>%a@]@;" (F.option_printer (F.pp_print_list DecisionPath.print "@;")) bounding_paths
 
 
@@ -83,7 +83,7 @@ class t :
             is_initialized <- other#is_initialized;
             enable_record_decisions <- other#enable_record_decisions;
             bounding_paths <- other#bounding_paths;
-            latest_function_call <- other#latest_function_call
+            last_function_call <- other#last_function_call
 
     end
 
