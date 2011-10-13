@@ -1,4 +1,4 @@
-Quick-start Guide
+Quick-start guide
 =================
 
 * Configure, build and test:
@@ -94,20 +94,22 @@ Quick-start Guide
             make debug
 
     2. Run the debugger script:
+
             (In the top/otter directory)
             scripts/debug [flags] <some c file>
 
-    Hopefully, that just works, but if the script gives you trouble, do the
-    following (which is basically what the script does, or tries to do):
+        Hopefully, that just works, but if the script gives you trouble, do the
+        following (which is basically what the script does, or tries to do):
 
     2a. Start the debugger in remote debugging mode:
 
             (In the top/otter directory)
             ocamldebug -s debugsocket -I _build/src/OtterCore -I _build/src \
                 -I ../cil/obj/x86_DARWIN -I ../cil/src _product/runotter.d.byte
+
             (In the debugger)
             set loadingmode manual
-            step 0
+            step
 
     2b. Start Otter in debug mode:
 
@@ -115,22 +117,22 @@ Quick-start Guide
             env CAML_DEBUG_SOCKET=debugsocket \
                 ./otter.byte [flags] <some c file>
 
-    The `x86_DARWIN` directory (which is also hard-coded into the debug script)
-    is for Macs. Substitute `x86_LINUX` or the like for other systems.
+        The `x86_DARWIN` directory (which is also hard-coded into the debug script)
+        is for Macs. Substitute `x86_LINUX` or the like for other systems.
 
 
 Building Otter
 ==============
 
 The easiest way of building Otter is from the top directory (i.e., the directory
-above the one this README file is in). From the top directory, type:
+above the one this file is in). From the top directory, type:
 
     make otter
 
 This will configure and build Otter as well as the required libraries such as
 CIL and STP. Subsequently, the above command will also automatically rebuild
 libraries that are updated (e.g., from the code repository) and, for the most
-part, it will also properly rebuild the dependent libraries as well as Otter.
+part, it will also properly rebuild the required libraries as well as Otter.
 So, this is the recommended way to build Otter.
 
 After building, you should also run Otter's test suite:
@@ -312,7 +314,7 @@ packs should be added to both `runotter.ml` and `runtestotter.ml` the under
 generated for module packs, add them to the `api` target in `Makefile.in`.
 
 
-Adding Integration or System Tests to Otter
+Adding integration or system tests to Otter
 ===========================================
 
 Otter also contains testing framework for integration testing in
@@ -341,13 +343,12 @@ test cases by their path.
 System tests are similarly organized in `test/TestOtterSystem`.
 
 
-Generating Documentation for Otter
+Generating documentation for Otter
 ==================================
 
-Other than this README file, Otter is mainly documented using `ocamldoc`
-annotations in the source code. It is more convenient to peruse these
-documentation as HTML documents, which may be generated from the top directory
-by running:
+Other than this file, Otter is mainly documented using `ocamldoc` annotations
+in the source code. It is more convenient to peruse these documentation as
+HTML documents, which may be generated from the top directory by running:
 
     make doc-otter
 
@@ -385,10 +386,10 @@ debugger in remote debugging mode with the commands:
 
     set socket <debug socket>
     set loadingmode manual
-    step 0
+    step
 
 where `debug socket` can be any file name which will be used to connect to
-Otter. The last line `step 0` will cause the debugger to wait for Otter to be
+Otter. The last line `step` will cause the debugger to wait for Otter to be
 launched, and immediately break at the first instruction.
 
 Finally, in a different terminal, start Otter in debug mode, giving it the same
