@@ -105,7 +105,6 @@ Quick-start Guide
             (In the top/otter directory)
             ocamldebug -s debugsocket -I _build/src/OtterCore -I _build/src \
                 -I ../cil/obj/x86_DARWIN -I ../cil/src _product/runotter.d.byte
-
             (In the debugger)
             set loadingmode manual
             step 0
@@ -116,8 +115,9 @@ Quick-start Guide
             env CAML_DEBUG_SOCKET=debugsocket \
                 ./otter.byte [flags] <some c file>
 
-    The 'x86_DARWIN' directory (which is also hard-coded into the debug script)
-    is for Macs. Substitute 'x86_LINUX' or the like for other systems.
+    The `x86_DARWIN` directory (which is also hard-coded into the debug script)
+    is for Macs. Substitute `x86_LINUX` or the like for other systems.
+
 
 Building Otter
 ==============
@@ -128,7 +128,7 @@ above the one this README file is in). From the top directory, type:
     make otter
 
 This will configure and build Otter as well as the required libraries such as
-Cil and STP. Subsequently, the above command will also automatically rebuild
+CIL and STP. Subsequently, the above command will also automatically rebuild
 libraries that are updated (e.g., from the code repository) and, for the most
 part, it will also properly rebuild the dependent libraries as well as Otter.
 So, this is the recommended way to build Otter.
@@ -172,6 +172,10 @@ command:
 It will be copied to `_product/runotter.d.byte`.
 
 
+[Ocamlbuild]: <http://nicolaspouillard.fr/ocamlbuild/ocamlbuild-user-guide.html>
+              "Ocamlbuild User Guide"
+
+
 Running Otter
 =============
 
@@ -213,12 +217,12 @@ additional flags and input files just as otter.pl does:
 
     newlib-1.19.0/otter/otter-with-libc [flags] <input files>
 
-One useful flag when using libc is '--doRunRmtmps':
+One useful flag when using libc is `--doRunRmtmps`:
 
     newlib-1.19.0/otter/otter-with-libc --doRunRmtmps --dootter [flags] <input files>
 
-(Specifying '--doRunRmtmps' requires you to explicitly specify which flavor of
-Otter you want, which otherwise defaults to '--dootter'.) Rmtmps is a CIL module
+(Specifying `--doRunRmtmps` requires you to explicitly specify which flavor of
+Otter you want, which otherwise defaults to `--dootter`.) Rmtmps is a CIL module
 which removes from the merged file all functions and global variables which are
 not reachable from main. If your program uses only a piece of libc, this can
 make the merged program much smaller.
@@ -227,11 +231,11 @@ Additionally, sometimes it is useful to merge a program with libc first and
 then, later, symbolically execute it. To do this, there is a script called
 cilly-with-libc in the same directory as otter-with-libc. This can be useful,
 for example, when merging a program that has a makefile. If, say, you are
-building a program whose makefile produces an executable called 'foo',
+building a program whose makefile produces an executable called `foo`,
 
     make CC=newlib-1.19.0/otter/cilly-with-libc
 
-will produce a file 'foo_comb.c', which is the program merged using Otter's libc
+will produce a file `foo_comb.c`, which is the program merged using Otter's libc
 and POSIX header files. Later, this can be run using otter-with-libc, which
 merges the libc and POSIX implementations in with the already-merged file.
 
@@ -269,7 +273,7 @@ well documented in the [Ocamlbuild][] user guide).
 
 When writing a new module, e.g., `NewModule.ml`, put the file into a module
 pack directory, and add a reference to it in the corresponding `.mlpack` file.
-If the module provides a new Cil feature, add it to the `runotter.ml` driver:
+If the module provides a new CIL feature, add it to the `runotter.ml` driver:
 
     (* in src/runotter.ml *)
     Cilly.run [
@@ -324,8 +328,8 @@ to `OtterPragmaTests.ml` for documentation of these directives.
 To add a new integration test case, simply add a C file to one of the
 directories under `test/TestOtterIntegration`:
 
-    * for test cases that are single-process, add the file to `OtterCore`;
-    * for test cases that require multi-process capability, such as calling
+* for test cases that are single-process, add the file to `OtterCore`;
+* for test cases that require multi-process capability, such as calling
       `fork()`, add the file to `MultiprocessOtter`.
 
 You may also create additional directories under `OtterCore` or
@@ -392,12 +396,3 @@ Finally, in a different terminal, start Otter in debug mode, giving it the same
 
     env CAML_DEBUG_SOCKET=<debug socket> \
         ./otter.byte [other flags] <input files>
-
-
-References
-==========
-
-[Ocamlbuild]: <http://nicolaspouillard.fr/ocamlbuild/ocamlbuild-user-guide.html>
-              "Ocamlbuild User Guide"
-
-
