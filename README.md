@@ -108,12 +108,12 @@ In Eran Yahav, editor, The 18th International Static Analysis Symposium (SAS),
 volume 6887 of Lecture Notes in Computer Science, pages 95–111, Venice, Italy,
 September 2011. Springer Berlin / Heidelberg.
 
-[Mixing Type Checking and Symbolic Execution](http://dx.doi.org/10.1145/1806596.1806645)
+[Mixing Type Checking and Symbolic Execution](http://dx.doi.org/10.1145/1806596.1806645).
 Khoo Yit Phang, Bor-Yuh Evan Chang, and Jeffrey S. Foster.
 In Proceedings of the 2010 ACM SIGPLAN Conference on Programming Language
 Design and Implementation (PLDI), pages 436–447, Toronto, Canada, June 2010.
 
-[Using Symbolic Evaluation to Understand Behavior in Configurable Software Systems](http://dx.doi.org/10.1145/1806799.1806864)
+[Using Symbolic Evaluation to Understand Behavior in Configurable Software Systems](http://dx.doi.org/10.1145/1806799.1806864).
 Elnatan Reisner, Charles Song, Kin-Keung Ma, Jeffrey S. Foster,
 and Adam Porter.
 In Proceedings of the 32nd International Conference on Software Engineering
@@ -123,7 +123,7 @@ In Proceedings of the 32nd International Conference on Software Engineering
 Technical reports
 -----------------
 
-[MultiOtter: Multiprocess Symbolic Execution](http://dx.doi.org/1903/11860)
+[MultiOtter: Multiprocess Symbolic Execution](http://dx.doi.org/1903/11860).
 Jonathan Turpie, Elnatan Reisner, Jeffrey S. Foster, and Michael Hicks.
 Technical Report CS-TR-4982, Department of Computer Science,
 University of Maryland, College Park, August 2011.
@@ -133,12 +133,12 @@ Kin-Keung Ma, Yit Phang Khoo, Jeffrey S. Foster, and Michael Hicks.
 Technical Report CS-TR-4979, Department of Computer Science,
 University of Maryland, College Park, April 2011.
 
-[Mixing Type Checking and Symbolic Execution (Extended Version)](http://dx.doi.org/1903/10115)
+[Mixing Type Checking and Symbolic Execution (Extended Version)](http://dx.doi.org/1903/10115).
 Khoo Yit Phang, Bor-Yun Evan Chang, and Jeffrey S. Foster.
 Technical Report CS-TR-4954, Computer Science Department,
 University of Maryland, College Park, March 2010.
 
-[Using Symbolic Evaluation to Understand Behavior in Configurable Software Systems](http://dx.doi.org/1903/9779)
+[Using Symbolic Evaluation to Understand Behavior in Configurable Software Systems](http://dx.doi.org/1903/9779).
 Elnatan Reisner, Charles Song, Kin-Keung Ma, Jeffrey S. Foster,
 and Adam Porter.
 Technical Report CS-TR-4946, Computer Science Department,
