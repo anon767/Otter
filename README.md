@@ -128,6 +128,11 @@ Jonathan Turpie, Elnatan Reisner, Jeffrey S. Foster, and Michael Hicks.
 Technical Report CS-TR-4982, Department of Computer Science,
 University of Maryland, College Park, August 2011.
 
+[Directed Symbolic Execution](http://dx.doi.org/1903/11860).
+Kin-Keung Ma, Yit Phang Khoo, Jeffrey S. Foster, and Michael Hicks.
+Technical Report CS-TR-4979, Department of Computer Science,
+University of Maryland, College Park, April 2011.
+
 [Mixing Type Checking and Symbolic Execution (Extended Version)](http://dx.doi.org/1903/10115)
 Khoo Yit Phang, Bor-Yun Evan Chang, and Jeffrey S. Foster.
 Technical Report CS-TR-4954, Computer Science Department,
