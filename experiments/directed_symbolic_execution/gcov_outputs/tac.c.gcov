@@ -1,0 +1,714 @@
+        -:    0:Source:/fs/buzz/kkma/code/wc1/branches/DSE/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/../src/tac.c
+        -:    0:Graph:tac.gcno
+        -:    0:Data:tac.gcda
+        -:    0:Runs:59
+        -:    0:Programs:1
+        -:    1:/* tac - concatenate and print files in reverse
+        -:    2:   Copyright (C) 1988-1991, 1995-2006 Free Software Foundation, Inc.
+        -:    3:
+        -:    4:   This program is free software: you can redistribute it and/or modify
+        -:    5:   it under the terms of the GNU General Public License as published by
+        -:    6:   the Free Software Foundation, either version 3 of the License, or
+        -:    7:   (at your option) any later version.
+        -:    8:
+        -:    9:   This program is distributed in the hope that it will be useful,
+        -:   10:   but WITHOUT ANY WARRANTY; without even the implied warranty of
+        -:   11:   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        -:   12:   GNU General Public License for more details.
+        -:   13:
+        -:   14:   You should have received a copy of the GNU General Public License
+        -:   15:   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+        -:   16:
+        -:   17:/* Written by Jay Lepreau (lepreau@cs.utah.edu).
+        -:   18:   GNU enhancements by David MacKenzie (djm@gnu.ai.mit.edu). */
+        -:   19:
+        -:   20:/* Copy each FILE, or the standard input if none are given or when a
+        -:   21:   FILE name of "-" is encountered, to the standard output with the
+        -:   22:   order of the records reversed.  The records are separated by
+        -:   23:   instances of a string, or a newline if none is given.  By default, the
+        -:   24:   separator string is attached to the end of the record that it
+        -:   25:   follows in the file.
+        -:   26:
+        -:   27:   Options:
+        -:   28:   -b, --before			The separator is attached to the beginning
+        -:   29:				of the record that it precedes in the file.
+        -:   30:   -r, --regex			The separator is a regular expression.
+        -:   31:   -s, --separator=separator	Use SEPARATOR as the record separator.
+        -:   32:
+        -:   33:   To reverse a file byte by byte, use (in bash, ksh, or sh):
+        -:   34:tac -r -s '.\|
+        -:   35:' file */
+        -:   36:
+        -:   37:#ifdef CIL
+        -:   38:extern int __backotter_is_origin_function(void);
+        -:   39:extern void __backotter_enable_record_decisions(void);
+        -:   40:extern void __backotter_disable_record_decisions(void);
+        -:   41:extern void __otter_main_setup_fs(void);
+        -:   42:#endif
+        -:   43:
+        -:   44:#include <config.h>
+        -:   45:
+        -:   46:#include <stdio.h>
+        -:   47:#include <getopt.h>
+        -:   48:#include <sys/types.h>
+        -:   49:#include "system.h"
+        -:   50:
+        -:   51:#include <regex.h>
+        -:   52:
+        -:   53:#include "error.h"
+        -:   54:#include "quote.h"
+        -:   55:#include "quotearg.h"
+        -:   56:#include "safe-read.h"
+        -:   57:#include "stdlib--.h"
+        -:   58:
+        -:   59:/* The official name of this program (e.g., no `g' prefix).  */
+        -:   60:#define PROGRAM_NAME "tac"
+        -:   61:
+        -:   62:#define AUTHORS "Jay Lepreau", "David MacKenzie"
+        -:   63:
+        -:   64:#if defined __MSDOS__ || defined _WIN32
+        -:   65:/* Define this to non-zero on systems for which the regular mechanism
+        -:   66:   (of unlinking an open file and expecting to be able to write, seek
+        -:   67:   back to the beginning, then reread it) doesn't work.  E.g., on Windows
+        -:   68:   and DOS systems.  */
+        -:   69:# define DONT_UNLINK_WHILE_OPEN 1
+        -:   70:#endif
+        -:   71:
+        -:   72:
+        -:   73:#ifndef DEFAULT_TMPDIR
+        -:   74:# define DEFAULT_TMPDIR "/tmp"
+        -:   75:#endif
+        -:   76:
+        -:   77:/* The number of bytes per atomic read. */
+        -:   78:#define INITIAL_READSIZE 8192
+        -:   79:
+        -:   80:/* The number of bytes per atomic write. */
+        -:   81:#define WRITESIZE 8192
+        -:   82:
+        -:   83:/* The name this program was run with. */
+        -:   84:char *program_name;
+        -:   85:
+        -:   86:/* The string that separates the records of the file. */
+        -:   87:static char const *separator;
+        -:   88:
+        -:   89:/* True if we have ever read standard input.  */
+        -:   90:static bool have_read_stdin = false;
+        -:   91:
+        -:   92:/* If true, print `separator' along with the record preceding it
+        -:   93:   in the file; otherwise with the record following it. */
+        -:   94:static bool separator_ends_record;
+        -:   95:
+        -:   96:/* 0 if `separator' is to be matched as a regular expression;
+        -:   97:   otherwise, the length of `separator', used as a sentinel to
+        -:   98:   stop the search. */
+        -:   99:static size_t sentinel_length;
+        -:  100:
+        -:  101:/* The length of a match with `separator'.  If `sentinel_length' is 0,
+        -:  102:   `match_length' is computed every time a match succeeds;
+        -:  103:   otherwise, it is simply the length of `separator'. */
+        -:  104:static size_t match_length;
+        -:  105:
+        -:  106:/* The input buffer. */
+        -:  107:static char *G_buffer;
+        -:  108:
+        -:  109:/* The number of bytes to read at once into `buffer'. */
+        -:  110:static size_t read_size;
+        -:  111:
+        -:  112:/* The size of `buffer'.  This is read_size * 2 + sentinel_length + 2.
+        -:  113:   The extra 2 bytes allow `past_end' to have a value beyond the
+        -:  114:   end of `G_buffer' and `match_start' to run off the front of `G_buffer'. */
+        -:  115:static size_t G_buffer_size;
+        -:  116:
+        -:  117:/* The compiled regular expression representing `separator'. */
+        -:  118:static struct re_pattern_buffer compiled_separator;
+        -:  119:static char compiled_separator_fastmap[UCHAR_MAX + 1];
+        -:  120:
+        -:  121:static struct option const longopts[] =
+        -:  122:{
+        -:  123:  {"before", no_argument, NULL, 'b'},
+        -:  124:  {"regex", no_argument, NULL, 'r'},
+        -:  125:  {"separator", required_argument, NULL, 's'},
+        -:  126:  {GETOPT_HELP_OPTION_DECL},
+        -:  127:  {GETOPT_VERSION_OPTION_DECL},
+        -:  128:  {NULL, 0, NULL, 0}
+        -:  129:};
+        -:  130:
+        -:  131:void
+        -:  132:usage (int status)
+        3:  133:{
+        3:  134:  if (status != EXIT_SUCCESS)
+    #####:  135:    fprintf (stderr, _("Try `%s --help' for more information.\n"),
+        -:  136:	     program_name);
+        -:  137:  else
+        -:  138:    {
+        3:  139:      printf (_("\
+        -:  140:Usage: %s [OPTION]... [FILE]...\n\
+        -:  141:"),
+        -:  142:	      program_name);
+        3:  143:      fputs (_("\
+        -:  144:Write each FILE to standard output, last line first.\n\
+        -:  145:With no FILE, or when FILE is -, read standard input.\n\
+        -:  146:\n\
+        -:  147:"), stdout);
+        3:  148:      fputs (_("\
+        -:  149:Mandatory arguments to long options are mandatory for short options too.\n\
+        -:  150:"), stdout);
+        3:  151:      fputs (_("\
+        -:  152:  -b, --before             attach the separator before instead of after\n\
+        -:  153:  -r, --regex              interpret the separator as a regular expression\n\
+        -:  154:  -s, --separator=STRING   use STRING as the separator instead of newline\n\
+        -:  155:"), stdout);
+        3:  156:      fputs (HELP_OPTION_DESCRIPTION, stdout);
+        3:  157:      fputs (VERSION_OPTION_DESCRIPTION, stdout);
+        3:  158:      emit_bug_reporting_address ();
+        -:  159:    }
+        3:  160:  exit (status);
+        -:  161:}
+        -:  162:
+        -:  163:/* Print the characters from START to PAST_END - 1.
+        -:  164:   If START is NULL, just flush the buffer. */
+        -:  165:
+        -:  166:static void
+        -:  167:output (const char *start, const char *past_end)
+     2204:  168:{
+        -:  169:  static char buffer[WRITESIZE];
+        -:  170:  static size_t bytes_in_buffer = 0;
+     2204:  171:  size_t bytes_to_add = past_end - start;
+     2204:  172:  size_t bytes_available = WRITESIZE - bytes_in_buffer;
+        -:  173:
+     2204:  174:  if (start == 0)
+        -:  175:    {
+       53:  176:      fwrite (buffer, 1, bytes_in_buffer, stdout);
+       53:  177:      bytes_in_buffer = 0;
+       53:  178:      return;
+        -:  179:    }
+        -:  180:
+        -:  181:  /* Write out as many full buffers as possible. */
+     4303:  182:  while (bytes_to_add >= bytes_available)
+        -:  183:    {
+        1:  184:      memcpy (buffer + bytes_in_buffer, start, bytes_available);
+        1:  185:      bytes_to_add -= bytes_available;
+        1:  186:      start += bytes_available;
+        1:  187:      fwrite (buffer, 1, WRITESIZE, stdout);
+        1:  188:      bytes_in_buffer = 0;
+        1:  189:      bytes_available = WRITESIZE;
+        -:  190:    }
+        -:  191:
+     2151:  192:  memcpy (buffer + bytes_in_buffer, start, bytes_to_add);
+     2151:  193:  bytes_in_buffer += bytes_to_add;
+        -:  194:}
+        -:  195:
+        -:  196:/* Print in reverse the file open on descriptor FD for reading FILE.
+        -:  197:   Return true if successful.  */
+        -:  198:
+        -:  199:static bool
+        -:  200:tac_seekable (int input_fd, const char *file)
+       53:  201:{
+        -:  202:#ifdef CIL
+        -:  203:  __backotter_disable_record_decisions();
+        -:  204:  if (__backotter_is_origin_function())
+        -:  205:      __otter_main_setup_fs();
+        -:  206:  __backotter_enable_record_decisions();
+        -:  207:#endif
+        -:  208:  /* Pointer to the location in `G_buffer' where the search for
+        -:  209:     the next separator will begin. */
+        -:  210:  char *match_start;
+        -:  211:
+        -:  212:  /* Pointer to one past the rightmost character in `G_buffer' that
+        -:  213:     has not been printed yet. */
+        -:  214:  char *past_end;
+        -:  215:
+        -:  216:  /* Length of the record growing in `G_buffer'. */
+        -:  217:  size_t saved_record_size;
+        -:  218:
+        -:  219:  /* Offset in the file of the next read. */
+        -:  220:  off_t file_pos;
+        -:  221:
+        -:  222:  /* True if `output' has not been called yet for any file.
+        -:  223:     Only used when the separator is attached to the preceding record. */
+       53:  224:  bool first_time = true;
+       53:  225:  char first_char = *separator;	/* Speed optimization, non-regexp. */
+       53:  226:  char const *separator1 = separator + 1; /* Speed optimization, non-regexp. */
+       53:  227:  size_t match_length1 = match_length - 1; /* Speed optimization, non-regexp. */
+        -:  228:  struct re_registers regs;
+        -:  229:
+        -:  230:  /* Find the size of the input file. */
+       53:  231:  file_pos = lseek (input_fd, (off_t) 0, SEEK_END);
+       53:  232:  if (file_pos < 1)
+        3:  233:    return true;			/* It's an empty file. */
+        -:  234:
+        -:  235:  /* Arrange for the first read to lop off enough to leave the rest of the
+        -:  236:     file a multiple of `read_size'.  Since `read_size' can change, this may
+        -:  237:     not always hold during the program run, but since it usually will, leave
+        -:  238:     it here for i/o efficiency (page/sector boundaries and all that).
+        -:  239:     Note: the efficiency gain has not been verified. */
+       50:  240:  saved_record_size = file_pos % read_size;
+       50:  241:  if (saved_record_size == 0)
+    #####:  242:    saved_record_size = read_size;
+       50:  243:  file_pos -= saved_record_size;
+        -:  244:  /* `file_pos' now points to the start of the last (probably partial) block
+        -:  245:     in the input file. */
+        -:  246:
+       50:  247:  if (lseek (input_fd, file_pos, SEEK_SET) < 0)
+    #####:  248:    error (0, errno, _("%s: seek failed"), quotearg_colon (file));
+        -:  249:
+       50:  250:  if (safe_read (input_fd, G_buffer, saved_record_size) != saved_record_size)
+        -:  251:    {
+    #####:  252:      error (0, errno, _("%s: read error"), quotearg_colon (file));
+    #####:  253:      return false;
+        -:  254:    }
+        -:  255:
+       50:  256:  match_start = past_end = G_buffer + saved_record_size;
+        -:  257:  /* For non-regexp search, move past impossible positions for a match. */
+       50:  258:  if (sentinel_length)
+       38:  259:    match_start -= match_length1;
+        -:  260:
+        -:  261:  for (;;)
+        -:  262:    {
+        -:  263:      /* Search backward from `match_start' - 1 to `G_buffer' for a match
+        -:  264:	 with `separator'; for speed, use strncmp if `separator' contains no
+        -:  265:	 metacharacters.
+        -:  266:	 If the match succeeds, set `match_start' to point to the start of
+        -:  267:	 the match and `match_length' to the length of the match.
+        -:  268:	 Otherwise, make `match_start' < `G_buffer'. */
+     2190:  269:      if (sentinel_length == 0)
+        -:  270:	{
+       75:  271:	  size_t i = match_start - G_buffer;
+       75:  272:	  regoff_t ri = i;
+       75:  273:	  regoff_t range = 1 - ri;
+        -:  274:	  regoff_t ret;
+        -:  275:
+       75:  276:	  if (1 < range)
+    #####:  277:	    error (EXIT_FAILURE, 0, _("record too large"));
+        -:  278:
+       87:  279:	  if (range == 1
+        -:  280:	      || ((ret = re_search (&compiled_separator, G_buffer,
+        -:  281:				    i, i - 1, range, &regs))
+        -:  282:		  == -1))
+       12:  283:	    match_start = G_buffer - 1;
+       63:  284:	  else if (ret == -2)
+        -:  285:	    {
+    #####:  286:	      error (EXIT_FAILURE, 0,
+        -:  287:		     _("error in regular expression search"));
+        -:  288:	    }
+        -:  289:	  else
+        -:  290:	    {
+       63:  291:	      match_start = G_buffer + regs.start[0];
+       63:  292:	      match_length = regs.end[0] - regs.start[0];
+        -:  293:	    }
+        -:  294:	}
+        -:  295:      else
+        -:  296:	{
+        -:  297:	  /* `match_length' is constant for non-regexp boundaries. */
+    10268:  298:	  while (*--match_start != first_char
+        -:  299:		 || (match_length1 && strncmp (match_start + 1, separator1,
+        -:  300:					       match_length1)))
+        -:  301:	    /* Do nothing. */ ;
+        -:  302:	}
+        -:  303:
+        -:  304:      /* Check whether we backed off the front of `G_buffer' without finding
+        -:  305:         a match for `separator'. */
+     2190:  306:      if (match_start < G_buffer)
+        -:  307:	{
+       51:  308:	  if (file_pos == 0)
+        -:  309:	    {
+        -:  310:	      /* Hit the beginning of the file; print the remaining record. */
+       50:  311:	      output (G_buffer, past_end);
+       50:  312:	      return true;
+        -:  313:	    }
+        -:  314:
+        1:  315:	  saved_record_size = past_end - G_buffer;
+        1:  316:	  if (saved_record_size > read_size)
+        -:  317:	    {
+        -:  318:	      /* `G_buffer_size' is about twice `read_size', so since
+        -:  319:		 we want to read in another `read_size' bytes before
+        -:  320:		 the data already in `G_buffer', we need to increase
+        -:  321:		 `G_buffer_size'. */
+        -:  322:	      char *newbuffer;
+    #####:  323:	      size_t offset = sentinel_length ? sentinel_length : 1;
+    #####:  324:	      ptrdiff_t match_start_offset = match_start - G_buffer;
+    #####:  325:	      ptrdiff_t past_end_offset = past_end - G_buffer;
+    #####:  326:	      size_t old_G_buffer_size = G_buffer_size;
+        -:  327:
+    #####:  328:	      read_size *= 2;
+    #####:  329:	      G_buffer_size = read_size * 2 + sentinel_length + 2;
+    #####:  330:	      if (G_buffer_size < old_G_buffer_size)
+    #####:  331:		xalloc_die ();
+    #####:  332:	      newbuffer = xrealloc (G_buffer - offset, G_buffer_size);
+    #####:  333:	      newbuffer += offset;
+        -:  334:	      /* Adjust the pointers for the new buffer location.  */
+    #####:  335:	      match_start = newbuffer + match_start_offset;
+    #####:  336:	      past_end = newbuffer + past_end_offset;
+    #####:  337:	      G_buffer = newbuffer;
+        -:  338:	    }
+        -:  339:
+        -:  340:	  /* Back up to the start of the next bufferfull of the file.  */
+        1:  341:	  if (file_pos >= read_size)
+        1:  342:	    file_pos -= read_size;
+        -:  343:	  else
+        -:  344:	    {
+    #####:  345:	      read_size = file_pos;
+    #####:  346:	      file_pos = 0;
+        -:  347:	    }
+        1:  348:	  if (lseek (input_fd, file_pos, SEEK_SET) < 0)
+    #####:  349:	    error (0, errno, _("%s: seek failed"), quotearg_colon (file));
+        -:  350:
+        -:  351:	  /* Shift the pending record data right to make room for the new.
+        -:  352:	     The source and destination regions probably overlap.  */
+        1:  353:	  memmove (G_buffer + read_size, G_buffer, saved_record_size);
+        1:  354:	  past_end = G_buffer + read_size + saved_record_size;
+        -:  355:	  /* For non-regexp searches, avoid unneccessary scanning. */
+        1:  356:	  if (sentinel_length)
+        1:  357:	    match_start = G_buffer + read_size;
+        -:  358:	  else
+    #####:  359:	    match_start = past_end;
+        -:  360:
+        1:  361:	  if (safe_read (input_fd, G_buffer, read_size) != read_size)
+        -:  362:	    {
+    #####:  363:	      error (0, errno, _("%s: read error"), quotearg_colon (file));
+    #####:  364:	      return false;
+        -:  365:	    }
+        -:  366:	}
+        -:  367:      else
+        -:  368:	{
+        -:  369:	  /* Found a match of `separator'. */
+     2139:  370:	  if (separator_ends_record)
+        -:  371:	    {
+     2088:  372:	      char *match_end = match_start + match_length;
+        -:  373:
+        -:  374:	      /* If this match of `separator' isn't at the end of the
+        -:  375:	         file, print the record. */
+     2088:  376:	      if (!first_time || match_end != past_end)
+     2050:  377:		output (match_end, past_end);
+     2088:  378:	      past_end = match_end;
+     2088:  379:	      first_time = false;
+        -:  380:	    }
+        -:  381:	  else
+        -:  382:	    {
+       51:  383:	      output (match_start, past_end);
+       51:  384:	      past_end = match_start;
+        -:  385:	    }
+        -:  386:
+        -:  387:	  /* For non-regex matching, we can back up.  */
+     2139:  388:	  if (sentinel_length > 0)
+     2076:  389:	    match_start -= match_length - 1;
+        -:  390:	}
+     2140:  391:    }
+        -:  392:}
+        -:  393:
+        -:  394:#if DONT_UNLINK_WHILE_OPEN
+        -:  395:
+        -:  396:/* FIXME-someday: remove all of this DONT_UNLINK_WHILE_OPEN junk.
+        -:  397:   Using atexit like this is wrong, since it can fail
+        -:  398:   when called e.g. 32 or more times.
+        -:  399:   But this isn't a big deal, since the code is used only on WOE/DOS
+        -:  400:   systems, and few people invoke tac on that many nonseekable files.  */
+        -:  401:
+        -:  402:static const char *file_to_remove;
+        -:  403:static FILE *fp_to_close;
+        -:  404:
+        -:  405:static void
+        -:  406:unlink_tempfile (void)
+        -:  407:{
+        -:  408:  fclose (fp_to_close);
+        -:  409:  unlink (file_to_remove);
+        -:  410:}
+        -:  411:
+        -:  412:static void
+        -:  413:record_or_unlink_tempfile (char const *fn, FILE *fp)
+        -:  414:{
+        -:  415:  if (!file_to_remove)
+        -:  416:    {
+        -:  417:      file_to_remove = fn;
+        -:  418:      fp_to_close = fp;
+        -:  419:      atexit (unlink_tempfile);
+        -:  420:    }
+        -:  421:}
+        -:  422:
+        -:  423:#else
+        -:  424:
+        -:  425:static void
+        -:  426:record_or_unlink_tempfile (char const *fn, FILE *fp ATTRIBUTE_UNUSED)
+       17:  427:{
+       17:  428:  unlink (fn);
+       17:  429:}
+        -:  430:
+        -:  431:#endif
+        -:  432:
+        -:  433:/* Copy from file descriptor INPUT_FD (corresponding to the named FILE) to
+        -:  434:   a temporary file, and set *G_TMP and *G_TEMPFILE to the resulting stream
+        -:  435:   and file name.  Return true if successful.  */
+        -:  436:
+        -:  437:static bool
+        -:  438:copy_to_temp (FILE **g_tmp, char **g_tempfile, int input_fd, char const *file)
+       17:  439:{
+        -:  440:  static char *template = NULL;
+        -:  441:  static char const *tempdir;
+        -:  442:  char *tempfile;
+        -:  443:  FILE *tmp;
+        -:  444:  int fd;
+        -:  445:
+       17:  446:  if (template == NULL)
+        -:  447:    {
+       17:  448:      char const * const Template = "%s/tacXXXXXX";
+       17:  449:      tempdir = getenv ("TMPDIR");
+       17:  450:      if (tempdir == NULL)
+       17:  451:	tempdir = DEFAULT_TMPDIR;
+        -:  452:
+        -:  453:      /* Subtract 2 for `%s' and add 1 for the trailing NUL byte.  */
+       17:  454:      template = xmalloc (strlen (tempdir) + strlen (Template) - 2 + 1);
+       17:  455:      sprintf (template, Template, tempdir);
+        -:  456:    }
+        -:  457:
+        -:  458:  /* FIXME: there's a small window between a successful mkstemp call
+        -:  459:     and the unlink that's performed by record_or_unlink_tempfile.
+        -:  460:     If we're interrupted in that interval, this code fails to remove
+        -:  461:     the temporary file.  On systems that define DONT_UNLINK_WHILE_OPEN,
+        -:  462:     the window is much larger -- it extends to the atexit-called
+        -:  463:     unlink_tempfile.
+        -:  464:     FIXME: clean up upon fatal signal.  Don't block them, in case
+        -:  465:     $TMPFILE is a remote file system.  */
+        -:  466:
+       17:  467:  tempfile = template;
+       17:  468:  fd = mkstemp (template);
+       17:  469:  if (fd < 0)
+        -:  470:    {
+    #####:  471:      error (0, errno, _("cannot create temporary file %s"), quote (tempfile));
+    #####:  472:      return false;
+        -:  473:    }
+        -:  474:
+       17:  475:  tmp = fdopen (fd, (O_BINARY ? "w+b" : "w+"));
+       17:  476:  if (! tmp)
+        -:  477:    {
+    #####:  478:      error (0, errno, _("cannot open %s for writing"), quote (tempfile));
+    #####:  479:      close (fd);
+    #####:  480:      unlink (tempfile);
+    #####:  481:      return false;
+        -:  482:    }
+        -:  483:
+       17:  484:  record_or_unlink_tempfile (tempfile, tmp);
+        -:  485:
+        -:  486:  while (1)
+        -:  487:    {
+       33:  488:      size_t bytes_read = safe_read (input_fd, G_buffer, read_size);
+       33:  489:      if (bytes_read == 0)
+       17:  490:	break;
+       16:  491:      if (bytes_read == SAFE_READ_ERROR)
+        -:  492:	{
+    #####:  493:	  error (0, errno, _("%s: read error"), quotearg_colon (file));
+    #####:  494:	  goto Fail;
+        -:  495:	}
+        -:  496:
+       16:  497:      if (fwrite (G_buffer, 1, bytes_read, tmp) != bytes_read)
+        -:  498:	{
+    #####:  499:	  error (0, errno, _("%s: write error"), quotearg_colon (tempfile));
+    #####:  500:	  goto Fail;
+        -:  501:	}
+       16:  502:    }
+        -:  503:
+       17:  504:  if (fflush (tmp) != 0)
+        -:  505:    {
+    #####:  506:      error (0, errno, _("%s: write error"), quotearg_colon (tempfile));
+    #####:  507:      goto Fail;
+        -:  508:    }
+        -:  509:
+       17:  510:  *g_tmp = tmp;
+       17:  511:  *g_tempfile = tempfile;
+       17:  512:  return true;
+        -:  513:
+    #####:  514: Fail:
+    #####:  515:  fclose (tmp);
+    #####:  516:  return false;
+        -:  517:}
+        -:  518:
+        -:  519:/* Copy INPUT_FD to a temporary, then tac that file.
+        -:  520:   Return true if successful.  */
+        -:  521:
+        -:  522:static bool
+        -:  523:tac_nonseekable (int input_fd, const char *file)
+       17:  524:{
+        -:  525:#ifdef CIL
+        -:  526:  __backotter_disable_record_decisions();
+        -:  527:  if (__backotter_is_origin_function())
+        -:  528:      __otter_main_setup_fs();
+        -:  529:  __backotter_enable_record_decisions();
+        -:  530:#endif
+        -:  531:  FILE *tmp_stream;
+        -:  532:  char *tmp_file;
+       17:  533:  return (copy_to_temp (&tmp_stream, &tmp_file, input_fd, file)
+        -:  534:	  && tac_seekable (fileno (tmp_stream), tmp_file));
+        -:  535:}
+        -:  536:
+        -:  537:/* Print FILE in reverse, copying it to a temporary
+        -:  538:   file first if it is not seekable.
+        -:  539:   Return true if successful.  */
+        -:  540:
+        -:  541:static bool
+        -:  542:tac_file (const char *filename)
+       53:  543:{
+        -:  544:#ifdef CIL
+        -:  545:  __backotter_disable_record_decisions();
+        -:  546:  if (__backotter_is_origin_function())
+        -:  547:      __otter_main_setup_fs();
+        -:  548:  __backotter_enable_record_decisions();
+        -:  549:#endif
+        -:  550:  bool ok;
+        -:  551:  off_t file_size;
+        -:  552:  int fd;
+       53:  553:  bool is_stdin = STREQ (filename, "-");
+        -:  554:
+       53:  555:  if (is_stdin)
+        -:  556:    {
+       35:  557:      have_read_stdin = true;
+       35:  558:      fd = STDIN_FILENO;
+       35:  559:      filename = _("standard input");
+        -:  560:      if (O_BINARY && ! isatty (STDIN_FILENO))
+        -:  561:	freopen (NULL, "rb", stdin);
+        -:  562:    }
+        -:  563:  else
+        -:  564:    {
+       18:  565:      fd = open (filename, O_RDONLY | O_BINARY);
+       18:  566:      if (fd < 0)
+        -:  567:	{
+    #####:  568:	  error (0, errno, _("cannot open %s for reading"), quote (filename));
+    #####:  569:	  return false;
+        -:  570:	}
+        -:  571:    }
+        -:  572:
+       53:  573:  file_size = lseek (fd, (off_t) 0, SEEK_END);
+        -:  574:
+       53:  575:  ok = (file_size < 0 || isatty (fd)
+        -:  576:	? tac_nonseekable (fd, filename)
+        -:  577:	: tac_seekable (fd, filename));
+        -:  578:
+       53:  579:  if (!is_stdin && close (fd) != 0)
+        -:  580:    {
+    #####:  581:      error (0, errno, _("%s: read error"), quotearg_colon (filename));
+    #####:  582:      ok = false;
+        -:  583:    }
+       53:  584:  return ok;
+        -:  585:}
+        -:  586:
+        -:  587:/**
+        -:  588: *  BackOtter: split main into two functions
+        -:  589: */
+        -:  590:int main2 (bool ok, char const *const *file);
+        -:  591:
+        -:  592:int
+        -:  593:main (int argc, char **argv)
+       59:  594:{
+        -:  595:  const char *error_message;	/* Return value from re_compile_pattern. */
+        -:  596:  int optc;
+        -:  597:  bool ok;
+        -:  598:  size_t half_buffer_size;
+        -:  599:
+        -:  600:  /* Initializer for file_list if no file-arguments
+        -:  601:     were specified on the command line.  */
+        -:  602:  static char const *const default_file_list[] = {"-", NULL};
+        -:  603:  char const *const *file;
+        -:  604:
+        -:  605:  initialize_main (&argc, &argv);
+       59:  606:  program_name = argv[0];
+       59:  607:  setlocale (LC_ALL, "");
+        -:  608:  bindtextdomain (PACKAGE, LOCALEDIR);
+        -:  609:  textdomain (PACKAGE);
+        -:  610:
+       59:  611:  atexit (close_stdout);
+        -:  612:
+       59:  613:  separator = "\n";
+       59:  614:  sentinel_length = 1;
+       59:  615:  separator_ends_record = true;
+        -:  616:
+      160:  617:  while ((optc = getopt_long (argc, argv, "brs:", longopts, NULL)) != -1)
+        -:  618:    {
+       48:  619:      switch (optc)
+        -:  620:	{
+        -:  621:	case 'b':
+       12:  622:	  separator_ends_record = false;
+       12:  623:	  break;
+        -:  624:	case 'r':
+       12:  625:	  sentinel_length = 0;
+       12:  626:	  break;
+        -:  627:	case 's':
+       18:  628:	  separator = optarg;
+       18:  629:	  if (*separator == 0)
+    #####:  630:	    error (EXIT_FAILURE, 0, _("separator cannot be empty"));
+       18:  631:	  break;
+        3:  632:	case_GETOPT_HELP_CHAR;
+        3:  633:	case_GETOPT_VERSION_CHAR (PROGRAM_NAME, AUTHORS);
+        -:  634:	default:
+    #####:  635:	  usage (EXIT_FAILURE);
+        -:  636:	}
+        -:  637:    }
+        -:  638:
+       53:  639:  if (sentinel_length == 0)
+        -:  640:    {
+       12:  641:      compiled_separator.buffer = NULL;
+       12:  642:      compiled_separator.allocated = 0;
+       12:  643:      compiled_separator.fastmap = compiled_separator_fastmap;
+       12:  644:      compiled_separator.translate = NULL;
+       12:  645:      error_message = re_compile_pattern (separator, strlen (separator),
+        -:  646:					  &compiled_separator);
+       12:  647:      if (error_message)
+    #####:  648:	error (EXIT_FAILURE, 0, "%s", error_message);
+        -:  649:    }
+        -:  650:  else
+       41:  651:    match_length = sentinel_length = strlen (separator);
+        -:  652:
+       53:  653:  read_size = INITIAL_READSIZE;
+      106:  654:  while (sentinel_length >= read_size / 2)
+        -:  655:    {
+    #####:  656:      if (SIZE_MAX / 2 < read_size)
+    #####:  657:	xalloc_die ();
+    #####:  658:      read_size *= 2;
+        -:  659:    }
+       53:  660:  half_buffer_size = read_size + sentinel_length + 1;
+       53:  661:  G_buffer_size = 2 * half_buffer_size;
+       53:  662:  if (! (read_size < half_buffer_size && half_buffer_size < G_buffer_size))
+    #####:  663:    xalloc_die ();
+       53:  664:  G_buffer = xmalloc (G_buffer_size);
+       53:  665:  if (sentinel_length)
+        -:  666:    {
+       41:  667:      strcpy (G_buffer, separator);
+       41:  668:      G_buffer += sentinel_length;
+        -:  669:    }
+        -:  670:  else
+        -:  671:    {
+       12:  672:      ++G_buffer;
+        -:  673:    }
+        -:  674:
+       53:  675:  file = (optind < argc
+        -:  676:	  ? (char const *const *) &argv[optind]
+        -:  677:	  : default_file_list);
+        -:  678:
+        -:  679:  if (O_BINARY && ! isatty (STDOUT_FILENO))
+        -:  680:    freopen (NULL, "wb", stdout);
+        -:  681:
+       53:  682:  return main2(ok, file);
+        -:  683:}
+        -:  684:
+        -:  685:int
+        -:  686:main2 (bool ok, char const *const *file)
+       53:  687:{
+        -:  688:#ifdef CIL
+        -:  689:  __backotter_disable_record_decisions();
+        -:  690:  if (__backotter_is_origin_function())
+        -:  691:      __otter_main_setup_fs();
+        -:  692:  __backotter_enable_record_decisions();
+        -:  693:#endif
+        -:  694:  {
+        -:  695:    size_t i;
+       53:  696:    ok = true;
+      106:  697:    for (i = 0; file[i]; ++i)
+       53:  698:      ok &= tac_file (file[i]);
+        -:  699:  }
+        -:  700:
+        -:  701:#ifndef CIL    // cannot reach target from this point
+        -:  702:  /* Flush the output buffer. */
+       53:  703:  output ((char *) NULL, (char *) NULL);
+        -:  704:
+       53:  705:  if (have_read_stdin && close (STDIN_FILENO) < 0)
+    #####:  706:    error (EXIT_FAILURE, errno, "-");
+       53:  707:  exit (ok ? EXIT_SUCCESS : EXIT_FAILURE);
+        -:  708:#endif
+        -:  709:}

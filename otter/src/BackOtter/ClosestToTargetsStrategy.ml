@@ -57,7 +57,7 @@ let get_distances =
                                 if all_targets = [] then
                                     max_int
                                 else
-                                    DistanceToTargets.find_in_context source context all_targets
+                                    DistanceToTargets.find_in_context ~interprocedural source context all_targets
                             in
                             InstructionListHash.add backotter_line_targets_hash backotter_line_targets distance;
                             distance

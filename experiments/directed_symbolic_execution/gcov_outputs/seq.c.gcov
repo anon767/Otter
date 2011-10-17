@@ -1,0 +1,449 @@
+        -:    0:Source:/fs/buzz/kkma/code/wc1/branches/DSE/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/../src/seq.c
+        -:    0:Graph:seq.gcno
+        -:    0:Data:seq.gcda
+        -:    0:Runs:75
+        -:    0:Programs:1
+        -:    1:/* seq - print sequence of numbers to standard output.
+        -:    2:   Copyright (C) 1994-2007 Free Software Foundation, Inc.
+        -:    3:
+        -:    4:   This program is free software: you can redistribute it and/or modify
+        -:    5:   it under the terms of the GNU General Public License as published by
+        -:    6:   the Free Software Foundation, either version 3 of the License, or
+        -:    7:   (at your option) any later version.
+        -:    8:
+        -:    9:   This program is distributed in the hope that it will be useful,
+        -:   10:   but WITHOUT ANY WARRANTY; without even the implied warranty of
+        -:   11:   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        -:   12:   GNU General Public License for more details.
+        -:   13:
+        -:   14:   You should have received a copy of the GNU General Public License
+        -:   15:   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+        -:   16:
+        -:   17:/* Written by Ulrich Drepper.  */
+        -:   18:
+        -:   19:#include <config.h>
+        -:   20:#include <getopt.h>
+        -:   21:#include <stdio.h>
+        -:   22:#include <sys/types.h>
+        -:   23:
+        -:   24:#include "system.h"
+        -:   25:#include "c-strtod.h"
+        -:   26:#include "error.h"
+        -:   27:#include "quote.h"
+        -:   28:#include "xstrtod.h"
+        -:   29:
+        -:   30:/* Roll our own isfinite rather than using <math.h>, so that we don't
+        -:   31:   have to worry about linking -lm just for isfinite.  */
+        -:   32:#ifndef isfinite
+        -:   33:# define isfinite(x) ((x) * 0 == 0)
+        -:   34:#endif
+        -:   35:
+        -:   36:/* The official name of this program (e.g., no `g' prefix).  */
+        -:   37:#define PROGRAM_NAME "seq"
+        -:   38:
+        -:   39:#define AUTHORS "Ulrich Drepper"
+        -:   40:
+        -:   41:/* If true print all number with equal width.  */
+        -:   42:static bool equal_width;
+        -:   43:
+        -:   44:/* The name that this program was run with.  */
+        -:   45:char *program_name;
+        -:   46:
+        -:   47:/* The string used to separate two numbers.  */
+        -:   48:static char const *separator;
+        -:   49:
+        -:   50:/* The string output after all numbers have been output.
+        -:   51:   Usually "\n" or "\0".  */
+        -:   52:/* FIXME: make this an option.  */
+        -:   53:static char const terminator[] = "\n";
+        -:   54:
+        -:   55:static struct option const long_options[] =
+        -:   56:{
+        -:   57:  { "equal-width", no_argument, NULL, 'w'},
+        -:   58:  { "format", required_argument, NULL, 'f'},
+        -:   59:  { "separator", required_argument, NULL, 's'},
+        -:   60:  {GETOPT_HELP_OPTION_DECL},
+        -:   61:  {GETOPT_VERSION_OPTION_DECL},
+        -:   62:  { NULL, 0, NULL, 0}
+        -:   63:};
+        -:   64:
+        -:   65:void
+        -:   66:usage (int status)
+        4:   67:{
+        4:   68:  if (status != EXIT_SUCCESS)
+        1:   69:    fprintf (stderr, _("Try `%s --help' for more information.\n"),
+        -:   70:	     program_name);
+        -:   71:  else
+        -:   72:    {
+        3:   73:      printf (_("\
+        -:   74:Usage: %s [OPTION]... LAST\n\
+        -:   75:  or:  %s [OPTION]... FIRST LAST\n\
+        -:   76:  or:  %s [OPTION]... FIRST INCREMENT LAST\n\
+        -:   77:"), program_name, program_name, program_name);
+        3:   78:      fputs (_("\
+        -:   79:Print numbers from FIRST to LAST, in steps of INCREMENT.\n\
+        -:   80:\n\
+        -:   81:  -f, --format=FORMAT      use printf style floating-point FORMAT\n\
+        -:   82:  -s, --separator=STRING   use STRING to separate numbers (default: \\n)\n\
+        -:   83:  -w, --equal-width        equalize width by padding with leading zeroes\n\
+        -:   84:"), stdout);
+        3:   85:      fputs (HELP_OPTION_DESCRIPTION, stdout);
+        3:   86:      fputs (VERSION_OPTION_DESCRIPTION, stdout);
+        3:   87:      fputs (_("\
+        -:   88:\n\
+        -:   89:If FIRST or INCREMENT is omitted, it defaults to 1.  That is, an\n\
+        -:   90:omitted INCREMENT defaults to 1 even when LAST is smaller than FIRST.\n\
+        -:   91:FIRST, INCREMENT, and LAST are interpreted as floating point values.\n\
+        -:   92:INCREMENT is usually positive if FIRST is smaller than LAST, and\n\
+        -:   93:INCREMENT is usually negative if FIRST is greater than LAST.\n\
+        -:   94:"), stdout);
+        3:   95:      fputs (_("\
+        -:   96:FORMAT must be suitable for printing one argument of type `double';\n\
+        -:   97:it defaults to %.PRECf if FIRST, INCREMENT, and LAST are all fixed point\n\
+        -:   98:decimal numbers with maximum precision PREC, and to %g otherwise.\n\
+        -:   99:"), stdout);
+        3:  100:      emit_bug_reporting_address ();
+        -:  101:    }
+        4:  102:  exit (status);
+        -:  103:}
+        -:  104:
+        -:  105:/* A command-line operand.  */
+        -:  106:struct operand
+        -:  107:{
+        -:  108:  /* Its value, converted to 'long double'.  */
+        -:  109:  long double value;
+        -:  110:
+        -:  111:  /* Its print width, if it were printed out in a form similar to its
+        -:  112:     input form.  An input like "-.1" is treated like "-0.1", and an
+        -:  113:     input like "1." is treated like "1", but otherwise widths are
+        -:  114:     left alone.  */
+        -:  115:  size_t width;
+        -:  116:
+        -:  117:  /* Number of digits after the decimal point, or INT_MAX if the
+        -:  118:     number can't easily be expressed as a fixed-point number.  */
+        -:  119:  int precision;
+        -:  120:};
+        -:  121:typedef struct operand operand;
+        -:  122:
+        -:  123:/* Description of what a number-generating format will generate.  */
+        -:  124:struct layout
+        -:  125:{
+        -:  126:  /* Number of bytes before and after the number.  */
+        -:  127:  size_t prefix_len;
+        -:  128:  size_t suffix_len;
+        -:  129:};
+        -:  130:
+        -:  131:/* Read a long double value from the command line.
+        -:  132:   Return if the string is correct else signal error.  */
+        -:  133:
+        -:  134:static operand
+        -:  135:scan_arg (const char *arg)
+      133:  136:{
+        -:  137:  operand ret;
+        -:  138:
+      133:  139:  if (! xstrtold (arg, NULL, &ret.value, c_strtold))
+        -:  140:    {
+    #####:  141:      error (0, 0, _("invalid floating point argument: %s"), arg);
+    #####:  142:      usage (EXIT_FAILURE);
+        -:  143:    }
+        -:  144:
+        -:  145:  /* We don't output spaces or '+' so don't include in width */
+      269:  146:  while (isspace (*arg) || *arg == '+')
+        3:  147:    arg++;
+        -:  148:
+      133:  149:  ret.width = strlen (arg);
+      133:  150:  ret.precision = INT_MAX;
+        -:  151:
+      133:  152:  if (! arg[strcspn (arg, "xX")] && isfinite (ret.value))
+        -:  153:    {
+      133:  154:      char const *decimal_point = strchr (arg, '.');
+      133:  155:      if (! decimal_point)
+       97:  156:	ret.precision = 0;
+        -:  157:      else
+        -:  158:	{
+       36:  159:	  size_t fraction_len = strcspn (decimal_point + 1, "eE");
+       36:  160:	  if (fraction_len <= INT_MAX)
+       36:  161:	    ret.precision = fraction_len;
+       36:  162:	  ret.width += (fraction_len == 0                      /* #.  -> #   */
+        -:  163:			? -1
+        -:  164:			: (decimal_point == arg                /* .#  -> 0.# */
+        -:  165:			   || ! ISDIGIT (decimal_point[-1]))); /* -.# -> 0.# */
+        -:  166:	}
+      133:  167:      char const *e = strchr (arg, 'e');
+      133:  168:      if (! e)
+      129:  169:	e = strchr (arg, 'E');
+      133:  170:      if (e)
+        -:  171:	{
+        4:  172:	  long exponent = strtol (e + 1, NULL, 10);
+        4:  173:	  ret.precision += exponent < 0 ? -exponent : 0;
+        -:  174:	}
+        -:  175:    }
+        -:  176:
+      133:  177:  return ret;
+        -:  178:}
+        -:  179:
+        -:  180:/* If FORMAT is a valid printf format for a double argument, return
+        -:  181:   its long double equivalent, possibly allocated from dynamic
+        -:  182:   storage, and store into *LAYOUT a description of the output layout;
+        -:  183:   otherwise, return NULL.  */
+        -:  184:
+        -:  185:static char const *
+        -:  186:long_double_format (char const *fmt, struct layout *layout)
+       12:  187:{
+        -:  188:  size_t i;
+       12:  189:  size_t prefix_len = 0;
+       12:  190:  size_t suffix_len = 0;
+        -:  191:  size_t length_modifier_offset;
+        -:  192:  bool has_L;
+        -:  193:
+       17:  194:  for (i = 0; ! (fmt[i] == '%' && fmt[i + 1] != '%'); i += (fmt[i] == '%') + 1)
+        4:  195:    if (fmt[i])
+        3:  196:      prefix_len++;
+        -:  197:    else
+        1:  198:      return NULL;
+        -:  199:
+       11:  200:  i++;
+       11:  201:  i += strspn (fmt + i, "-+#0 '");
+       11:  202:  i += strspn (fmt + i, "0123456789");
+       11:  203:  if (fmt[i] == '.')
+        -:  204:    {
+       10:  205:      i++;
+       10:  206:      i += strspn (fmt + i, "0123456789");
+        -:  207:    }
+        -:  208:
+       11:  209:  length_modifier_offset = i;
+       11:  210:  has_L = (fmt[i] == 'L');
+       11:  211:  i += has_L;
+       11:  212:  if (! strchr ("efgaEFGA", fmt[i]))
+    #####:  213:    return NULL;
+        -:  214:
+       13:  215:  for (i++; ! (fmt[i] == '%' && fmt[i + 1] != '%'); i += (fmt[i] == '%') + 1)
+       12:  216:    if (fmt[i])
+        1:  217:      suffix_len++;
+        -:  218:    else
+        -:  219:      {
+       11:  220:	size_t format_size = i + 1;
+       11:  221:	char *ldfmt = xmalloc (format_size + 1);
+       11:  222:	memcpy (ldfmt, fmt, length_modifier_offset);
+       11:  223:	ldfmt[length_modifier_offset] = 'L';
+       11:  224:	strcpy (ldfmt + length_modifier_offset + 1,
+        -:  225:		fmt + length_modifier_offset + has_L);
+       11:  226:	layout->prefix_len = prefix_len;
+       11:  227:	layout->suffix_len = suffix_len;
+       11:  228:	return ldfmt;
+        -:  229:      }
+        -:  230:
+    #####:  231:  return NULL;
+        -:  232:}
+        -:  233:
+        -:  234:/* Actually print the sequence of numbers in the specified range, with the
+        -:  235:   given or default stepping and format.  */
+        -:  236:
+        -:  237:static void
+        -:  238:print_numbers (char const *fmt, struct layout layout,
+        -:  239:	       long double first, long double step, long double last)
+       68:  240:{
+       68:  241:  bool out_of_range = (step < 0 ? first < last : last < first);
+        -:  242:
+       68:  243:  if (! out_of_range)
+        -:  244:    {
+       65:  245:      long double x = first;
+        -:  246:      long double i;
+        -:  247:
+    10052:  248:      for (i = 1; ; i++)
+        -:  249:	{
+    10052:  250:	  long double x0 = x;
+    10052:  251:	  printf (fmt, x);
+    10052:  252:	  if (out_of_range)
+        4:  253:	    break;
+    10048:  254:	  x = first + i * step;
+    10048:  255:	  out_of_range = (step < 0 ? x < last : last < x);
+        -:  256:
+    10048:  257:	  if (out_of_range)
+        -:  258:	    {
+        -:  259:	      /* If the number just past LAST prints as a value equal
+        -:  260:		 to LAST, and prints differently from the previous
+        -:  261:		 number, then print the number.  This avoids problems
+        -:  262:		 with rounding.  For example, with the x86 it causes
+        -:  263:		 "seq 0 0.000001 0.000003" to print 0.000003 instead
+        -:  264:		 of stopping at 0.000002.  */
+        -:  265:
+       65:  266:	      bool print_extra_number = false;
+        -:  267:	      long double x_val;
+        -:  268:	      char *x_str;
+       65:  269:	      int x_strlen = asprintf (&x_str, fmt, x);
+       65:  270:	      if (x_strlen < 0)
+    #####:  271:		xalloc_die ();
+       65:  272:	      x_str[x_strlen - layout.suffix_len] = '\0';
+        -:  273:
+       65:  274:	      if (xstrtold (x_str + layout.prefix_len, NULL, &x_val, c_strtold)
+        -:  275:		  && x_val == last)
+        -:  276:		{
+        4:  277:		  char *x0_str = NULL;
+        4:  278:		  if (asprintf (&x0_str, fmt, x0) < 0)
+    #####:  279:		    xalloc_die ();
+        4:  280:		  print_extra_number = !STREQ (x0_str, x_str);
+        4:  281:		  free (x0_str);
+        -:  282:		}
+        -:  283:
+       65:  284:	      free (x_str);
+       65:  285:	      if (! print_extra_number)
+       61:  286:		break;
+        -:  287:	    }
+        -:  288:
+     9987:  289:	  fputs (separator, stdout);
+     9987:  290:	}
+        -:  291:
+       65:  292:      fputs (terminator, stdout);
+        -:  293:    }
+       68:  294:}
+        -:  295:
+        -:  296:/* Return the default format given FIRST, STEP, and LAST.  */
+        -:  297:static char const *
+        -:  298:get_default_format (operand first, operand step, operand last)
+       57:  299:{
+        -:  300:  static char format_buf[sizeof "%0.Lf" + 2 * INT_STRLEN_BOUND (int)];
+        -:  301:
+       57:  302:  int prec = MAX (first.precision, step.precision);
+        -:  303:
+       57:  304:  if (prec != INT_MAX && last.precision != INT_MAX)
+        -:  305:    {
+       57:  306:      if (equal_width)
+        -:  307:	{
+        -:  308:	  /* increase first_width by any increased precision in step */
+        8:  309:	  size_t first_width = first.width + (prec - first.precision);
+        -:  310:	  /* adjust last_width to use precision from first/step */
+        8:  311:	  size_t last_width = last.width + (prec - last.precision);
+        8:  312:	  if (last.precision && prec == 0)
+        1:  313:	    last_width--;  /* don't include space for '.' */
+        8:  314:	  size_t width = MAX (first_width, last_width);
+        8:  315:	  if (width <= INT_MAX)
+        -:  316:	    {
+        8:  317:	      int w = width;
+        8:  318:	      sprintf (format_buf, "%%0%d.%dLf", w, prec);
+        8:  319:	      return format_buf;
+        -:  320:	    }
+        -:  321:	}
+        -:  322:      else
+        -:  323:	{
+       49:  324:	  sprintf (format_buf, "%%.%dLf", prec);
+       49:  325:	  return format_buf;
+        -:  326:	}
+        -:  327:    }
+        -:  328:
+    #####:  329:  return "%Lg";
+        -:  330:}
+        -:  331:
+        -:  332:int
+        -:  333:main (int argc, char **argv)
+       75:  334:{
+        -:  335:  int optc;
+       75:  336:  operand first = { 1, 1, 0 };
+       75:  337:  operand step = { 1, 1, 0 };
+        -:  338:  operand last;
+       75:  339:  struct layout layout = { 0, 0 };
+        -:  340:
+        -:  341:  /* The printf(3) format used for output.  */
+       75:  342:  char const *format_str = NULL;
+        -:  343:
+        -:  344:  initialize_main (&argc, &argv);
+       75:  345:  program_name = argv[0];
+       75:  346:  setlocale (LC_ALL, "");
+        -:  347:  bindtextdomain (PACKAGE, LOCALEDIR);
+        -:  348:  textdomain (PACKAGE);
+        -:  349:
+       75:  350:  atexit (close_stdout);
+        -:  351:
+       75:  352:  equal_width = false;
+       75:  353:  separator = "\n";
+        -:  354:
+        -:  355:  /* We have to handle negative numbers in the command line but this
+        -:  356:     conflicts with the command line arguments.  So explicitly check first
+        -:  357:     whether the next argument looks like a negative number.  */
+      170:  358:  while (optind < argc)
+        -:  359:    {
+       95:  360:      if (argv[optind][0] == '-'
+        -:  361:	  && ((optc = argv[optind][1]) == '.' || ISDIGIT (optc)))
+        -:  362:	{
+        -:  363:	  /* means negative number */
+        -:  364:	  break;
+        -:  365:	}
+        -:  366:
+       90:  367:      optc = getopt_long (argc, argv, "+f:s:w", long_options, NULL);
+       90:  368:      if (optc == -1)
+       64:  369:	break;
+        -:  370:
+       26:  371:      switch (optc)
+        -:  372:	{
+        -:  373:	case 'f':
+       12:  374:	  format_str = optarg;
+       12:  375:	  break;
+        -:  376:
+        -:  377:	case 's':
+    #####:  378:	  separator = optarg;
+    #####:  379:	  break;
+        -:  380:
+        -:  381:	case 'w':
+        8:  382:	  equal_width = true;
+        8:  383:	  break;
+        -:  384:
+        3:  385:	case_GETOPT_HELP_CHAR;
+        -:  386:
+        3:  387:	case_GETOPT_VERSION_CHAR (PROGRAM_NAME, AUTHORS);
+        -:  388:
+        -:  389:	default:
+    #####:  390:	  usage (EXIT_FAILURE);
+        -:  391:	}
+        -:  392:    }
+        -:  393:
+       69:  394:  if (argc - optind < 1)
+        -:  395:    {
+    #####:  396:      error (0, 0, _("missing operand"));
+    #####:  397:      usage (EXIT_FAILURE);
+        -:  398:    }
+        -:  399:
+       69:  400:  if (3 < argc - optind)
+        -:  401:    {
+    #####:  402:      error (0, 0, _("extra operand %s"), quote (argv[optind + 3]));
+    #####:  403:      usage (EXIT_FAILURE);
+        -:  404:    }
+        -:  405:
+       69:  406:  if (format_str)
+        -:  407:    {
+       12:  408:      char const *f = long_double_format (format_str, &layout);
+       12:  409:      if (! f)
+        -:  410:	{
+        1:  411:	  error (0, 0, _("invalid format string: %s"), quote (format_str));
+        1:  412:	  usage (EXIT_FAILURE);
+        -:  413:	}
+       11:  414:      format_str = f;
+        -:  415:    }
+        -:  416:
+       68:  417:  last = scan_arg (argv[optind++]);
+        -:  418:
+       68:  419:  if (optind < argc)
+        -:  420:    {
+       46:  421:      first = last;
+       46:  422:      last = scan_arg (argv[optind++]);
+        -:  423:
+       46:  424:      if (optind < argc)
+        -:  425:	{
+       19:  426:	  step = last;
+       19:  427:	  last = scan_arg (argv[optind++]);
+        -:  428:	}
+        -:  429:    }
+        -:  430:
+       68:  431:  if (format_str != NULL && equal_width)
+        -:  432:    {
+    #####:  433:      error (0, 0, _("\
+        -:  434:format string may not be specified when printing equal width strings"));
+    #####:  435:      usage (EXIT_FAILURE);
+        -:  436:    }
+        -:  437:
+       68:  438:  if (format_str == NULL)
+       57:  439:    format_str = get_default_format (first, step, last);
+        -:  440:
+       68:  441:  print_numbers (format_str, layout, first.value, step.value, last.value);
+        -:  442:
+       68:  443:  exit (EXIT_SUCCESS);
+        -:  444:}

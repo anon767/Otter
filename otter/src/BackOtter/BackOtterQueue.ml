@@ -3,50 +3,48 @@ open OcamlUtilities
 (* Forward *)
 type queues = [
     | `BackOtterClosestToTargets
-    | `BackOtterRoundRobinClosestToTargets
-    | `BackOtterProbabilisticClosestToTargets
     | `BackOtterClosestToTargetsIntraprocedural
     | `BackOtterClosestToTargetsPathWeighted
-    | `SDSERP
-    | `RandomPathPruneUnreachable
+    | `BackOtterRoundRobinSDSERandomPath
+    | `BackOtterRandomPathReachable
+    | `BackOtterBatchInterSDSE
+    | `BackOtterBatchInterSDSE_rr
+    | `BackOtterInterSDSE_rr
+    | `BackOtterInterSDSE_pr
     | OtterQueue.Queue.queues
     (* Aliases of strategy names used in the DSE paper *)
     | `BackOtterIntraSDSE  (* Same as `BackOtterClosestToTargetsIntraprocedural *)
     | `BackOtterInterSDSE  (* Same as `BackOtterClosestToTargets *)
-    | `BackOtterInterSDSE_rr  (* Same as `BackOtterRoundRobinClosestToTargets *)
-    | `BackOtterInterSDSE_pr  (* Same as `BackOtterProbabilisticClosestToTargets *)
 ]
 
 let queues : (string * queues) list = [
     "backotter-closest-to-targets", `BackOtterClosestToTargets;
-    "backotter-round-robin-closest-to-targets", `BackOtterRoundRobinClosestToTargets;
-    "backotter-probabilistic-closest-to-targets", `BackOtterProbabilisticClosestToTargets;
     "backotter-closest-to-targets-intraprocedural", `BackOtterClosestToTargetsIntraprocedural;
     "backotter-closest-to-targets-path-weighted", `BackOtterClosestToTargetsPathWeighted;
-    "SDSE-RP", `SDSERP;
-    "random-path-prune-unreachable", `RandomPathPruneUnreachable;
+    "backotter-roundrobin-SDSE-RandomPath", `BackOtterRoundRobinSDSERandomPath;
+    "backotter-RandomPath-reachable", `BackOtterRandomPathReachable;
     (* Aliases of strategy names used in the DSE paper *)
     "backotter-IntraSDSE", `BackOtterIntraSDSE;
     "backotter-InterSDSE", `BackOtterInterSDSE;
-    "backotter-InterSDSE-round-robin", `BackOtterInterSDSE_rr;
+    "backotter-InterSDSE-roundrobin", `BackOtterInterSDSE_rr;
     "backotter-InterSDSE-probabilistic", `BackOtterInterSDSE_pr;
+    "backotter-batch-InterSDSE", `BackOtterBatchInterSDSE;
+    "backotter-batch-InterSDSE-roundrobin", `BackOtterBatchInterSDSE_rr;
 ] @ (OtterQueue.Queue.queues :> (string * queues) list)
 
 (* BackOtter's ClosestToTargetsStrategy is different from that in OtterQueue *)
 let rec get = function
     | `BackOtterClosestToTargets -> new OtterQueue.RankedQueue.t [ new ClosestToTargetsStrategy.t OtterQueue.ClosestToTargetsStrategy.inversely_proportional]
-    | `BackOtterRoundRobinClosestToTargets -> new OtterQueue.RankedQueue.t [ new RoundRobinClosestToTargetsStrategy.t OtterQueue.ClosestToTargetsStrategy.inversely_proportional]
-    | `BackOtterProbabilisticClosestToTargets -> new OtterQueue.RankedQueue.t [ new OtterQueue.WeightedRandomStrategy.t (new ClosestToTargetsStrategy.t OtterQueue.ClosestToTargetsStrategy.inversely_proportional) ]
-    | `BackOtterClosestToTargetsIntraprocedural -> new OtterQueue.RankedQueue.t [ new ClosestToTargetsStrategy.t ~interprocedural:true OtterQueue.ClosestToTargetsStrategy.inversely_proportional]
+    | `BackOtterClosestToTargetsIntraprocedural -> new OtterQueue.RankedQueue.t [ new ClosestToTargetsStrategy.t ~interprocedural:false OtterQueue.ClosestToTargetsStrategy.inversely_proportional]
     | `BackOtterClosestToTargetsPathWeighted -> new OtterQueue.RankedQueue.t [ new ClosestToTargetsStrategy.t OtterQueue.ClosestToTargetsStrategy.quantized; new OtterQueue.WeightedRandomStrategy.t (new OtterQueue.PathWeightedStrategy.t) ]
-    | `SDSERP -> new OtterQueue.RoundRobinQueue.t [ get `RandomPath; get `BackOtterClosestToTargets]
-    | `RandomPathPruneUnreachable -> new OtterQueue.RandomPathQueue.t (fun job -> ClosestToTargetsStrategy.weight (fun d->d) job < max_int)
-    (* Aliases of strategy names used in the DSE paper *)
+    | `BackOtterRoundRobinSDSERandomPath -> new OtterQueue.BatchQueue.t (new OtterQueue.RoundRobinQueue.t [ get `BackOtterInterSDSE_rr; get `PathWeighted ])
+    | `BackOtterRandomPathReachable -> new OtterQueue.RandomPathQueue.t (fun job -> ClosestToTargetsStrategy.weight (fun d->d) job < max_int)
     | `BackOtterIntraSDSE  -> get `BackOtterClosestToTargetsIntraprocedural
     | `BackOtterInterSDSE  -> get `BackOtterClosestToTargets
-    | `BackOtterInterSDSE_rr  -> get `BackOtterRoundRobinClosestToTargets
-    | `BackOtterInterSDSE_pr  -> get `BackOtterProbabilisticClosestToTargets
-
+    | `BackOtterInterSDSE_rr  -> new OtterQueue.RankedQueue.t [ new RoundRobinClosestToTargetsStrategy.t OtterQueue.ClosestToTargetsStrategy.inversely_proportional]
+    | `BackOtterInterSDSE_pr  -> new OtterQueue.RankedQueue.t [ new OtterQueue.WeightedRandomStrategy.t (new ClosestToTargetsStrategy.t OtterQueue.ClosestToTargetsStrategy.inversely_proportional) ]
+    | `BackOtterBatchInterSDSE  -> new OtterQueue.BatchQueue.t (get `BackOtterInterSDSE)
+    | `BackOtterBatchInterSDSE_rr  -> new OtterQueue.BatchQueue.t (get `BackOtterInterSDSE_rr)
     | #OtterQueue.Queue.queues as queue -> OtterQueue.Queue.get queue
 
 let default_fqueue = ref (`Generational `BreadthFirst)

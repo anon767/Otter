@@ -1,0 +1,725 @@
+        -:    0:Source:/fs/buzz/kkma/code/wc1/branches/DSE/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/../src/md5sum.c
+        -:    0:Graph:md5sum-md5sum.gcno
+        -:    0:Data:md5sum-md5sum.gcda
+        -:    0:Runs:21
+        -:    0:Programs:1
+        -:    1:/* Compute MD5, SHA1, SHA224, SHA256, SHA384 or SHA512 checksum of files or strings
+        -:    2:   Copyright (C) 1995-2007 Free Software Foundation, Inc.
+        -:    3:
+        -:    4:   This program is free software: you can redistribute it and/or modify
+        -:    5:   it under the terms of the GNU General Public License as published by
+        -:    6:   the Free Software Foundation, either version 3 of the License, or
+        -:    7:   (at your option) any later version.
+        -:    8:
+        -:    9:   This program is distributed in the hope that it will be useful,
+        -:   10:   but WITHOUT ANY WARRANTY; without even the implied warranty of
+        -:   11:   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        -:   12:   GNU General Public License for more details.
+        -:   13:
+        -:   14:   You should have received a copy of the GNU General Public License
+        -:   15:   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+        -:   16:
+        -:   17:/* Written by Ulrich Drepper <drepper@gnu.ai.mit.edu>.  */
+        -:   18:
+        -:   19:#include <config.h>
+        -:   20:
+        -:   21:#include <getopt.h>
+        -:   22:#include <sys/types.h>
+        -:   23:
+        -:   24:#include "system.h"
+        -:   25:
+        -:   26:#if HASH_ALGO_MD5
+        -:   27:# include "md5.h"
+        -:   28:#endif
+        -:   29:#if HASH_ALGO_SHA1
+        -:   30:# include "sha1.h"
+        -:   31:#endif
+        -:   32:#if HASH_ALGO_SHA256 || HASH_ALGO_SHA224
+        -:   33:# include "sha256.h"
+        -:   34:#endif
+        -:   35:#if HASH_ALGO_SHA512 || HASH_ALGO_SHA384
+        -:   36:# include "sha512.h"
+        -:   37:#endif
+        -:   38:#include "error.h"
+        -:   39:#include "stdio--.h"
+        -:   40:
+        -:   41:/* The official name of this program (e.g., no `g' prefix).  */
+        -:   42:#if HASH_ALGO_MD5
+        -:   43:# define PROGRAM_NAME "md5sum"
+        -:   44:# define DIGEST_TYPE_STRING "MD5"
+        -:   45:# define DIGEST_STREAM md5_stream
+        -:   46:# define DIGEST_BITS 128
+        -:   47:# define DIGEST_REFERENCE "RFC 1321"
+        -:   48:# define DIGEST_ALIGN 4
+        -:   49:#elif HASH_ALGO_SHA1
+        -:   50:# define PROGRAM_NAME "sha1sum"
+        -:   51:# define DIGEST_TYPE_STRING "SHA1"
+        -:   52:# define DIGEST_STREAM sha1_stream
+        -:   53:# define DIGEST_BITS 160
+        -:   54:# define DIGEST_REFERENCE "FIPS-180-1"
+        -:   55:# define DIGEST_ALIGN 4
+        -:   56:#elif HASH_ALGO_SHA256
+        -:   57:# define PROGRAM_NAME "sha256sum"
+        -:   58:# define DIGEST_TYPE_STRING "SHA256"
+        -:   59:# define DIGEST_STREAM sha256_stream
+        -:   60:# define DIGEST_BITS 256
+        -:   61:# define DIGEST_REFERENCE "FIPS-180-2"
+        -:   62:# define DIGEST_ALIGN 4
+        -:   63:#elif HASH_ALGO_SHA224
+        -:   64:# define PROGRAM_NAME "sha224sum"
+        -:   65:# define DIGEST_TYPE_STRING "SHA224"
+        -:   66:# define DIGEST_STREAM sha224_stream
+        -:   67:# define DIGEST_BITS 224
+        -:   68:# define DIGEST_REFERENCE "RFC 3874"
+        -:   69:# define DIGEST_ALIGN 4
+        -:   70:#elif HASH_ALGO_SHA512
+        -:   71:# define PROGRAM_NAME "sha512sum"
+        -:   72:# define DIGEST_TYPE_STRING "SHA512"
+        -:   73:# define DIGEST_STREAM sha512_stream
+        -:   74:# define DIGEST_BITS 512
+        -:   75:# define DIGEST_REFERENCE "FIPS-180-2"
+        -:   76:# define DIGEST_ALIGN 8
+        -:   77:#elif HASH_ALGO_SHA384
+        -:   78:# define PROGRAM_NAME "sha384sum"
+        -:   79:# define DIGEST_TYPE_STRING "SHA384"
+        -:   80:# define DIGEST_STREAM sha384_stream
+        -:   81:# define DIGEST_BITS 384
+        -:   82:# define DIGEST_REFERENCE "FIPS-180-2"
+        -:   83:# define DIGEST_ALIGN 8
+        -:   84:#else
+        -:   85:# error "Can't decide which hash algorithm to compile."
+        -:   86:#endif
+        -:   87:
+        -:   88:#define DIGEST_HEX_BYTES (DIGEST_BITS / 4)
+        -:   89:#define DIGEST_BIN_BYTES (DIGEST_BITS / 8)
+        -:   90:
+        -:   91:#define AUTHORS "Ulrich Drepper", "Scott Miller", "David Madore"
+        -:   92:
+        -:   93:/* The minimum length of a valid digest line.  This length does
+        -:   94:   not include any newline character at the end of a line.  */
+        -:   95:#define MIN_DIGEST_LINE_LENGTH \
+        -:   96:  (DIGEST_HEX_BYTES /* length of hexadecimal message digest */ \
+        -:   97:   + 2 /* blank and binary indicator */ \
+        -:   98:   + 1 /* minimum filename length */ )
+        -:   99:
+        -:  100:/* True if any of the files read were the standard input. */
+        -:  101:static bool have_read_stdin;
+        -:  102:
+        -:  103:/* The minimum length of a valid checksum line for the selected algorithm.  */
+        -:  104:static size_t min_digest_line_length;
+        -:  105:
+        -:  106:/* Set to the length of a digest hex string for the selected algorithm.  */
+        -:  107:static size_t digest_hex_bytes;
+        -:  108:
+        -:  109:/* With --check, don't generate any output.
+        -:  110:   The exit code indicates success or failure.  */
+        -:  111:static bool status_only = false;
+        -:  112:
+        -:  113:/* With --check, print a message to standard error warning about each
+        -:  114:   improperly formatted checksum line.  */
+        -:  115:static bool warn = false;
+        -:  116:
+        -:  117:/* The name this program was run with.  */
+        -:  118:char *program_name;
+        -:  119:
+        -:  120:/* For long options that have no equivalent short option, use a
+        -:  121:   non-character as a pseudo short option, starting with CHAR_MAX + 1.  */
+        -:  122:enum
+        -:  123:{
+        -:  124:  STATUS_OPTION = CHAR_MAX + 1
+        -:  125:};
+        -:  126:
+        -:  127:static const struct option long_options[] =
+        -:  128:{
+        -:  129:  { "binary", no_argument, NULL, 'b' },
+        -:  130:  { "check", no_argument, NULL, 'c' },
+        -:  131:  { "status", no_argument, NULL, STATUS_OPTION },
+        -:  132:  { "text", no_argument, NULL, 't' },
+        -:  133:  { "warn", no_argument, NULL, 'w' },
+        -:  134:  { GETOPT_HELP_OPTION_DECL },
+        -:  135:  { GETOPT_VERSION_OPTION_DECL },
+        -:  136:  { NULL, 0, NULL, 0 }
+        -:  137:};
+        -:  138:
+        -:  139:void
+        -:  140:usage (int status)
+        3:  141:{
+        3:  142:  if (status != EXIT_SUCCESS)
+    #####:  143:    fprintf (stderr, _("Try `%s --help' for more information.\n"),
+        -:  144:	     program_name);
+        -:  145:  else
+        -:  146:    {
+        3:  147:      printf (_("\
+        -:  148:Usage: %s [OPTION] [FILE]...\n\
+        -:  149:Print or check %s (%d-bit) checksums.\n\
+        -:  150:With no FILE, or when FILE is -, read standard input.\n\
+        -:  151:\n\
+        -:  152:"),
+        -:  153:	      program_name,
+        -:  154:	      DIGEST_TYPE_STRING,
+        -:  155:	      DIGEST_BITS);
+        -:  156:      if (O_BINARY)
+        -:  157:	fputs (_("\
+        -:  158:  -b, --binary            read in binary mode (default unless reading tty stdin)\n\
+        -:  159:"), stdout);
+        -:  160:      else
+        3:  161:	fputs (_("\
+        -:  162:  -b, --binary            read in binary mode\n\
+        -:  163:"), stdout);
+        3:  164:      printf (_("\
+        -:  165:  -c, --check             read %s sums from the FILEs and check them\n"),
+        -:  166:	      DIGEST_TYPE_STRING);
+        -:  167:      if (O_BINARY)
+        -:  168:	fputs (_("\
+        -:  169:  -t, --text              read in text mode (default if reading tty stdin)\n\
+        -:  170:"), stdout);
+        -:  171:      else
+        3:  172:	fputs (_("\
+        -:  173:  -t, --text              read in text mode (default)\n\
+        -:  174:"), stdout);
+        3:  175:      fputs (_("\
+        -:  176:\n\
+        -:  177:The following two options are useful only when verifying checksums:\n\
+        -:  178:      --status            don't output anything, status code shows success\n\
+        -:  179:  -w, --warn              warn about improperly formatted checksum lines\n\
+        -:  180:\n\
+        -:  181:"), stdout);
+        3:  182:      fputs (HELP_OPTION_DESCRIPTION, stdout);
+        3:  183:      fputs (VERSION_OPTION_DESCRIPTION, stdout);
+        3:  184:      printf (_("\
+        -:  185:\n\
+        -:  186:The sums are computed as described in %s.  When checking, the input\n\
+        -:  187:should be a former output of this program.  The default mode is to print\n\
+        -:  188:a line with checksum, a character indicating type (`*' for binary, ` ' for\n\
+        -:  189:text), and name for each FILE.\n"),
+        -:  190:	      DIGEST_REFERENCE);
+        3:  191:      emit_bug_reporting_address ();
+        -:  192:    }
+        -:  193:
+        3:  194:  exit (status);
+        -:  195:}
+        -:  196:
+        -:  197:#define ISWHITE(c) ((c) == ' ' || (c) == '\t')
+        -:  198:
+        -:  199:/* Split the checksum string S (of length S_LEN) from a BSD 'md5' or
+        -:  200:   'sha1' command into two parts: a hexadecimal digest, and the file
+        -:  201:   name.  S is modified.  Return true if successful.  */
+        -:  202:
+        -:  203:static bool
+        -:  204:bsd_split_3 (char *s, size_t s_len, unsigned char **hex_digest, char **file_name)
+        2:  205:{
+        -:  206:  size_t i;
+        -:  207:
+        2:  208:  *file_name = s;
+        -:  209:
+        -:  210:  /* Find end of filename. The BSD 'md5' and 'sha1' commands do not escape
+        -:  211:     filenames, so search backwards for the last ')'. */
+        2:  212:  i = s_len - 1;
+       74:  213:  while (i && s[i] != ')')
+       70:  214:    i--;
+        -:  215:
+        2:  216:  if (s[i] != ')')
+    #####:  217:    return false;
+        -:  218:
+        2:  219:  s[i++] = '\0';
+        -:  220:
+        6:  221:  while (ISWHITE (s[i]))
+        2:  222:    i++;
+        -:  223:
+        2:  224:  if (s[i] != '=')
+    #####:  225:    return false;
+        -:  226:
+        2:  227:  i++;
+        -:  228:
+        6:  229:  while (ISWHITE (s[i]))
+        2:  230:    i++;
+        -:  231:
+        2:  232:  *hex_digest = (unsigned char *) &s[i];
+        2:  233:  return true;
+        -:  234:}
+        -:  235:
+        -:  236:/* Split the string S (of length S_LEN) into three parts:
+        -:  237:   a hexadecimal digest, binary flag, and the file name.
+        -:  238:   S is modified.  Return true if successful.  */
+        -:  239:
+        -:  240:static bool
+        -:  241:split_3 (char *s, size_t s_len,
+        -:  242:	 unsigned char **hex_digest, int *binary, char **file_name)
+        5:  243:{
+        -:  244:  size_t i;
+        5:  245:  bool escaped_filename = false;
+        -:  246:  size_t algo_name_len;
+        -:  247:
+        5:  248:  i = 0;
+       10:  249:  while (ISWHITE (s[i]))
+    #####:  250:    ++i;
+        -:  251:
+        -:  252:  /* Check for BSD-style checksum line. */
+        5:  253:  algo_name_len = strlen (DIGEST_TYPE_STRING);
+        5:  254:  if (strncmp (s + i, DIGEST_TYPE_STRING, algo_name_len) == 0)
+        -:  255:    {
+        2:  256:      if (strncmp (s + i + algo_name_len, " (", 2) == 0)
+        -:  257:	{
+        2:  258:	  *binary = 0;
+        2:  259:	  return bsd_split_3 (s +      i + algo_name_len + 2,
+        -:  260:			      s_len - (i + algo_name_len + 2),
+        -:  261:			      hex_digest, file_name);
+        -:  262:	}
+        -:  263:    }
+        -:  264:
+        -:  265:  /* Ignore this line if it is too short.
+        -:  266:     Each line must have at least `min_digest_line_length - 1' (or one more, if
+        -:  267:     the first is a backslash) more characters to contain correct message digest
+        -:  268:     information.  */
+        3:  269:  if (s_len - i < min_digest_line_length + (s[i] == '\\'))
+    #####:  270:    return false;
+        -:  271:
+        3:  272:  if (s[i] == '\\')
+        -:  273:    {
+    #####:  274:      ++i;
+    #####:  275:      escaped_filename = true;
+        -:  276:    }
+        3:  277:  *hex_digest = (unsigned char *) &s[i];
+        -:  278:
+        -:  279:  /* The first field has to be the n-character hexadecimal
+        -:  280:     representation of the message digest.  If it is not followed
+        -:  281:     immediately by a white space it's an error.  */
+        3:  282:  i += digest_hex_bytes;
+        3:  283:  if (!ISWHITE (s[i]))
+        1:  284:    return false;
+        -:  285:
+        2:  286:  s[i++] = '\0';
+        -:  287:
+        2:  288:  if (s[i] != ' ' && s[i] != '*')
+    #####:  289:    return false;
+        2:  290:  *binary = (s[i++] == '*');
+        -:  291:
+        -:  292:  /* All characters between the type indicator and end of line are
+        -:  293:     significant -- that includes leading and trailing white space.  */
+        2:  294:  *file_name = &s[i];
+        -:  295:
+        2:  296:  if (escaped_filename)
+        -:  297:    {
+        -:  298:      /* Translate each `\n' string in the file name to a NEWLINE,
+        -:  299:	 and each `\\' string to a backslash.  */
+        -:  300:
+    #####:  301:      char *dst = &s[i];
+        -:  302:
+    #####:  303:      while (i < s_len)
+        -:  304:	{
+    #####:  305:	  switch (s[i])
+        -:  306:	    {
+        -:  307:	    case '\\':
+    #####:  308:	      if (i == s_len - 1)
+        -:  309:		{
+        -:  310:		  /* A valid line does not end with a backslash.  */
+    #####:  311:		  return false;
+        -:  312:		}
+    #####:  313:	      ++i;
+    #####:  314:	      switch (s[i++])
+        -:  315:		{
+        -:  316:		case 'n':
+    #####:  317:		  *dst++ = '\n';
+    #####:  318:		  break;
+        -:  319:		case '\\':
+    #####:  320:		  *dst++ = '\\';
+    #####:  321:		  break;
+        -:  322:		default:
+        -:  323:		  /* Only `\' or `n' may follow a backslash.  */
+    #####:  324:		  return false;
+        -:  325:		}
+    #####:  326:	      break;
+        -:  327:
+        -:  328:	    case '\0':
+        -:  329:	      /* The file name may not contain a NUL.  */
+    #####:  330:	      return false;
+        -:  331:	      break;
+        -:  332:
+        -:  333:	    default:
+    #####:  334:	      *dst++ = s[i++];
+        -:  335:	      break;
+        -:  336:	    }
+        -:  337:	}
+    #####:  338:      *dst = '\0';
+        -:  339:    }
+        2:  340:  return true;
+        -:  341:}
+        -:  342:
+        -:  343:static bool
+        -:  344:hex_digits (unsigned char const *s)
+        4:  345:{
+      136:  346:  while (*s)
+        -:  347:    {
+      128:  348:      if (!isxdigit (*s))
+    #####:  349:        return false;
+      128:  350:      ++s;
+        -:  351:    }
+        4:  352:  return true;
+        -:  353:}
+        -:  354:
+        -:  355:/* An interface to the function, DIGEST_STREAM.
+        -:  356:   Operate on FILENAME (it may be "-").
+        -:  357:
+        -:  358:   *BINARY indicates whether the file is binary.  BINARY < 0 means it
+        -:  359:   depends on whether binary mode makes any difference and the file is
+        -:  360:   a terminal; in that case, clear *BINARY if the file was treated as
+        -:  361:   text because it was a terminal.
+        -:  362:
+        -:  363:   Put the checksum in *BIN_RESULT, which must be properly aligned.
+        -:  364:   Return true if successful.  */
+        -:  365:
+        -:  366:static bool
+        -:  367:digest_file (const char *filename, int *binary, unsigned char *bin_result)
+       14:  368:{
+        -:  369:  FILE *fp;
+        -:  370:  int err;
+       14:  371:  bool is_stdin = STREQ (filename, "-");
+        -:  372:
+       14:  373:  if (is_stdin)
+        -:  374:    {
+        1:  375:      have_read_stdin = true;
+        1:  376:      fp = stdin;
+        -:  377:      if (O_BINARY && *binary)
+        -:  378:	{
+        -:  379:	  if (*binary < 0)
+        -:  380:	    *binary = ! isatty (STDIN_FILENO);
+        -:  381:	  if (*binary)
+        -:  382:	    freopen (NULL, "rb", stdin);
+        -:  383:	}
+        -:  384:    }
+        -:  385:  else
+        -:  386:    {
+       13:  387:      fp = fopen (filename, (O_BINARY && *binary ? "rb" : "r"));
+       13:  388:      if (fp == NULL)
+        -:  389:	{
+    #####:  390:	  error (0, errno, "%s", filename);
+    #####:  391:	  return false;
+        -:  392:	}
+        -:  393:    }
+        -:  394:
+       14:  395:  err = DIGEST_STREAM (fp, bin_result);
+       14:  396:  if (err)
+        -:  397:    {
+    #####:  398:      error (0, errno, "%s", filename);
+    #####:  399:      if (fp != stdin)
+    #####:  400:	fclose (fp);
+    #####:  401:      return false;
+        -:  402:    }
+        -:  403:
+       14:  404:  if (!is_stdin && fclose (fp) != 0)
+        -:  405:    {
+    #####:  406:      error (0, errno, "%s", filename);
+    #####:  407:      return false;
+        -:  408:    }
+        -:  409:
+       14:  410:  return true;
+        -:  411:}
+        -:  412:
+        -:  413:static bool
+        -:  414:digest_check (const char *checkfile_name)
+        5:  415:{
+        -:  416:  FILE *checkfile_stream;
+        5:  417:  uintmax_t n_properly_formatted_lines = 0;
+        5:  418:  uintmax_t n_mismatched_checksums = 0;
+        5:  419:  uintmax_t n_open_or_read_failures = 0;
+        -:  420:  unsigned char bin_buffer_unaligned[DIGEST_BIN_BYTES + DIGEST_ALIGN];
+        -:  421:  /* Make sure bin_buffer is properly aligned. */
+        5:  422:  unsigned char *bin_buffer = ptr_align (bin_buffer_unaligned, DIGEST_ALIGN);
+        -:  423:  uintmax_t line_number;
+        -:  424:  char *line;
+        -:  425:  size_t line_chars_allocated;
+        5:  426:  bool is_stdin = STREQ (checkfile_name, "-");
+        -:  427:
+        5:  428:  if (is_stdin)
+        -:  429:    {
+    #####:  430:      have_read_stdin = true;
+    #####:  431:      checkfile_name = _("standard input");
+    #####:  432:      checkfile_stream = stdin;
+        -:  433:    }
+        -:  434:  else
+        -:  435:    {
+        5:  436:      checkfile_stream = fopen (checkfile_name, "r");
+        5:  437:      if (checkfile_stream == NULL)
+        -:  438:	{
+    #####:  439:	  error (0, errno, "%s", checkfile_name);
+    #####:  440:	  return false;
+        -:  441:	}
+        -:  442:    }
+        -:  443:
+        5:  444:  line_number = 0;
+        5:  445:  line = NULL;
+        5:  446:  line_chars_allocated = 0;
+        -:  447:  do
+        -:  448:    {
+        -:  449:      char *filename;
+        -:  450:      int binary;
+        -:  451:      unsigned char *hex_digest IF_LINT (= NULL);
+        -:  452:      ssize_t line_length;
+        -:  453:
+       10:  454:      ++line_number;
+       10:  455:      if (line_number == 0)
+    #####:  456:	error (EXIT_FAILURE, 0, _("%s: too many checksum lines"),
+        -:  457:	       checkfile_name);
+        -:  458:
+       10:  459:      line_length = getline (&line, &line_chars_allocated, checkfile_stream);
+       10:  460:      if (line_length <= 0)
+        5:  461:	break;
+        -:  462:
+        -:  463:      /* Ignore comment lines, which begin with a '#' character.  */
+        5:  464:      if (line[0] == '#')
+    #####:  465:	continue;
+        -:  466:
+        -:  467:      /* Remove any trailing newline.  */
+        5:  468:      if (line[line_length - 1] == '\n')
+        5:  469:	line[--line_length] = '\0';
+        -:  470:
+        6:  471:      if (! (split_3 (line, line_length, &hex_digest, &binary, &filename)
+        -:  472:	     && ! (is_stdin && STREQ (filename, "-"))
+        -:  473:	     && hex_digits (hex_digest)))
+        -:  474:	{
+        1:  475:	  if (warn)
+        -:  476:	    {
+    #####:  477:	      error (0, 0,
+        -:  478:		     _("%s: %" PRIuMAX
+        -:  479:		       ": improperly formatted %s checksum line"),
+        -:  480:		     checkfile_name, line_number,
+        -:  481:		     DIGEST_TYPE_STRING);
+        -:  482:	    }
+        -:  483:	}
+        -:  484:      else
+        -:  485:	{
+        -:  486:	  static const char bin2hex[] = { '0', '1', '2', '3',
+        -:  487:					  '4', '5', '6', '7',
+        -:  488:					  '8', '9', 'a', 'b',
+        -:  489:					  'c', 'd', 'e', 'f' };
+        -:  490:	  bool ok;
+        -:  491:
+        4:  492:	  ++n_properly_formatted_lines;
+        -:  493:
+        4:  494:	  ok = digest_file (filename, &binary, bin_buffer);
+        -:  495:
+        4:  496:	  if (!ok)
+        -:  497:	    {
+    #####:  498:	      ++n_open_or_read_failures;
+    #####:  499:	      if (!status_only)
+        -:  500:		{
+    #####:  501:		  printf (_("%s: FAILED open or read\n"), filename);
+    #####:  502:		  fflush (stdout);
+        -:  503:		}
+        -:  504:	    }
+        -:  505:	  else
+        -:  506:	    {
+        4:  507:	      size_t digest_bin_bytes = digest_hex_bytes / 2;
+        -:  508:	      size_t cnt;
+        -:  509:	      /* Compare generated binary number with text representation
+        -:  510:		 in check file.  Ignore case of hex digits.  */
+       36:  511:	      for (cnt = 0; cnt < digest_bin_bytes; ++cnt)
+        -:  512:		{
+       34:  513:		  if (tolower (hex_digest[2 * cnt])
+        -:  514:		      != bin2hex[bin_buffer[cnt] >> 4]
+        -:  515:		      || (tolower (hex_digest[2 * cnt + 1])
+        -:  516:			  != (bin2hex[bin_buffer[cnt] & 0xf])))
+        -:  517:		    break;
+        -:  518:		}
+        4:  519:	      if (cnt != digest_bin_bytes)
+        2:  520:		++n_mismatched_checksums;
+        -:  521:
+        4:  522:	      if (!status_only)
+        -:  523:		{
+        2:  524:		  printf ("%s: %s\n", filename,
+        -:  525:			  (cnt != digest_bin_bytes ? _("FAILED") : _("OK")));
+        2:  526:		  fflush (stdout);
+        -:  527:		}
+        -:  528:	    }
+        -:  529:	}
+        -:  530:    }
+        5:  531:  while (!feof (checkfile_stream) && !ferror (checkfile_stream));
+        -:  532:
+        5:  533:  free (line);
+        -:  534:
+        5:  535:  if (ferror (checkfile_stream))
+        -:  536:    {
+    #####:  537:      error (0, 0, _("%s: read error"), checkfile_name);
+    #####:  538:      return false;
+        -:  539:    }
+        -:  540:
+        5:  541:  if (!is_stdin && fclose (checkfile_stream) != 0)
+        -:  542:    {
+    #####:  543:      error (0, errno, "%s", checkfile_name);
+    #####:  544:      return false;
+        -:  545:    }
+        -:  546:
+        5:  547:  if (n_properly_formatted_lines == 0)
+        -:  548:    {
+        -:  549:      /* Warn if no tests are found.  */
+        1:  550:      error (0, 0, _("%s: no properly formatted %s checksum lines found"),
+        -:  551:	     checkfile_name, DIGEST_TYPE_STRING);
+        -:  552:    }
+        -:  553:  else
+        -:  554:    {
+        4:  555:      if (!status_only)
+        -:  556:	{
+        2:  557:	  if (n_open_or_read_failures != 0)
+    #####:  558:	    error (0, 0,
+        -:  559:		   ngettext ("WARNING: %" PRIuMAX " of %" PRIuMAX
+        -:  560:			     " listed file could not be read",
+        -:  561:			     "WARNING: %" PRIuMAX " of %" PRIuMAX
+        -:  562:			     " listed files could not be read",
+        -:  563:			     select_plural (n_properly_formatted_lines)),
+        -:  564:		   n_open_or_read_failures, n_properly_formatted_lines);
+        -:  565:
+        2:  566:	  if (n_mismatched_checksums != 0)
+        -:  567:	    {
+        -:  568:	      uintmax_t n_computed_checksums =
+    #####:  569:		(n_properly_formatted_lines - n_open_or_read_failures);
+    #####:  570:	      error (0, 0,
+        -:  571:		     ngettext ("WARNING: %" PRIuMAX " of %" PRIuMAX
+        -:  572:			       " computed checksum did NOT match",
+        -:  573:			       "WARNING: %" PRIuMAX " of %" PRIuMAX
+        -:  574:			       " computed checksums did NOT match",
+        -:  575:			       select_plural (n_computed_checksums)),
+        -:  576:		     n_mismatched_checksums, n_computed_checksums);
+        -:  577:	    }
+        -:  578:	}
+        -:  579:    }
+        -:  580:
+        5:  581:  return (n_properly_formatted_lines != 0
+        -:  582:	  && n_mismatched_checksums == 0
+        -:  583:	  && n_open_or_read_failures == 0);
+        -:  584:}
+        -:  585:
+        -:  586:int
+        -:  587:main (int argc, char **argv)
+       21:  588:{
+        -:  589:  unsigned char bin_buffer_unaligned[DIGEST_BIN_BYTES + DIGEST_ALIGN];
+        -:  590:  /* Make sure bin_buffer is properly aligned. */
+       21:  591:  unsigned char *bin_buffer = ptr_align (bin_buffer_unaligned, DIGEST_ALIGN);
+       21:  592:  bool do_check = false;
+        -:  593:  int opt;
+       21:  594:  bool ok = true;
+       21:  595:  int binary = -1;
+        -:  596:
+        -:  597:  /* Setting values of global variables.  */
+        -:  598:  initialize_main (&argc, &argv);
+       21:  599:  program_name = argv[0];
+       21:  600:  setlocale (LC_ALL, "");
+        -:  601:  bindtextdomain (PACKAGE, LOCALEDIR);
+        -:  602:  textdomain (PACKAGE);
+        -:  603:
+       21:  604:  atexit (close_stdout);
+        -:  605:
+       58:  606:  while ((opt = getopt_long (argc, argv, "bctw", long_options, NULL)) != -1)
+       22:  607:    switch (opt)
+        -:  608:      {
+        -:  609:      case 'b':
+    #####:  610:	binary = 1;
+    #####:  611:	break;
+        -:  612:      case 'c':
+        5:  613:	do_check = true;
+        5:  614:	break;
+        -:  615:      case STATUS_OPTION:
+        2:  616:	status_only = true;
+        2:  617:	warn = false;
+        2:  618:	break;
+        -:  619:      case 't':
+        9:  620:	binary = 0;
+        9:  621:	break;
+        -:  622:      case 'w':
+    #####:  623:	status_only = false;
+    #####:  624:	warn = true;
+    #####:  625:	break;
+        3:  626:      case_GETOPT_HELP_CHAR;
+        3:  627:      case_GETOPT_VERSION_CHAR (PROGRAM_NAME, AUTHORS);
+        -:  628:      default:
+    #####:  629:	usage (EXIT_FAILURE);
+        -:  630:      }
+        -:  631:
+       15:  632:  min_digest_line_length = MIN_DIGEST_LINE_LENGTH;
+       15:  633:  digest_hex_bytes = DIGEST_HEX_BYTES;
+        -:  634:
+       15:  635:  if (0 <= binary && do_check)
+        -:  636:    {
+    #####:  637:      error (0, 0, _("the --binary and --text options are meaningless when "
+        -:  638:		     "verifying checksums"));
+    #####:  639:      usage (EXIT_FAILURE);
+        -:  640:    }
+        -:  641:
+       15:  642:  if (status_only & !do_check)
+        -:  643:    {
+    #####:  644:      error (0, 0,
+        -:  645:       _("the --status option is meaningful only when verifying checksums"));
+    #####:  646:      usage (EXIT_FAILURE);
+        -:  647:    }
+        -:  648:
+       15:  649:  if (warn & !do_check)
+        -:  650:    {
+    #####:  651:      error (0, 0,
+        -:  652:       _("the --warn option is meaningful only when verifying checksums"));
+    #####:  653:      usage (EXIT_FAILURE);
+        -:  654:    }
+        -:  655:
+       15:  656:  if (!O_BINARY && binary < 0)
+        6:  657:    binary = 0;
+        -:  658:
+       15:  659:  if (optind == argc)
+        1:  660:    argv[argc++] = "-";
+        -:  661:
+       30:  662:  for (; optind < argc; ++optind)
+        -:  663:    {
+       15:  664:      char *file = argv[optind];
+        -:  665:
+       15:  666:      if (do_check)
+        5:  667:	ok &= digest_check (file);
+        -:  668:      else
+        -:  669:	{
+       10:  670:	  int file_is_binary = binary;
+        -:  671:
+       10:  672:	  if (! digest_file (file, &file_is_binary, bin_buffer))
+    #####:  673:	    ok = false;
+        -:  674:	  else
+        -:  675:	    {
+        -:  676:	      size_t i;
+        -:  677:
+        -:  678:	      /* Output a leading backslash if the file name contains
+        -:  679:		 a newline or backslash.  */
+       10:  680:	      if (strchr (file, '\n') || strchr (file, '\\'))
+        2:  681:		putchar ('\\');
+        -:  682:
+      170:  683:	      for (i = 0; i < (digest_hex_bytes / 2); ++i)
+      160:  684:		printf ("%02x", bin_buffer[i]);
+        -:  685:
+       10:  686:	      putchar (' ');
+       10:  687:	      if (file_is_binary)
+    #####:  688:		putchar ('*');
+        -:  689:	      else
+       10:  690:		putchar (' ');
+        -:  691:
+        -:  692:	      /* Translate each NEWLINE byte to the string, "\\n",
+        -:  693:		 and each backslash to "\\\\".  */
+       26:  694:	      for (i = 0; i < strlen (file); ++i)
+        -:  695:		{
+       16:  696:		  switch (file[i])
+        -:  697:		    {
+        -:  698:		    case '\n':
+        1:  699:		      fputs ("\\n", stdout);
+        1:  700:		      break;
+        -:  701:
+        -:  702:		    case '\\':
+        1:  703:		      fputs ("\\\\", stdout);
+        1:  704:		      break;
+        -:  705:
+        -:  706:		    default:
+       14:  707:		      putchar (file[i]);
+        -:  708:		      break;
+        -:  709:		    }
+        -:  710:		}
+       10:  711:	      putchar ('\n');
+        -:  712:	    }
+        -:  713:	}
+        -:  714:    }
+        -:  715:
+       15:  716:  if (have_read_stdin && fclose (stdin) == EOF)
+    #####:  717:    error (EXIT_FAILURE, errno, _("standard input"));
+        -:  718:
+       15:  719:  exit (ok ? EXIT_SUCCESS : EXIT_FAILURE);
+        -:  720:}

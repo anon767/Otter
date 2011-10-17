@@ -1,0 +1,505 @@
+        -:    0:Source:/fs/buzz/kkma/code/wc1/branches/DSE/experiments/directed_symbolic_execution/coreutils-6.10/benchmark/../src/paste.c
+        -:    0:Graph:paste.gcno
+        -:    0:Data:paste.gcda
+        -:    0:Runs:15
+        -:    0:Programs:1
+        -:    1:/* paste - merge lines of files
+        -:    2:   Copyright (C) 1997-2005 Free Software Foundation, Inc.
+        -:    3:   Copyright (C) 1984 David M. Ihnat
+        -:    4:
+        -:    5:   This program is free software: you can redistribute it and/or modify
+        -:    6:   it under the terms of the GNU General Public License as published by
+        -:    7:   the Free Software Foundation, either version 3 of the License, or
+        -:    8:   (at your option) any later version.
+        -:    9:
+        -:   10:   This program is distributed in the hope that it will be useful,
+        -:   11:   but WITHOUT ANY WARRANTY; without even the implied warranty of
+        -:   12:   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        -:   13:   GNU General Public License for more details.
+        -:   14:
+        -:   15:   You should have received a copy of the GNU General Public License
+        -:   16:   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+        -:   17:
+        -:   18:/* Written by David Ihnat.  */
+        -:   19:
+        -:   20:/* The list of valid escape sequences has been expanded over the Unix
+        -:   21:   version, to include \b, \f, \r, and \v.
+        -:   22:
+        -:   23:   POSIX changes, bug fixes, long-named options, and cleanup
+        -:   24:   by David MacKenzie <djm@gnu.ai.mit.edu>.
+        -:   25:
+        -:   26:   Options:
+        -:   27:   --serial
+        -:   28:   -s				Paste one file at a time rather than
+        -:   29:				one line from each file.
+        -:   30:   --delimiters=delim-list
+        -:   31:   -d delim-list		Consecutively use the characters in
+        -:   32:				DELIM-LIST instead of tab to separate
+        -:   33:				merged lines.  When DELIM-LIST is exhausted,
+        -:   34:				start again at its beginning.
+        -:   35:   A FILE of `-' means standard input.
+        -:   36:   If no FILEs are given, standard input is used. */
+        -:   37:
+        -:   38:#include <config.h>
+        -:   39:
+        -:   40:#include <stdio.h>
+        -:   41:#include <getopt.h>
+        -:   42:#include <sys/types.h>
+        -:   43:#include "system.h"
+        -:   44:#include "error.h"
+        -:   45:
+        -:   46:/* The official name of this program (e.g., no `g' prefix).  */
+        -:   47:#define PROGRAM_NAME "paste"
+        -:   48:
+        -:   49:#define AUTHORS "David M. Ihnat", "David MacKenzie"
+        -:   50:
+        -:   51:/* Indicates that no delimiter should be added in the current position. */
+        -:   52:#define EMPTY_DELIM '\0'
+        -:   53:
+        -:   54:/* Name this program was run with. */
+        -:   55:char *program_name;
+        -:   56:
+        -:   57:/* If nonzero, we have read standard input at some point. */
+        -:   58:static bool have_read_stdin;
+        -:   59:
+        -:   60:/* If nonzero, merge subsequent lines of each file rather than
+        -:   61:   corresponding lines from each file in parallel. */
+        -:   62:static bool serial_merge;
+        -:   63:
+        -:   64:/* The delimeters between lines of input files (used cyclically). */
+        -:   65:static char *delims;
+        -:   66:
+        -:   67:/* A pointer to the character after the end of `delims'. */
+        -:   68:static char const *delim_end;
+        -:   69:
+        -:   70:static struct option const longopts[] =
+        -:   71:{
+        -:   72:  {"serial", no_argument, NULL, 's'},
+        -:   73:  {"delimiters", required_argument, NULL, 'd'},
+        -:   74:  {GETOPT_HELP_OPTION_DECL},
+        -:   75:  {GETOPT_VERSION_OPTION_DECL},
+        -:   76:  {NULL, 0, NULL, 0}
+        -:   77:};
+        -:   78:
+        -:   79:/* Set globals delims and delim_end.  Copy STRPTR to DELIMS, converting
+        -:   80:   backslash representations of special characters in STRPTR to their actual
+        -:   81:   values. The set of possible backslash characters has been expanded beyond
+        -:   82:   that recognized by the Unix version.  */
+        -:   83:
+        -:   84:static void
+        -:   85:collapse_escapes (char const *strptr)
+        9:   86:{
+        9:   87:  char *strout = xstrdup (strptr);
+        9:   88:  delims = strout;
+        -:   89:
+       27:   90:  while (*strptr)
+        -:   91:    {
+        9:   92:      if (*strptr != '\\')	/* Is it an escape character? */
+        9:   93:	*strout++ = *strptr++;	/* No, just transfer it. */
+        -:   94:      else
+        -:   95:	{
+        -:   96:	  /* buffer overflow occurs when an odd number of \ occurs at the end of strptr:
+        -:   97:	   * http://git.savannah.gnu.org/cgit/coreutils.git/commit/?id=b58a8b4ef588ec8a365b920d12e27fdd71aa48d1 */
+        -:   98:	  //__otter_paste_assert(*(strptr+1) != '\0');
+        -:   99:
+    #####:  100:	  switch (*++strptr)
+        -:  101:	    {
+        -:  102:	    case '0':
+    #####:  103:	      *strout++ = EMPTY_DELIM;
+    #####:  104:	      break;
+        -:  105:
+        -:  106:	    case 'b':
+    #####:  107:	      *strout++ = '\b';
+    #####:  108:	      break;
+        -:  109:
+        -:  110:	    case 'f':
+    #####:  111:	      *strout++ = '\f';
+    #####:  112:	      break;
+        -:  113:
+        -:  114:	    case 'n':
+    #####:  115:	      *strout++ = '\n';
+    #####:  116:	      break;
+        -:  117:
+        -:  118:	    case 'r':
+    #####:  119:	      *strout++ = '\r';
+    #####:  120:	      break;
+        -:  121:
+        -:  122:	    case 't':
+    #####:  123:	      *strout++ = '\t';
+    #####:  124:	      break;
+        -:  125:
+        -:  126:	    case 'v':
+    #####:  127:	      *strout++ = '\v';
+    #####:  128:	      break;
+        -:  129:
+        -:  130:	    default:
+    #####:  131:	      *strout++ = *strptr;
+        -:  132:	      break;
+        -:  133:	    }
+    #####:  134:	  strptr++;
+        -:  135:	}
+        -:  136:    }
+        9:  137:  delim_end = strout;
+        9:  138:}
+        -:  139:
+        -:  140:/* Report a write error and exit.  */
+        -:  141:
+        -:  142:static void write_error (void) ATTRIBUTE_NORETURN;
+        -:  143:static void
+        -:  144:write_error (void)
+    #####:  145:{
+    #####:  146:  error (EXIT_FAILURE, errno, _("write error"));
+    #####:  147:  abort ();
+        -:  148:}
+        -:  149:
+        -:  150:/* Output a single byte, reporting any write errors.  */
+        -:  151:
+        -:  152:static inline void
+        -:  153:xputchar (char c)
+       49:  154:{
+       49:  155:  if (putchar (c) < 0)
+    #####:  156:    write_error ();
+       49:  157:}
+        -:  158:
+        -:  159:/* Perform column paste on the NFILES files named in FNAMPTR.
+        -:  160:   Return true if successful, false if one or more files could not be
+        -:  161:   opened or read. */
+        -:  162:
+        -:  163:static bool
+        -:  164:paste_parallel (size_t nfiles, char **fnamptr)
+        9:  165:{
+        9:  166:  bool ok = true;
+        -:  167:  /* If all files are just ready to be closed, or will be on this
+        -:  168:     round, the string of delimiters must be preserved.
+        -:  169:     delbuf[0] through delbuf[nfiles]
+        -:  170:     store the delimiters for closed files. */
+        9:  171:  char *delbuf = xmalloc (nfiles + 2);
+        -:  172:
+        -:  173:  /* Streams open to the files to process; NULL if the corresponding
+        -:  174:     stream is closed.  */
+        9:  175:  FILE **fileptr = xnmalloc (nfiles + 1, sizeof *fileptr);
+        -:  176:
+        -:  177:  /* Number of files still open to process.  */
+        -:  178:  size_t files_open;
+        -:  179:
+        -:  180:  /* True if any fopen got fd == STDIN_FILENO.  */
+        9:  181:  bool opened_stdin = false;
+        -:  182:
+        -:  183:  /* Attempt to open all files.  This could be expanded to an infinite
+        -:  184:     number of files, but at the (considerable) expense of remembering
+        -:  185:     each file and its current offset, then opening/reading/closing.  */
+        -:  186:
+       26:  187:  for (files_open = 0; files_open < nfiles; ++files_open)
+        -:  188:    {
+       17:  189:      if (STREQ (fnamptr[files_open], "-"))
+        -:  190:	{
+        1:  191:	  have_read_stdin = true;
+        1:  192:	  fileptr[files_open] = stdin;
+        -:  193:	}
+        -:  194:      else
+        -:  195:	{
+       16:  196:	  fileptr[files_open] = fopen (fnamptr[files_open], "r");     /* OTTER: Target? */
+       16:  197:	  if (fileptr[files_open] == NULL)
+    #####:  198:	    error (EXIT_FAILURE, errno, "%s", fnamptr[files_open]);
+       16:  199:	  else if (fileno (fileptr[files_open]) == STDIN_FILENO)
+    #####:  200:	    opened_stdin = true;
+        -:  201:	}
+        -:  202:    }
+        -:  203:
+        9:  204:  if (opened_stdin && have_read_stdin)
+    #####:  205:    error (EXIT_FAILURE, 0, _("standard input is closed"));
+        -:  206:
+        -:  207:  /* Read a line from each file and output it to stdout separated by a
+        -:  208:     delimiter, until we go through the loop without successfully
+        -:  209:     reading from any of the files. */
+        -:  210:
+       40:  211:  while (files_open)
+        -:  212:    {
+        -:  213:      /* Set up for the next line. */
+       22:  214:      bool somedone = false;
+       22:  215:      char const *delimptr = delims;
+       22:  216:      size_t delims_saved = 0;	/* Number of delims saved in `delbuf'. */
+        -:  217:      size_t i;
+        -:  218:
+       64:  219:      for (i = 0; i < nfiles && files_open; i++)
+        -:  220:	{
+        -:  221:	  int chr IF_LINT (= 0);	/* Input character. */
+        -:  222:	  int err IF_LINT (= 0);	/* Input errno value.  */
+       42:  223:	  size_t line_length = 0;	/* Number of chars in line. */
+        -:  224:
+       42:  225:	  if (fileptr[i])
+        -:  226:	    {
+       42:  227:	      chr = getc (fileptr[i]);
+       42:  228:	      err = errno;
+       42:  229:	      if (chr != EOF && delims_saved)
+        -:  230:		{
+    #####:  231:		  if (fwrite (delbuf, 1, delims_saved, stdout) != delims_saved)
+    #####:  232:		    write_error ();
+    #####:  233:		  delims_saved = 0;
+        -:  234:		}
+        -:  235:
+      108:  236:	      while (chr != EOF)
+        -:  237:		{
+       41:  238:		  line_length++;
+       41:  239:		  if (chr == '\n')
+       17:  240:		    break;
+       24:  241:		  xputchar (chr);
+       24:  242:		  chr = getc (fileptr[i]);
+       24:  243:		  err = errno;
+        -:  244:		}
+        -:  245:	    }
+        -:  246:
+       42:  247:	  if (line_length == 0)
+        -:  248:	    {
+        -:  249:	      /* EOF, read error, or closed file.
+        -:  250:		 If an EOF or error, close the file.  */
+       17:  251:	      if (fileptr[i])
+        -:  252:		{
+       17:  253:		  if (ferror (fileptr[i]))
+        -:  254:		    {
+    #####:  255:		      error (0, err, "%s", fnamptr[i]);
+    #####:  256:		      ok = false;
+        -:  257:		    }
+       17:  258:		  if (fileptr[i] == stdin)
+        1:  259:		    clearerr (fileptr[i]); /* Also clear EOF. */
+       16:  260:		  else if (fclose (fileptr[i]) == EOF)
+        -:  261:		    {
+    #####:  262:		      error (0, errno, "%s", fnamptr[i]);
+    #####:  263:		      ok = false;
+        -:  264:		    }
+        -:  265:
+       17:  266:		  fileptr[i] = NULL;
+       17:  267:		  files_open--;
+        -:  268:		}
+        -:  269:
+       17:  270:	      if (i + 1 == nfiles)
+        -:  271:		{
+        -:  272:		  /* End of this output line.
+        -:  273:		     Is this the end of the whole thing? */
+        9:  274:		  if (somedone)
+        -:  275:		    {
+        -:  276:		      /* No.  Some files were not closed for this line. */
+    #####:  277:		      if (delims_saved)
+        -:  278:			{
+    #####:  279:			  if (fwrite (delbuf, 1, delims_saved, stdout)
+        -:  280:			      != delims_saved)
+    #####:  281:			    write_error ();
+    #####:  282:			  delims_saved = 0;
+        -:  283:			}
+    #####:  284:		      xputchar ('\n');
+        -:  285:		    }
+        9:  286:		  continue;	/* Next read of files, or exit. */
+        -:  287:		}
+        -:  288:	      else
+        -:  289:		{
+        -:  290:		  /* Closed file; add delimiter to `delbuf'. */
+        8:  291:		  if (*delimptr != EMPTY_DELIM)
+        8:  292:		    delbuf[delims_saved++] = *delimptr;
+        8:  293:		  if (++delimptr == delim_end)
+        8:  294:		    delimptr = delims;
+        -:  295:		}
+        -:  296:	    }
+        -:  297:	  else
+        -:  298:	    {
+        -:  299:	      /* Some data read. */
+       25:  300:	      somedone = true;
+        -:  301:
+        -:  302:	      /* Except for last file, replace last newline with delim. */
+       25:  303:	      if (i + 1 != nfiles)
+        -:  304:		{
+       12:  305:		  if (chr != '\n' && chr != EOF)
+    #####:  306:		    xputchar (chr);
+       12:  307:		  if (*delimptr != EMPTY_DELIM)
+       12:  308:		    xputchar (*delimptr);
+       12:  309:		  if (++delimptr == delim_end)
+       12:  310:		    delimptr = delims;
+        -:  311:		}
+        -:  312:	      else
+        -:  313:		{
+        -:  314:		  /* If the last line of the last file lacks a newline,
+        -:  315:		     print one anyhow.  POSIX requires this.  */
+       13:  316:		  char c = (chr == EOF ? '\n' : chr);
+       13:  317:		  xputchar (c);
+        -:  318:		}
+        -:  319:	    }
+        -:  320:	}
+        -:  321:    }
+        9:  322:  free (fileptr);
+        9:  323:  free (delbuf);
+        9:  324:  return ok;
+        -:  325:}
+        -:  326:
+        -:  327:/* Perform serial paste on the NFILES files named in FNAMPTR.
+        -:  328:   Return true if no errors, false if one or more files could not be
+        -:  329:   opened or read. */
+        -:  330:
+        -:  331:static bool
+        -:  332:paste_serial (size_t nfiles, char **fnamptr)
+    #####:  333:{
+    #####:  334:  bool ok = true;	/* false if open or read errors occur. */
+        -:  335:  int charnew, charold; /* Current and previous char read. */
+        -:  336:  char const *delimptr;	/* Current delimiter char. */
+        -:  337:  FILE *fileptr;	/* Open for reading current file. */
+        -:  338:
+    #####:  339:  for (; nfiles; nfiles--, fnamptr++)
+        -:  340:    {
+        -:  341:      int saved_errno;
+    #####:  342:      bool is_stdin = STREQ (*fnamptr, "-");
+    #####:  343:      if (is_stdin)
+        -:  344:	{
+    #####:  345:	  have_read_stdin = true;
+    #####:  346:	  fileptr = stdin;
+        -:  347:	}
+        -:  348:      else
+        -:  349:	{
+    #####:  350:	  fileptr = fopen (*fnamptr, "r");
+    #####:  351:	  if (fileptr == NULL)
+        -:  352:	    {
+    #####:  353:	      error (0, errno, "%s", *fnamptr);
+    #####:  354:	      ok = false;
+    #####:  355:	      continue;
+        -:  356:	    }
+        -:  357:	}
+        -:  358:
+    #####:  359:      delimptr = delims;	/* Set up for delimiter string. */
+        -:  360:
+    #####:  361:      charold = getc (fileptr);
+    #####:  362:      saved_errno = errno;
+    #####:  363:      if (charold != EOF)
+        -:  364:	{
+        -:  365:	  /* `charold' is set up.  Hit it!
+        -:  366:	     Keep reading characters, stashing them in `charnew';
+        -:  367:	     output `charold', converting to the appropriate delimiter
+        -:  368:	     character if needed.  After the EOF, output `charold'
+        -:  369:	     if it's a newline; otherwise, output it and then a newline. */
+        -:  370:
+    #####:  371:	  while ((charnew = getc (fileptr)) != EOF)
+        -:  372:	    {
+        -:  373:	      /* Process the old character. */
+    #####:  374:	      if (charold == '\n')
+        -:  375:		{
+    #####:  376:		  if (*delimptr != EMPTY_DELIM)
+    #####:  377:		    xputchar (*delimptr);
+        -:  378:
+    #####:  379:		  if (++delimptr == delim_end)
+    #####:  380:		    delimptr = delims;
+        -:  381:		}
+        -:  382:	      else
+    #####:  383:		xputchar (charold);
+        -:  384:
+    #####:  385:	      charold = charnew;
+        -:  386:	    }
+    #####:  387:	  saved_errno = errno;
+        -:  388:
+        -:  389:	  /* Hit EOF.  Process that last character. */
+    #####:  390:	  xputchar (charold);
+        -:  391:	}
+        -:  392:
+    #####:  393:      if (charold != '\n')
+    #####:  394:	xputchar ('\n');
+        -:  395:
+    #####:  396:      if (ferror (fileptr))
+        -:  397:	{
+    #####:  398:	  error (0, saved_errno, "%s", *fnamptr);
+    #####:  399:	  ok = false;
+        -:  400:	}
+    #####:  401:      if (is_stdin)
+    #####:  402:	clearerr (fileptr);	/* Also clear EOF. */
+    #####:  403:      else if (fclose (fileptr) == EOF)
+        -:  404:	{
+    #####:  405:	  error (0, errno, "%s", *fnamptr);
+    #####:  406:	  ok = false;
+        -:  407:	}
+        -:  408:    }
+    #####:  409:  return ok;
+        -:  410:}
+        -:  411:
+        -:  412:void
+        -:  413:usage (int status)
+        3:  414:{
+        3:  415:  if (status != EXIT_SUCCESS)
+    #####:  416:    fprintf (stderr, _("Try `%s --help' for more information.\n"),
+        -:  417:	     program_name);
+        -:  418:  else
+        -:  419:    {
+        3:  420:      printf (_("\
+        -:  421:Usage: %s [OPTION]... [FILE]...\n\
+        -:  422:"),
+        -:  423:	      program_name);
+        3:  424:      fputs (_("\
+        -:  425:Write lines consisting of the sequentially corresponding lines from\n\
+        -:  426:each FILE, separated by TABs, to standard output.\n\
+        -:  427:With no FILE, or when FILE is -, read standard input.\n\
+        -:  428:\n\
+        -:  429:"), stdout);
+        3:  430:      fputs (_("\
+        -:  431:Mandatory arguments to long options are mandatory for short options too.\n\
+        -:  432:"), stdout);
+        3:  433:      fputs (_("\
+        -:  434:  -d, --delimiters=LIST   reuse characters from LIST instead of TABs\n\
+        -:  435:  -s, --serial            paste one file at a time instead of in parallel\n\
+        -:  436:"), stdout);
+        3:  437:      fputs (HELP_OPTION_DESCRIPTION, stdout);
+        3:  438:      fputs (VERSION_OPTION_DESCRIPTION, stdout);
+        -:  439:      /* FIXME: add a couple of examples.  */
+        3:  440:      emit_bug_reporting_address ();
+        -:  441:    }
+        3:  442:  exit (status);
+        -:  443:}
+        -:  444:
+        -:  445:int
+        -:  446:main (int argc, char **argv)
+       15:  447:{
+        -:  448:  int optc;
+        -:  449:  bool ok;
+       15:  450:  char const *delim_arg = "\t";
+        -:  451:
+        -:  452:  initialize_main (&argc, &argv);
+       15:  453:  program_name = argv[0];
+       15:  454:  setlocale (LC_ALL, "");
+        -:  455:  bindtextdomain (PACKAGE, LOCALEDIR);
+        -:  456:  textdomain (PACKAGE);
+        -:  457:
+       15:  458:  atexit (close_stdout);
+        -:  459:
+       15:  460:  have_read_stdin = false;
+       15:  461:  serial_merge = false;
+        -:  462:
+       34:  463:  while ((optc = getopt_long (argc, argv, "d:s", longopts, NULL)) != -1)
+        -:  464:    {
+       10:  465:      switch (optc)
+        -:  466:	{
+        -:  467:	case 'd':
+        -:  468:	  /* Delimiter character(s). */
+        4:  469:	  delim_arg = (optarg[0] == '\0' ? "\\0" : optarg);
+        4:  470:	  break;
+        -:  471:
+        -:  472:	case 's':
+    #####:  473:	  serial_merge = true;
+    #####:  474:	  break;
+        -:  475:
+        3:  476:	case_GETOPT_HELP_CHAR;
+        -:  477:
+        3:  478:	case_GETOPT_VERSION_CHAR (PROGRAM_NAME, AUTHORS);
+        -:  479:
+        -:  480:	default:
+    #####:  481:	  usage (EXIT_FAILURE);
+        -:  482:	}
+        -:  483:    }
+        -:  484:
+        9:  485:  if (optind == argc)
+        1:  486:    argv[argc++] = "-";
+        -:  487:
+        9:  488:  collapse_escapes (delim_arg);
+        -:  489:
+        9:  490:  if (!serial_merge)
+        9:  491:    ok = paste_parallel (argc - optind, &argv[optind]);
+        -:  492:  else
+    #####:  493:    ok = paste_serial (argc - optind, &argv[optind]);
+        -:  494:
+        9:  495:  free (delims);
+        -:  496:
+        9:  497:  if (have_read_stdin && fclose (stdin) == EOF)
+    #####:  498:    error (EXIT_FAILURE, errno, "-");
+        9:  499:  exit (ok ? EXIT_SUCCESS : EXIT_FAILURE);
+        -:  500:}
