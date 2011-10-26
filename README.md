@@ -103,7 +103,7 @@ Confererence papers
 -------------------
 
 [Directed Symbolic Execution](http://dx.doi.org/10.1007/978-3-642-23702-7_11).
-Kin-Keung Ma, Yit Phang Khoo, Jeffrey S. Foster, and Michael Hicks.
+Kin-Keung Ma, Khoo Yit Phang, Jeffrey S. Foster, and Michael Hicks.
 In Eran Yahav, editor, The 18th International Static Analysis Symposium (SAS),
 volume 6887 of Lecture Notes in Computer Science, pages 95–111, Venice, Italy,
 September 2011. Springer Berlin / Heidelberg.
@@ -129,7 +129,7 @@ Technical Report CS-TR-4982, Department of Computer Science,
 University of Maryland, College Park, August 2011.
 
 [Directed Symbolic Execution](http://dx.doi.org/1903/11860).
-Kin-Keung Ma, Yit Phang Khoo, Jeffrey S. Foster, and Michael Hicks.
+Kin-Keung Ma, Khoo Yit Phang, Jeffrey S. Foster, and Michael Hicks.
 Technical Report CS-TR-4979, Department of Computer Science,
 University of Maryland, College Park, April 2011.
 
