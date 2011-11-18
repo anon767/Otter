@@ -110,7 +110,7 @@ let test_dir path test =
             end
         end tests dir
     in
-    TestList (test_dir "" (Sys.readdir path) [])
+    TestList (if Sys.file_exists path then test_dir "" (Sys.readdir path) [] else [])
 
 
 (* redefine OUnit functions to use the above buffer, test wrapper, and Format-based printer *)
