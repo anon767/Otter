@@ -20,3 +20,4 @@ BackOtter/ContentQueue
 BackOtter/FunctionQueue
 BackOtter/FunctionRanker
 BackOtter/RoundRobinClosestToTargetsStrategy
+BackOtter/SDSEUtilities

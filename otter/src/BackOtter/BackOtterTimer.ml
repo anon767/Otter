@@ -1,3 +1,9 @@
+type timing_methods = [
+    | `TimeReal      (* Wall-clock time *)
+    | `TimeStpCalls  (* Time approximated by # of STP queries *)
+    | `TimeWeighted  (* A weighted formula of #STP calls and regular steps *)
+]
+
 let timing_methods = [
     "real", `TimeReal;           (* Wall-clock time *)
     "stp-calls", `TimeStpCalls;  (* Time approximated by # of STP queries *)
@@ -7,9 +13,9 @@ let timing_methods = [
 let default_timing_method = ref `TimeStpCalls
 let arg_stp_call_weight = ref 50
 
-let get_time_now () =
+let get_time_now_with_method (timing_method:timing_methods) =
     (* TODO: make this a function ref instead of pattern match *)
-    match !default_timing_method with
+    match timing_method with
     | `TimeReal -> Unix.gettimeofday ()
     | `TimeStpCalls ->
             let count = DataStructures.NamedCounter.get "stpc_query" in
@@ -19,7 +25,9 @@ let get_time_now () =
             let step_count = DataStructures.NamedCounter.get "step" in
             float_of_int ((!arg_stp_call_weight) * stp_count + step_count)
 
-class t = object (self)
+let get_time_now () = get_time_now_with_method (!default_timing_method)
+
+class t ?(timing_method=(!default_timing_method)) () = object (self)
     val t_entryfn = 0.0
     val t_otherfn = 0.0
     val last = None
@@ -28,7 +36,7 @@ class t = object (self)
 
     method private time kind =
         DataStructures.NamedCounter.incr "step";
-        let t_now = get_time_now () in
+        let t_now = get_time_now_with_method timing_method in
         match last with
         | None -> {< last = Some (t_now, kind) >}
         | Some (t_last, kind_last) ->

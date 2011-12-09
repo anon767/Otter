@@ -45,37 +45,64 @@ benchmarks = {
             'ProCCBSE' : "@trunk@/experiments/directed_symbolic_execution/synthetic/pro_backotter_3.c",
             'ProMix'   : "@trunk@/experiments/directed_symbolic_execution/synthetic/pro_mix_1.c",
             },
-        'command' : 'CILLY_DONT_COMPILE_AFTER_MERGE= @trunk@/otter/otter.pl --merge -nostdinc -nostdlib -Wp,-undef,-D_POSIX_THREADS,-D__GNUC__,-D_GCC_LIMITS_H_ --timeout=600'
+        'command' : 'CILLY_DONT_COMPILE_AFTER_MERGE= @trunk@/otter/otter.pl --merge -nostdinc -nostdlib -Wp,-undef,-D_POSIX_THREADS,-D__GNUC__,-D_GCC_LIMITS_H_ --timeout=900'
         }
     }
 
-strategies = {
-    'InterSDSE'         : '--dobackotter --bidirectional-search-ratio=1.1 --forward-queue=backotter-closest-to-targets',
-    'IntraSDSE'         : '--dobackotter --bidirectional-search-ratio=1.1 --forward-queue=backotter-closest-to-targets-intraprocedural',
-    'CCBSE(RandomPath)' : '--dobackotter --function-inlining --forward-queue=random-path --backward-queue=random-path --bidirectional-search-ratio=-1 --function-job-points-to=really-unsound-typed-void --backward-function-rank=closest-to-entry',
-    'CCBSE(InterSDSE)'  : '--dobackotter --function-inlining --forward-queue=backotter-closest-to-targets --backward-queue=backotter-closest-to-targets --bidirectional-search-ratio=-1 --function-job-points-to=really-unsound-typed-void --backward-function-rank=closest-to-entry',
-    'CCBSE(IntraSDSE)'  : '--dobackotter --function-inlining --forward-queue=backotter-closest-to-targets-intraprocedural --backward-queue=backotter-closest-to-targets-intraprocedural --bidirectional-search-ratio=-1 --function-job-points-to=really-unsound-typed-void --backward-function-rank=closest-to-entry',
-    'OtterKLEE'         : '--dobackotter --bidirectional-search-ratio=1.1 --forward-queue=KLEE',
-    'Mix(OtterKLEE)'    : '--dobackotter --function-inlining --backward-queue=random-path --bidirectional-search-ratio=.5  --function-job-points-to=really-unsound-typed-void --backward-function-rank=closest-to-entry --forward-queue=KLEE',
-    'OtterSAGE'         : '--dobackotter --bidirectional-search-ratio=1.1 --forward-queue=SAGE',
-    'Mix(OtterSAGE)'    : '--dobackotter --function-inlining --backward-queue=random-path --bidirectional-search-ratio=.5  --function-job-points-to=really-unsound-typed-void --backward-function-rank=closest-to-entry --forward-queue=SAGE',
-    'RandomPath'        : '--dobackotter --bidirectional-search-ratio=1.1 --forward-queue=random-path',
-    'Mix(RandomPath)'   : '--dobackotter --function-inlining --backward-queue=random-path --bidirectional-search-ratio=.5  --function-job-points-to=really-unsound-typed-void --backward-function-rank=closest-to-entry --forward-queue=random-path',
-}
+strategies = dict(
+        [(s,'--bidirectional-search-ratio=1.1 --forward-queue="%s"'%s) for s in [
+            "KLEE",
+            "SAGE",
+            "random-path",
+            "IntraSDSE",
+           #"InterSDSE",
+            "InterSDSE-probabilistic",
+            "InterSDSE-efficient",
+           #"RoundRobin(RandomPath,InterSDSE)",
+            "RoundRobin(RandomPath,InterSDSE-efficient)",
+           #"Batched(InterSDSE)",
+            "Batched(InterSDSE-probabilistic)",
+            "Batched(InterSDSE-efficient)",
+           #"Batched(RoundRobin(RandomPath,InterSDSE))",
+            "Batched(RoundRobin(RandomPath,InterSDSE-efficient))",
+            "Batched(Phases(KLEE,InterSDSE-efficient))",
+            ]] +
+        [('CCBSE(%s)'%s,'    --bidirectional-search-ratio=-1  --function-inlining --backward-function-rank=closest-to-entry --forward-queue="%s" --backward-queue="%s"'%(s,s)) for s in [
+            "random-path",
+           #"IntraSDSE",
+            "InterSDSE",
+            ]] +
+        [('Mix(%s,0.75)'%s,'  --bidirectional-search-ratio=.75 --function-inlining --backward-function-rank=closest-to-entry --forward-queue="%s" --backward-queue=random-path '%s) for s in [
+            "random-path",
+            "KLEE",
+            "SAGE",
+            ]] +
+        #[('Mix(%s)'%s,'      --bidirectional-search-ratio=.5  --function-inlining --backward-function-rank=closest-to-entry --forward-queue="%s" --backward-queue=random-path '%s) for s in [
+        #    "random-path",
+        #    "KLEE",
+        #    "SAGE",
+        #    ]] +
+        []
+        )
 
 options = {
-    'std'  : '--convert-non-target-reached-abandoned-to-truncated --doRunRmtmps --max-abandoned=1 --printErrorsOnly --backotter-timing-method=weighted --backotter-no-overlap-path-matching',
+    'std'  : '--dobackotter --convert-non-target-reached-abandoned-to-truncated --doRunRmtmps --max-abandoned=1 --printErrorsOnly --backotter-timing-method=real --function-job-points-to=really-unsound-typed-void ',
 }
+
 def make_test(command, program, strategy, option, seed):
     test_log  = '"@dest@/logs/%d/%s-%s-%s.log"' % (seed, program[0], strategy[0], option[0])
     test_csv  = '"@dest@/csv/%s/%s/%s/%d/entry"' % (option[0], program[0], strategy[0], seed)
-    test_gcov = '"@dest@/logs/%d/%s-%s-%s.gcov"' % (seed, program[0], strategy[0], option[0])
-    test_comb = '"@dest@/logs/%d/%s-%s-%s.comb.c"' % (seed, program[0], strategy[0], option[0])
 
-    test_cmd  = 'mkdir -p $(dirname %s)' % test_log + "\n"
-    test_cmd += 'mkdir -p $(dirname %s)' % test_csv + "\n"
-    test_cmd += '%s %s %s %s --random-seed=%d --gcov --gcov-path="@trunk@/newlib-1.19.0/otter" --gcov-out=%s --out=%s 2>&1 | @trunk@/experiments/directed_symbolic_execution/timelines.py > %s' % (command, strategy[1], option[1], program[1], seed, test_gcov, test_comb, test_log) + "\n"
-    test_cmd += 'cat %s | @trunk@/experiments/directed_symbolic_execution/targetreached.py > %s' % (test_log, test_csv)
+    test_cmd  = ''
+    test_cmd += 'if [ -f %s ]; then\n' % test_log
+    test_cmd += '   echo %s " exists"\n' % test_log
+    test_cmd += 'else\n'
+    test_cmd += '   mkdir -p "$(dirname %s)"\n' % test_log
+    test_cmd += '   mkdir -p "$(dirname %s)"\n' % test_csv
+    test_cmd += '   %s %s %s %s --random-seed=%d 2>&1 | @trunk@/experiments/directed_symbolic_execution/timelines.py > %s \n' % (command, strategy[1], option[1], program[1], seed, test_log)
+    test_cmd += '   cat %s | @trunk@/experiments/directed_symbolic_execution/targetreached.py > %s \n' % (test_log, test_csv)
+    test_cmd += 'fi\n'
+
     test_file = '@dest@/tests/%d/%s-%s-%s.sh' % (seed, program[0], strategy[0], option[0])
     return (test_file, test_cmd)
 

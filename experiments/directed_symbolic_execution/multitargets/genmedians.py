@@ -7,7 +7,7 @@ infty = float('inf')
 def median_siqr_outliers(values):
     length = len(values)
     if len(values) == 0: raise Exception("Empty list")
-    if length < 3: print "Warning: list length < 3"
+    #if length < 3: print "Warning: list length < 3"
     values = [ float(x) if x != 'NA' else infty for x in values ]
     values.sort()
     median = values[length/2]

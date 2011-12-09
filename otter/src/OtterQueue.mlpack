@@ -11,5 +11,10 @@ OtterQueue/PathWeightedStrategy
 OtterQueue/RandomPathQueue
 OtterQueue/RankedQueue
 OtterQueue/RoundRobinQueue
+OtterQueue/RoundRobinPrioritizer
 OtterQueue/SageQueue
 OtterQueue/WeightedRandomStrategy
+OtterQueue/CompositePrioritizer
+OtterQueue/PriorityQueuePrioritizer
+OtterQueue/PrioritizerRandomQueue
+OtterQueue/PhasesQueue

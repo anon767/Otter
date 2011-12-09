@@ -11,17 +11,19 @@ open BackOtterUtilities
 
 (**/**)
 let arg_ratio = ref 0.5
+let real_timer = ref (new BackOtterTimer.t ~timing_method:`TimeReal ())
 (**/**)
 
 class ['job] t ?(ratio=(!arg_ratio))
-               ?(forward_queue=BackOtterQueue.get_default_fqueue ())
-               ?(backward_queue=BackOtterQueue.get_default_bqueue ())
                file
+               ?(forward_queue=BackOtterQueue.get_default_fqueue file)
+               ?(backward_queue=BackOtterQueue.get_default_bqueue file)
+               ()
     = object (self : 'self)
         val forward_queue = new ContentQueue.t forward_queue
         val backward_queue = new ContentQueue.t backward_queue
         val bounded_queue = new OtterQueue.RankedQueue.t [ new OtterQueue.DepthFirstStrategy.t ]
-        val timer = new BackOtterTimer.t
+        val timer = new BackOtterTimer.t ()
 
         (** Put a job into this queue. The job will go to [forward_queue], [backward_queue] and/or [bounded_queue], or be discarded, based on the following:
             + If the job is bounded and still in-bound, put it in the bounded_queue.
@@ -124,12 +126,14 @@ class ['job] t ?(ratio=(!arg_ratio))
                             if want_forward_search then
                                 match forward_queue#get with
                                 | Some (forward_queue, job) ->
+                                    real_timer := (!real_timer)#time_forward;
                                     Some ({< forward_queue = forward_queue; timer = timer#time_forward; >}, job)
                                 | None -> failwith "This is unreachable"
 
                             else if backward_queue#length > 0 then
                                 match backward_queue#get with
                                 | Some (backward_queue, job) ->
+                                    real_timer := (!real_timer)#time_backward;
                                     Some ({< backward_queue = backward_queue; timer = timer#time_backward; >}, job)
                                 | None -> failwith "This is unreachable"
 

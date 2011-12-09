@@ -66,10 +66,15 @@ let add_line_target file instruction =
     let loc_map = LocationMap.add_to_set (Location.of_instruction instruction) instruction (get_line_targets_loc_map file) in 
     file_to_line_targets := FileMap.add file loc_map (!file_to_line_targets)
 
+let update_flag = ref false
+let remove_count = ref 0
+
 let remove_line_target_loc file loc =
     let loc_map = get_line_targets_loc_map file in
     let loc_map = LocationMap.remove loc loc_map in
     Output.must_printf "Remove target at %a@\n" Location.printer loc;
+    update_flag := true;
+    remove_count := 1 + !remove_count;
     file_to_line_targets := FileMap.add file loc_map (!file_to_line_targets)
 
 let process_completed entry_fn (reason, job) =

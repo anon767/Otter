@@ -8,6 +8,7 @@ seed_start = int(sys.argv[1])
 seed_end = int(sys.argv[2])
 base_in = sys.argv[3]
 base_out = sys.argv[4]
+module = sys.argv[5]
 
 def mkdir_p(path):
     try:
@@ -18,55 +19,23 @@ def mkdir_p(path):
         else: raise
 
 program_info_list = [
-        { "name" : 'ProSDSE'  , "timelimit" : 600.0  , "count total" : False },
-        { "name" : 'ProCCBSE' , "timelimit" : 600.0  , "count total" : False },
-        { "name" : 'ProMix'   , "timelimit" : 600.0  , "count total" : False },
         { "name" : "mkdir"    , "timelimit" : 1800.0 , "count total" : True },
         { "name" : "mkfifo"   , "timelimit" : 1800.0 , "count total" : True },
         { "name" : "mknod"    , "timelimit" : 1800.0 , "count total" : True },
         { "name" : "paste"    , "timelimit" : 1800.0 , "count total" : True },
         { "name" : "seq"      , "timelimit" : 1800.0 , "count total" : True },
         { "name" : "ptx"      , "timelimit" : 1800.0 , "count total" : True },
-        { "name" : "ptx2"     , "timelimit" : 1800.0 , "count total" : True },
         { "name" : "md5sum"   , "timelimit" : 1800.0 , "count total" : True },
         { "name" : "tac"      , "timelimit" : 7200.0 , "count total" : True },
         { "name" : "pr"       , "timelimit" : 7200.0 , "count total" : True },
     ]
 
-directed_strategy_list = [
-         'InterSDSE',
-         'InterSDSE(RoundRobin)',
-         'InterSDSE(Probabilistic)',
-         'IntraSDSE',
-         'CCBSE(RandomPath)',
-         'CCBSE(InterSDSE)',
-         'CCBSE(IntraSDSE)',
-        ]
+_temp = __import__(module[:-3], globals(), locals(), ['strategies', 'options'], -1)
 
-klee_strategy_list = [
-        'KLEE',
-        ]
+strategies = sorted(_temp.strategies.keys())
+options    = sorted(_temp.options.keys())
 
-undirected_strategy_list = [
-         'OtterKLEE',
-         'Mix(OtterKLEE)',
-         'OtterSAGE',
-         'Mix(OtterSAGE)',
-         'RandomPath',
-         'Mix(RandomPath)',
-        ]
-
-options = [
-        'stp0',
-        'stp10',
-        'stp50',
-        'stp100',
-        'stp1000',
-        'stp10000',
-        'uncm',
-        ]
-
-strategy_list = directed_strategy_list+ klee_strategy_list+ undirected_strategy_list
+strategy_list = strategies
 seeds = range(seed_start,seed_end+1)
 
 
@@ -109,8 +78,4 @@ for seed in seeds:
                         print >>file, "remove: %5.2f %s" % (time,target)
 
                     file.close()
-
-
-
-
 

@@ -2,11 +2,17 @@
 import sys, csv, re
 from collections import defaultdict
 
+infty = float('inf')
+
 def pretty_float(f):
-    return "%.1f" % f if f < float('inf') else ''
+    return "%.1f" % f if f < infty else ''
 
 def pretty_int(f):
     return "%d" % f if f > 0 else ''
+
+def pretty_num(f,isint=True):
+    if isint: return "%d" % (int(f)) if f < infty else ''
+    else:     return pretty_float(f)
 
 csv_reader = csv.reader(sys.stdin, delimiter=',', quotechar='"')
 
@@ -36,59 +42,73 @@ program_info_list = [
         { "name" : "pr"       , "timelimit" : 7200.0 , "count total" : True },
     ]
 
-directed_strategy_list = [
-         'InterSDSE',
-         'InterSDSE(RoundRobin)',
-         'InterSDSE(Probabilistic)',
-         #'IntraSDSE',
-         'CCBSE(RandomPath)',
-         #'CCBSE(InterSDSE)',
-         #'CCBSE(IntraSDSE)',
-        ]
+#strategies = sorted(__import__(sys.argv[1][:-3], globals(), locals(), ['strategies'], -1).strategies.keys())
+strategies = [
+    # renamer
+    "Batched(InterSDSE-efficient)",
+    "Batched(InterSDSE-probabilistic)",
+    "Batched(InterSDSE-roundrobin)",
+    "Batched(RoundRobin(RandomPath,InterSDSE-efficient))",
+    "Batched(RoundRobin(RandomPath,InterSDSE-roundrobin))",
+    "Batched(Phases(KLEE,InterSDSE))",
 
-klee_strategy_list = [
-        #'KLEE',
-        ]
+    "CCBSE(random-path)",
+    "KLEE",
+    "Mix(KLEE,0.75)",
+    "SAGE",
+    "Mix(SAGE,0.75)",
+    "random-path",
+    "Mix(random-path,0.75)",
+]
 
-undirected_strategy_list = [
-         'OtterKLEE',
-         'Mix(OtterKLEE)',
-         'OtterSAGE',
-         'Mix(OtterSAGE)',
-         'RandomPath',
-         'Mix(RandomPath)',
-        ]
+rowname = {'(#targets)':'n','(#removed)':'Cov.','(max)':'Time'}
 
-total = defaultdict(float)
 
-maxrows = 30
+for strategy in strategies:
+    # TODO: print ids
+    print "% ", strategy
 
-for strategy_list in [directed_strategy_list+ klee_strategy_list+ undirected_strategy_list]:
-    for program_info in program_info_list:
-        program = program_info['name']
-        print '\\multitargetstable{%s}{' % program
-        rows = sorted(table[program].keys())[:-3]
-        for typ in ['(#targets)','(#removed)','(max)'] + rows[:maxrows]:
-            output = [ str(typ) ]
-            for strategy in strategy_list:
-                try:
-                    stats = table[program][typ][strategy]
-                    median = pretty_float(stats['median'])
-                    if median == '':
-                        macro = '\\timedout{}'
-                    else:
-                        macro = '\\mso{%s}{%s}{%s}' % (median, pretty_float(stats['siqr']), pretty_int(stats['outliers']))
-                    output.append(macro)
-                except KeyError:
-                    # Data missing
-                    output.append("")
-            result = ' & '.join(output) + ' \\\\'
-            result = re.sub('#','\\#',result)
-            print result
-            if typ == '(max)':
-                print '\\hline'
-        if len(rows) > maxrows:
-            result = ' & '.join(['(...)'] + ['']*len(strategy_list)) + ' \\\\'
-            print result
-        print '}'
+for program_info in program_info_list:
+    program = program_info['name']
+    #rows = sorted(table[program].keys())[:-3]
+    rows = ['(#removed)','(max)'] # + rows
 
+    program_ntargets = '%s(%d)' % (program,int(table[program]['(#targets)'][strategies[0]]['median']))
+    for typ in rows:
+        output = [ program_ntargets, rowname[str(typ)] ]
+        for strategy in strategies:
+            try:
+                stats = table[program][typ][strategy]
+                median = pretty_num(stats['median'],isint=(typ=='(#removed)'))
+                if median == '':
+                    macro = '\\timedout{}'
+                else:
+                    macro = '\\mso{%s}{%s}{%s}' % (median, pretty_num(stats['siqr'],isint=(typ=='(#removed)')), pretty_int(stats['outliers']))
+                output.append(macro)
+            except KeyError:
+                # Data missing
+                output.append("")
+        result = ' & '.join(output) + ' \\\\'
+        print result
+        if typ == '(max)':
+            print '\\hline'
+
+total = defaultdict(lambda: defaultdict(float))
+
+def percent(ntargets,nremoved):
+    if ntargets < 0.0001: return 0.0
+    return (nremoved/ntargets)*100.0
+
+# TODO:compute total
+for program_info in program_info_list:
+    program = program_info['name']
+    if program_info["count total"]:
+        for strategy in strategies:
+            ntargets = table[program]['(#targets)'][strategy]['median']
+            nremoved = table[program]['(#removed)'][strategy]['median']
+            total[strategy]['ntargets'] += ntargets
+            total[strategy]['nremoved'] += nremoved
+            total[strategy]['percentage'] += percent(ntargets,nremoved)/len(program_info_list)
+
+print ' & '.join(['','Avg\\%']+[pretty_float(total[strategy]['percentage']) for strategy in strategies]) + ' \\\\'
+print ' & '.join(['','Agg\\%']+[pretty_float(percent(total[strategy]['ntargets'],total[strategy]['nremoved'])) for strategy in strategies]) + ' \\\\'

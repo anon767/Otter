@@ -45,7 +45,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
     let queue = 
         if (!BidirectionalQueue.arg_ratio) >= 1.0 then 
             (* Degenerates to pure forward Otter *)
-            BackOtterQueue.get_default_fqueue ()
+            BackOtterQueue.get_default_fqueue file
         else
             (* when get_line_targets != [], add appropriate jobs in bqueue *)
             let module FundecSet = Set.Make(CilData.CilFundec) in
@@ -64,7 +64,7 @@ let callchain_backward_se ?(random_seed=(!Executeargs.arg_random_seed))
 
             List.iter (fun f -> Output.debug_printf "Transitive callers of targets: %s@." f.svar.vname) starter_fundecs;
 
-            let queue = new BidirectionalQueue.t file in
+            let queue = new BidirectionalQueue.t file () in
 
             (* Add non-entryfn jobs *)
             let queue = List.fold_left (fun queue fundec ->
@@ -134,11 +134,13 @@ let doit file =
     UserSignal.using_signals ~usr1_handler:(fun _ -> BackOtterJobProfiler.flush ()) begin fun () -> try
         Core.prepare_file file;
 
+        (*
         let find_tag_name tag assocs = List.assoc tag (List.map (fun (a,b)->(b,a)) assocs) in
         Output.printf "Forward strategy: %s@." (find_tag_name (!BackOtterQueue.default_fqueue) BackOtterQueue.queues);
         Output.printf "Backward function ranking: %s@." (find_tag_name (!FunctionRanker.default_function_rank) FunctionRanker.queues);
         Output.printf "Backward strategy: %s@." (find_tag_name (!BackOtterQueue.default_bqueue) BackOtterQueue.queues);
         Output.printf "Ratio: %0.2f@." !BidirectionalQueue.arg_ratio ;
+        *)
 
         let queue, reporter = callchain_backward_se (new BackOtterReporter.t ()) file in
 
@@ -152,6 +154,11 @@ let doit file =
         Output.printf "Number of steps: %d@." steps;
         Output.printf "Number of paths: %d@." paths;
         Output.printf "Number of abandoned: %d@." abandoned;
+
+        if (!BidirectionalQueue.arg_ratio) > 0.0 && (!BidirectionalQueue.arg_ratio) < 1.0 then begin
+            let forward_time, backward_time = (!BidirectionalQueue.real_timer)#time_elapsed in
+            Output.printf "forward/backward ratio = %.2f/%.2f = %.2f@." forward_time backward_time (forward_time /. backward_time)
+        end;
 
         Report.print_report reporter#completed
 

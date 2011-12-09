@@ -9,7 +9,8 @@ table = defaultdict(list)
 
 for program in sorted(os.listdir(path)):
     for strategy in sorted(os.listdir(os.path.join(path, program))):
-        for seed in sorted(os.listdir(os.path.join(path, program, strategy))):
+        #for seed in sorted(os.listdir(os.path.join(path, program, strategy))):
+        for seed in [str(i) for i in range(1,num_seeds+1)]:
             p = os.path.join(path, program, strategy, seed, 'entry')
             if os.path.exists(p):
                 file = open(p)
@@ -23,5 +24,6 @@ csv_writer = csv.writer(sys.stdout, delimiter=',', quotechar='"', quoting=csv.QU
 csv_writer.writerow(['Test','Strategy'] + ["d%d"%x for x in range(1,num_seeds+1)])
 
 for (program, strategy), times in sorted(table.items()):
-    csv_writer.writerow([program, strategy] + sorted(times))
+    if len(times) == num_seeds:
+        csv_writer.writerow([program, strategy] + sorted(times))
 
