@@ -1,5 +1,5 @@
 
-SUBDIRS=cilqual cil stp ocamlgraph
+SUBDIRS=otter cilqual cil stp ocamlgraph delimcc
 
 EXTRALIBDIRS=$(addprefix $(CURDIR)/,stp/src/OcamlSTP)
 EXTRAOCAMLPATH=$(CURDIR):$(CURDIR)/stp/src
