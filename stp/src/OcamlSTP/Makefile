@@ -25,8 +25,8 @@ lib : libOcamlSTP.a OcamlSTP.a OcamlSTP.cmi OcamlSTP.cma OcamlSTP.cmxa
 
 
 %.a %.cmi %.cma %.cmxa : %.mli %.ml lib%.a libstp.a
-	$(OCAMLOPT) $(OCAMLFLAGS) $(OCAMLLDFLAGS) -a -o $*.cmxa $*.mli $*.ml -cclib -l$* -cclib -lstp
-	$(OCAMLC) $(OCAMLFLAGS) $(OCAMLLDFLAGS) -a -custom -o $*.cma $*.mli $*.ml -cclib -l$* -cclib -lstp
+	$(OCAMLOPT) $(OCAMLFLAGS) -a -o $*.cmxa $*.mli $*.ml -cclib -l$* -cclib -lstp $(OCAMLLDFLAGS)
+	$(OCAMLC) $(OCAMLFLAGS) -a -custom -o $*.cma $*.mli $*.ml -cclib -l$* -cclib -lstp $(OCAMLLDFLAGS)
 
 libOcamlSTP.a : OcamlSTP_impl.o
 	$(RM) libOcamlSTP.a
