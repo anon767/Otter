@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT(cilqual, alpha-0, khooyp@cs.umd.edu)
+AC_INIT(otter, alpha-0, khooyp@cs.umd.edu)
 
 
 # Checks for programs.
