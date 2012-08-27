@@ -153,7 +153,7 @@ module Make (Key : OrderedType) (Priority : OrderedType) = struct
                 Winner (k', p', v', LoserTree.lbalance k p v t m t', m')
 
     let rec second_best t m' = match t with
-        | LoserTree.Start _ -> Void
+        | LoserTree.Start -> Void
         | LoserTree.LLoser (_, k, p, v, l, m, r) -> play (Winner (k, p, v, l, m)) (second_best r m')
         | LoserTree.RLoser (_, k, p, v, l, m, r) -> play (second_best l m) (Winner (k, p, v, r, m'))
 

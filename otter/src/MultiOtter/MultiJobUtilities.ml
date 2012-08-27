@@ -77,8 +77,8 @@ let schedule_job job =
             | Atomic _, Atomic _ -> failwith "There are multiple Atomic processes in the process list"
             | _, Atomic _ -> process
             | Atomic _, _ -> max_process
-            | _, Running _ -> process
-            | Running _, _ -> max_process
+            | _, Running -> process
+            | Running, _ -> max_process
             | TimeWait x, TimeWait y -> if x < y then max_process else process
             | _, TimeWait _ -> process
             | TimeWait _, _ -> max_process
