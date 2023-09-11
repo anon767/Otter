@@ -22,7 +22,6 @@
 #define YYMAXDEPTH 1048576000
 #define YYERROR_VERBOSE 1
 #define YY_EXIT_FAILURE -1
-#define YYPARSE_PARAM AssertsQuery
   
   extern int cvclex(void);
   extern char* yytext;
@@ -215,14 +214,14 @@ other_cmd       :
 /* } */
 |      Query 
 { 
-  ((ASTVec*)AssertsQuery)->push_back(parserInterface->CreateNode(TRUE));
-  ((ASTVec*)AssertsQuery)->push_back(*$1);                       
+ // ((ASTVec*)AssertsQuery)->push_back(parserInterface->CreateNode(TRUE));
+ // ((ASTVec*)AssertsQuery)->push_back(*$1);                       
   delete $1;
 }
 |      VarDecls Query 
 { 
-  ((ASTVec*)AssertsQuery)->push_back(parserInterface->CreateNode(TRUE));
-  ((ASTVec*)AssertsQuery)->push_back(*$2);
+ // ((ASTVec*)AssertsQuery)->push_back(parserInterface->CreateNode(TRUE));
+ // ((ASTVec*)AssertsQuery)->push_back(*$2);
   delete $2;
 }
 |      other_cmd1 Query
@@ -237,8 +236,8 @@ other_cmd       :
     aaa.size() == 1 ? 
     aaa[0] :
     parserInterface->CreateNode(AND, aaa);
-  ((ASTVec*)AssertsQuery)->push_back(asserts);
-  ((ASTVec*)AssertsQuery)->push_back(*$2);
+ // ((ASTVec*)AssertsQuery)->push_back(asserts);
+ // ((ASTVec*)AssertsQuery)->push_back(*$2);
   delete $2;
 }
 ;
