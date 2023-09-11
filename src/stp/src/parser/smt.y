@@ -60,7 +60,6 @@
 #define YYMAXDEPTH 104857600
 #define YYERROR_VERBOSE 1
 #define YY_EXIT_FAILURE -1
-#define YYPARSE_PARAM AssertsQuery
   %}
 
 %union {  
@@ -222,8 +221,8 @@ benchmark
       query = parserInterface->CreateNode(FALSE);
     }
 
-  ((ASTVec*)AssertsQuery)->push_back(assumptions);
-  ((ASTVec*)AssertsQuery)->push_back(query);
+  //((ASTVec*)AssertsQuery)->push_back(assumptions);
+  //((ASTVec*)AssertsQuery)->push_back(query);
   delete $1;
   parserInterface->letMgr.cleanupParserSymbolTable();
   query = ASTNode();
