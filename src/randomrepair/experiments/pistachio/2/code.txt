@@ -1,0 +1,29 @@
+/*
+	Code is from RCP 0.6.4. The code handles agreement between window sizes. Specifically, the two parties send window sizes until an agreement is reached. If either party receives the window size previously sent, then they can begin transmitting the file. The conclusion asks that while there is still disagreement with the last value previously sent, the next message should be either a protocol version message or an error message. Error messages are not allowed if the either party sent a valid window size (there is actually a limit in the spec on how many message about window sizes can be sent, after which either party can disconnect without further notification; the disconnect part cannot be modeled properly here, so we ignore it for now). What happens here is that even while there is disagreement, a different type of message will be sent back (a file request message specifically). The rule also requests that if we reply with another window size message, the size should be between bounds.
+
+	Notes: There is another error here, that will be detailed in example 3 (because this rule does not check for it). Specifically, the new size we send should be in between what we sent last time (wndsize[sock_in]) and what we have received from the other party. However, there are parens missing from msgout.payload[0] =  msgin.payload[0] + wndsize[sock_in] / 2; to achieve that. This rule does not make this request, but a different rule does (see example 4).
+
+	Estimated difficulty for abduction: High?
+
+	Solution: The condition of the if is badly written, we should replace =! with !=.
+*/
+
+#define RCP_MAX_WNDSIZE 4096
+#define RCP_MIN_WNDSIZE 32
+
+int sz = recv(sock_in, inbuf, MAX_MSG_SIZE);
+rcp_extract(inbuf, sz, &msgin);
+if(msgin.type == RCP_WNDSIZE) {
+	if(msgin.payload[0] =! wndsize[sock_in]) {
+		msgout.type = RCP_WNDSIZE;
+		if((msgin.payload[0] > RCP_MAX_WNDSIZE) || (msgin.payload[0] < RCP_MIN_WNDSIZE))
+			send_protocol_error(sock_in,ERR_WNDSIZE);
+		else {	
+			msgout.payload[0] =  msgin.payload[0] + wndsize[sock_in] / 2;
+			sz = rcp_compose(msgout, outbuf, MAX_MSG_SIZE);
+			send(sock_in, outbuf, sz);
+		}
+	} else {
+		send_file_request(sock_in, F);
+	}
+}

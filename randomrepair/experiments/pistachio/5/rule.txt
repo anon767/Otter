@@ -1,9 +1,0 @@
-recv(sock_in,msgin,_)
-msgin.type = RCP_FILE_HEADER
-(msgin.payload[1] << sizeof(int)) | msgin.payload[0] > 0
-len(msgin.str) > 0
-=>
-send(sock_in,msgout,_)
-msgout.type = RCP_START_FILE_REQ
-((msgout.payload[1] << sizeof(int)) | msggout.payload[1]) > 0
-

@@ -1,0 +1,52 @@
+Statement: fmsgrecv(clisock, inmsg, SSH2_MSG_SIZE);
+Facts: {inmsg[3..6] = MSGTYPE_PROTOVER;}
+Comments: The rule hypothesis assumes that we are dealing with a protocol version message. The type of this message in this stage is a value stored in byts 3..6 of the message payload. The bytes 7 through 9 store the version and subversion of the protocol in the format version.subversion. The rule hypothesis states that we are dealing with a MSGTYPE_PROTOVER and the conclusion requires that a protover message be returned as well. If there are any errors, these have to be encoded as part of the protocol version reply message.
+Notes: Input pattern matched for rule protover.
+-------------------
+Statement: _b23 = parse_message(MSGTYPE_PROTOVER, inmsg, len(inmsg), &protomsg);
+Facts: {inmsg[3..6] = MSGTYPE_PROTOVER; _b23 = true;}
+Comments: This function parses the message from a byte buffer into the structure protomsg. The function will return true iff the first parameter matches the type of message in the buffer. The protomsg.proto_ver will contain the floating point value that was stored in bytes 7..9 of the original message.
+-------------------
+Statement: if(!b_23)
+Facts: {inmsg[3..6] = MSGTYPE_PROTOVER; _b23 = true;}
+Comments: Since from the facts in the hypothesis we know _b23 is true, then we will only consider the false branch of this if.
+Notes: False branch 
+-------------------
+Statement: if(protomsg.proto_ver < 1)
+Facts: {inmsg[3..6] = MSGTYPE_PROTOVER; _b23 = true;}
+Comments: We cannot decide on which branch to take and therefore we will consider both and after that the sets of facts will be intersected.
+Notes: Either branch
+-------------------
+Statement: payload.msgid = SSH_DISCONNECT;
+Facts: {inmsg[3..6] = MSGTYPE_PROTOVER; _b23 = true; protomsg.proto_ver < 1; payload.msgid = SSH_DISCONNECT}
+Comments: Starting on the true branch, the condition of the if is asserted, as well as the result of the assignment.
+Notes: Start of true branch of if(protomsg.proto_ver < 1)
+-------------------
+Statement: payload.reason = SSH_DISCONNECT_PROTOCOL_ERROR;
+Facts: {inmsg[3..6] = MSGTYPE_PROTOVER; _b23 = true; protomsg.proto_ver < 1; payload.msgid = SSH_DISCONNECT; payload.reason = SSH_DISCONNECT_PROTOCOL_ERROR;}
+Comments: Continuing on the true branch.
+-------------------
+Statement: sz = pack_message(MSGTYPE_DISCONNECT, payload, outmsg, SSH2_MSG_SIZE);
+Facts: {inmsg[3..6] = MSGTYPE_PROTOVER; _b23 = true; protomsg.proto_ver < 1; payload.msgid = SSH_DISCONNECT; payload.reason = SSH_DISCONNECT_PROTOCOL_ERROR; outmsg[3..6] = MSGTYPE_DISCONNECT; outmsg[0..3] = SSH_DISCONNECT; outmsg[6..9] = SSH_DISCONNECT_PROTOCOL_ERROR;}
+Comments: This function packs a protocol message and returns the size in bytes of the output buffer (outmsg). The call says we want to pack a disconnect message with the message payload given in payload (contains a reason and any other params), maximum size of message has to be lower than SSH2_MSG_SIZE. The type of the message will be reflected in outmsg in bytes 3..6. Bytes 6..9 will contain the reason specified (since there are no more parameters in payload for now, no other facts will be inferred. However, messages are normally assigned a sequence number which should be in the first 4 bytes (0..3); DISCONNECT messages do not follow this rule, hence they are assigned a special sequence code.
+-------------------
+Statement: sprintf(outstr, ”\%.1f\%c\%s\%c\%c”, 2, SP, SRV_COMMENTS, CR, LF);
+Facts: {inmsg[3..6] = MSGTYPE_PROTOVER; _b23 = true; protomsg.proto_ver > 1; outstr[0] = '2'; outstr[1] = '.'; outstr[2] = '0'; outstr[3] = SP; outstr[len(outstr)-2] = CR; outstr[len(outstr)-1] = LF;}
+Comments: We are now on the false branch of the if, so we assert the opposite of the conditional (protomsg.proto_ver > 1). The call to sprintf will infer the facts about outstr (as you can observe).
+Notes: Start of false branch of if(protomsg.proto_ver < 1)
+-------------------
+Statement: sz = pack_message(MSGTYPE_PROTOVER, outstr, outmsg, SSH2_MSG_SIZE);
+Facts: {inmsg[3..6] = MSGTYPE_PROTOVER; _b23 = true; protomsg.proto_ver > 1; outstr[0] = '2'; outstr[1] = '.'; outstr[2] = '0'; outstr[3] = SP; outstr[len(outstr)-2] = CR; outstr[len(outstr)-1] = LF; outmsg[3..6] = MSGTYPE_PROTOVER; outmsg[7] = '2'; outmsg[8] = '.'; outmsg[9] = '0';}
+Comments: pack_message is an overloaded function. In this case, it can be called with a string-based representation of a payload -- some messages in SSH contain text more than data (such as shell commands, environment variables, etc.) so this function is useful in many cases. This is a confirmation message that sends back the same version along with comments from the server in text-based format (the constant SRV_COMMENTS). For the string-based payload version, pack_message expects the ver.subver to start with, followed by a space, followed by any text-based parameters (the server comments in this case). In the previous version, there was a mistake in the set of facts about out[0..3] being SSH_SRV_COMMENTS. That has been removed. Some indexes were also fixed.
+Notes: Start of false branch of if(protomsg.proto_ver < 1)
+-------------------
+Statement: AFTER if(protomsg.proto_ver < 1) BLOCK
+Facts: {inmsg[3..6] = MSGTYPE_PROTOVER; _b23 = true; }
+Comments: We are after the if statement and have to intersect both branches. Since these are different messages asserted on the two branches, facts about outmsg get killed.
+Notes: Intersect branches
+-------------------
+Statement: fmsgsend(clisock, outmsg, sz);
+Facts: {inmsg[3..6] = MSGTYPE_PROTOVER; _b23 = true; }
+Notes: Output pattern match for rule protover.
+Comments: Since we have no facts of outmsg, this will fail.
+CHECK: outmsg[3..6] = MSGTYPE_PROTOVER >>> FAILED

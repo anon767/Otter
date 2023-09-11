@@ -1,0 +1,7 @@
+recv(_,msgin,_)
+msgin.type = SSH_MSG_CHANNEL_OPTIONS
+msgin.szParams >= 1
+=>
+send(_,msgout,_)
+msgout.type = SSH_CHANNEL_OPTIONS_ACK
+msgout.uParams[0] = msgin.szParams

@@ -1,0 +1,91 @@
+CIL_SRCDIR = @CIL_SRCDIR@
+EXTRALIBDIRS = @EXTRALIBDIRS@
+
+include $(CIL_SRCDIR)/config.mk
+
+CIL_OBJDIR = $(CILHOME)/obj/$(ARCHOS)
+
+OCAMLBUILD_CIL = -cflags -I,$(CIL_OBJDIR) -lflags -I,$(CIL_OBJDIR) -tags pkg_unix,pkg_str,pkg_num -libs cil
+OCAMLBUILD_OCAMLGRAPH = -tags pkg_ocamlgraph
+OCAMLBUILD_OUNIT = -tags pkg_oUnit
+OCAMLBUILD_OCAMLSTP = -tags pkg_OcamlSTP
+OCAMLBUILD_DELIMCC = -tags pkg_delimcc
+
+OCAMLBUILD_FLAGS = \
+	-j 0 -Xs doc,examples,libc,util -tags warn_error_A,debug \
+	$(OCAMLBUILD_CIL) $(OCAMLBUILD_OCAMLGRAPH) $(OCAMLBUILD_OUNIT) \
+	$(OCAMLBUILD_OCAMLSTP) $(OCAMLBUILD_DELIMCC) \
+	$(EXTRALIBDIRS:%=-cflags -I,%) $(EXTRALIBDIRS:%=-lflags -I,%) $(OCAMLBUILD_EXTRAFLAGS)
+export OCAMLPATH:=$(CURDIR):@EXTRAOCAMLPATH@
+
+OCAMLBUILD_DEPS = \
+	configure Makefile Makefile.rules \
+	$(EXTRALIBDIRS) $(CIL_OBJDIR) $(EXTRALIBDIRS:%=%/*) $(CIL_OBJDIR)/*
+
+OUNIT_FLAGS = -verbose
+
+VPATH = src test benchmark
+
+.PHONY : all native debug config test experiments
+
+# local configuration hook; include it if it exists
+-include Makefile.local
+
+all : native libs doc
+
+native : ocamlbuild//runotter.native config
+debug : ocamlbuild//runotter.d.byte config
+
+profile : OCAMLBUILD_FLAGS += -tag profile
+profile : native
+
+libs : $(addprefix ocamlbuild//,Otter.cmxa Otter.a Otter.cma Otter.cmi)
+libs : OCAMLBUILD_MORE_CMI= \
+		DataStructures.cmi CilUtilities.cmi OcamlUtilities.cmi OtterBytes.cmi OtterCFG.cmi OtterESD.cmi \
+		OtterCore.cmi OtterExtensions.cmi OtterJob.cmi OtterQueue.cmi OtterReporter.cmi OtterDriver.cmi
+
+test : ounit//runtestotter.d.byte
+ounit//runtestotter.d.byte : debug
+
+benchmark-otter : ounit//runbenchmarkotter.native
+ounit//runbenchmarkotter.native : native
+
+debug-benchmark-otter : ounit//runbenchmarkotter.d.byte
+ounit//runbenchmarkotter.d.byte : debug
+
+
+config : otter.pl.config libc/__otter/config.h
+otter.pl.config : Makefile $(CIL_SRCDIR)/config.mk
+	printf "\
+	$$::cilhome = '$(CILHOME)';\n\
+	$$::cc  = '$(CILLY_NATIVE_CC)';\n\
+	$$::default_mode = '$(DEFAULT_CIL_MODE)';\n\
+	$$::native = '$(OCAMLBUILD_PRODUCTDIR)/runotter.native';\n\
+	$$::byte = '$(OCAMLBUILD_PRODUCTDIR)/runotter.d.byte';\n\
+	$$::do_default = '--dootter';\n\
+	$$::compile_after_merge = 0;\n\
+	1;" > $@
+
+libc/__otter/config.h : $(CIL_SRCDIR)/config.h
+	cp $< $@
+
+#doc : api dot
+
+api : $(foreach foo, \
+		DataStructures CilUtilities OcamlUtilities OtterBytes OtterCFG OtterESD OtterCore OtterExtensions \
+		OtterJob OtterQueue OtterReporter OtterDriver Otter MultiOtter BackOtter DebugOtter TestUtil, \
+		ocamlbuild//$(foo).docdir)
+
+dot : ocamlbuild//All.dot
+
+clean : clean-ocamlbuild
+	$(RM) otter.pl.config
+
+distclean : clean
+	$(RM) config.cache config.log config.status
+
+maintainer-clean : distclean
+	$(RM) Makefile
+	$(RM) -r auto4mate.cache
+
+include Makefile.rules
