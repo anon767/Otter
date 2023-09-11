@@ -31,7 +31,7 @@ VPATH = src test benchmark
 # local configuration hook; include it if it exists
 -include Makefile.local
 
-all : native libs doc
+all : native libs
 
 native : ocamlbuild//runotter.native config
 debug : ocamlbuild//runotter.d.byte config
